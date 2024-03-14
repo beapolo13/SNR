@@ -1,5 +1,6 @@
 from sympy import symbols, cos, sin, Matrix, simplify
 import numpy as np
+from numpy import transpose, real, sqrt,linalg, cosh, sinh
 import scipy
 import matplotlib.pyplot as plt
 from itertools import combinations
@@ -44,9 +45,9 @@ def V_tms_sym(z,x, phi, params, ordering='xxpp'):
     #print('S',S)
     if params is not None:
       O1= Orth(params)
-      result= P @ B_total @ O1 @ S @ transpose(O1) @ transpose(B_total) @ transpose(P)
+      result= P @ B_total @ O1 @ S @ transpose(O1) @ transpose(B_total)  @ transpose(P)
     else:
-      result= P @ B_total @ S @ transpose(B_total) @ transpose(P)
+      result= P @ B_total @ S @ transpose(B_total) @transpose(P)
 
     if ordering == 'xpxp': 
       return convention_switch(simplify(result),'xxpp',format='String')
@@ -313,3 +314,9 @@ def analytical_results(z1,z2,x1,phi1,phi2): #so far only for N =2
   print('diff phi2=',diff_phi2_ng)
   return
 
+z1,z2,x1 =symbols('z1,z2,x1',real=True)
+phi1,phi2 =symbols('phi1,phi2',real=True)
+z_values = [z1,z2]  #1:N+1
+theta_values = [x1] #N*(N-1)//2 +1
+phi_values = [phi1,phi2]  #1:N+1
+V_tms_sym(z_values,theta_values, phi_values, params=None, ordering='xxpp')

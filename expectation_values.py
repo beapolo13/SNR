@@ -140,7 +140,7 @@ def N2_ng(sigma,nongaussian_ops):
     return (1/K_ng(sigma,nongaussian_ops))*sum
 
 def varianceN_ng(sigma,nongaussian_ops):
-    return  np.sqrt(N2_ng(sigma,nongaussian_ops) - (expvalN_ng(sigma,nongaussian_ops))**2)
+  return  np.sqrt(N2_ng(sigma,nongaussian_ops) - (expvalN_ng(sigma,nongaussian_ops))**2)
 
 def SNR_ng(sigma,nongaussian_ops):
   return expvalN_ng(sigma,nongaussian_ops)/varianceN_ng(sigma,nongaussian_ops)
