@@ -13,7 +13,10 @@ from matplotlib.ticker import LinearLocator
 from pprint import pprint
 from scipy.linalg import block_diag
 import os
-from mpl_toolkits.mplot3d import Axes3D
+
+from utils import *
+from covariance_matrix import *
+from expectation_values import *
 
 def global_optimization():  #global optimizer: too slow even for fixed squeezing
   for N in range(2,6):

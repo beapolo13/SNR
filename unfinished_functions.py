@@ -1,3 +1,24 @@
+import numpy as np
+from numpy import transpose, real, sqrt, sin, cos, linalg, cosh, sinh
+import scipy
+import matplotlib.pyplot as plt
+from itertools import combinations
+from scipy import optimize
+from scipy.optimize import minimize
+import time
+import sys
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator
+from pprint import pprint
+from scipy.linalg import block_diag
+import os
+from mpl_toolkits.mplot3d import Axes3D
+
+from utils import *
+from covariance_matrix import *
+from expectation_values import *
+
 #Check for separability of the gaussian covariance matrix
 
 def check(sigma,N):  #only for N=2
@@ -57,7 +78,8 @@ def check(sigma,N):  #only for N=2
 
 
 #criterion 1 for separability (PPT) (something is wrong here, check!)
-def separability():
+def separability(sigma):
+    N= len(sigma)//2
     T=np.diag([1,1,1,-1])
     sigma_hat= T @ sigma @ T
     print('sigma hat')
@@ -79,7 +101,7 @@ def separability():
 #3D PLOT:
 def three_D_plot():
   fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-  Z = np.abs(expvalN_ng(V_tms(z,T,modesBS,[0,0],params1,params2))/varianceN_ng(V_tms(z,T,modesBS,[0,0],params1,params2)))
+  Z = np.abs(expvalN_ng(V_tms(z,T,[0,0],params1))/varianceN_ng(V_tms(z,T,[0,0],params1)))
 
   # Plot the surface.
   surf = ax.plot_surface(T, S, Z, cmap=cm.coolwarm,linewidth=0, antialiased=False)

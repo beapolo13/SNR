@@ -66,6 +66,7 @@ def p_matchings(elements):  #input is an array/list of numbers #output is a resh
 #CHANGE OF CONVENTION IN THE ORDER OF THE COVARIANCE MATRIX ELEMENTS
 def convention_switch(sigma,ordering,format):
   # expresses the covariance matrix in the opposite convention
+  #ordering is the initial ordering of input matrix
   array=sigma
   N=len(sigma)//2
   #print('input array:')
@@ -127,7 +128,7 @@ def create_test_matrix(N,ordering):   #creation of a test matrix to test the con
 
 
 # Gaussianity check function using Robertson-Schrodinger uncertainty relation
-def gauss_check(sigma): #checks that the input covariance matrix corresponds to a gaussian state
+def gauss_check(sigma, ordering='xxpp'): #checks that the input covariance matrix corresponds to a gaussian state
   N= len(sigma)//2
   print('input sigma')
   pprint(np.round(sigma,1))
@@ -159,20 +160,20 @@ def gauss_check(sigma): #checks that the input covariance matrix corresponds to 
 
 
 #definition of the paper's identities 
-def id1(sigma,l,k): #function to compute Tr(a^dag_l a^dag_k rho)
+def id1(sigma,l,k,ordering='xxpp'): #function to compute Tr(a^dag_l a^dag_k rho)
     N= len(sigma)//2
     if ordering == 'xpxp':
       sigma=convention_switch(sigma,'xpxp','number')
     return (1/4)*(sigma[l-1][k-1]-sigma[l+N-1][k+N-1]-1j*(sigma[l-1][k+N-1]+sigma[l+N-1][k-1]))
 
-def id2(sigma,l,k): #function to compute Tr(a_l a_k rho)
+def id2(sigma,l,k,ordering='xxpp'): #function to compute Tr(a_l a_k rho)
     N= len(sigma)//2
     if ordering == 'xpxp':
       sigma=convention_switch(sigma,'xpxp','number')
 
     return np.conjugate(id1(sigma,l,k))
 
-def id3(sigma,l,k): #function to compute Tr(a^dag_l a_k rho)
+def id3(sigma,l,k,ordering='xxpp'): #function to compute Tr(a^dag_l a_k rho)
     N= len(sigma)//2
     if ordering == 'xpxp':
       sigma=convention_switch(sigma,'xpxp','number')
@@ -181,7 +182,7 @@ def id3(sigma,l,k): #function to compute Tr(a^dag_l a_k rho)
         delta+=1
     return (1/4)*(sigma[l-1][k-1]+sigma[l+N-1][k+N-1]+1j*(sigma[l-1][k+N-1]-sigma[l+N-1][k-1])-2*delta)
 
-def id4(sigma,l,k):  #function to compute Tr(a^_l a^dag_k rho)
+def id4(sigma,l,k,ordering='xxpp'):  #function to compute Tr(a^_l a^dag_k rho)
     N= len(sigma)//2
     if ordering == 'xpxp':
       sigma=convention_switch(sigma,'xpxp','number')

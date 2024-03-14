@@ -15,11 +15,12 @@ from scipy.linalg import block_diag
 import os
 from mpl_toolkits.mplot3d import Axes3D
 
+from utils import *
 
 
 #COVARIANCE MATRIX BUILDING
 #function that builds squeezing matrix D
-def sq(z):
+def sq(z,ordering='xxpp'): #ordering is optional parameter
   N=len(z)
   if ordering == 'xpxp':
     d_vector=[]
@@ -68,34 +69,28 @@ def Orth(params):
 #params is the vector of passive optics O
 #no params2 since i have checked that the correct definition is with O and O transpose (same orthogonal matrix)
 
-def V_tms(z,x, phi, params): 
+def V_tms(z,x, phi, params,ordering='xxpp'):  #ordering is an optional parameter
     N=len(z)
-    if ordering == 'xpxp': #this only works for N=2 so far
-      B=np.array([[cos(x),0,sin(x),0],[0,cos(x),0,sin(x)],[-sin(x),0,cos(x),0],[0,-sin(x),0,cos(x)]])
-      P1=np.array([[cos(phi1),sin(phi1)], [-sin(phi1), cos(phi1)]])
-      P2=np.array([[cos(phi2),sin(phi2)], [-sin(phi2), cos(phi2)]])
-      P= np.block([[P1,np.zeros((N,N))],[np.zeros((N,N)), P2]])
-    elif ordering == 'xxpp':
-      #beamsplitter
-      B_total=np.eye(2*N)
-      #print('x:',cos(x),sin(x))
-      index=0
-      for i in range(N):
-          for j in range(i+1,N):
-              B=np.eye(2*N)
-              B[i,i]=B[j,j]=B[N+i,N+i]=B[N+j,N+j]= cos(x[index])
-              B[i,j]=B[N+i,N+j]= sin(x[index])
-              B[j,i]=B[N+j,N+i]= -sin(x[index])
-              index+=1
-              B_total=B_total@B
-      #print('B',np.round(B_total,2))
-      #dephasing
-      P= np.zeros((2*N, 2*N))
-      for i in range(N):
-        P[i,i]=P[i+N,i+N]= cos(phi[i])
-        P[i,i+N]=sin(phi[i])
-        P[i+N,i]=-sin(phi[i])
-      #print('P',P)
+    #beamsplitter
+    B_total=np.eye(2*N)
+    #print('x:',cos(x),sin(x))
+    index=0
+    for i in range(N):
+        for j in range(i+1,N):
+            B=np.eye(2*N)
+            B[i,i]=B[j,j]=B[N+i,N+i]=B[N+j,N+j]= cos(x[index])
+            B[i,j]=B[N+i,N+j]= sin(x[index])
+            B[j,i]=B[N+j,N+i]= -sin(x[index])
+            index+=1
+            B_total=B_total@B
+    #print('B',np.round(B_total,2))
+    #dephasing
+    P= np.zeros((2*N, 2*N))
+    for i in range(N):
+      P[i,i]=P[i+N,i+N]= cos(phi[i])
+      P[i,i+N]=sin(phi[i])
+      P[i+N,i]=-sin(phi[i])
+    #print('P',P)
     S=sq(z)
     #print('S',S)
     if params is not None:
@@ -103,7 +98,8 @@ def V_tms(z,x, phi, params):
       result= P @ B_total @ O1 @ S @ transpose(O1) @ transpose(B_total) @ transpose(P)
     else:
       result= P @ B_total @ S @ transpose(B_total) @ transpose(P)
-    return result
-
-
-
+    
+    if ordering == 'xpxp': 
+      return convention_switch(result,'xxpp',format='number')
+    else:
+      return result
