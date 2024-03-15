@@ -19,26 +19,27 @@ from utils import *
 from covariance_matrix import *
 from expectation_values import *
 
-def results_and_plots(nongaussian_ops,z,theta,modesBS,phi,params):
-  print('Initialization parameters:',nongaussian_ops,z,theta,modesBS,phi,params)
-  rho_gaussian_sep= V_tms(z,0,modesBS,phi,params)
-  print('rho sep',np.round(V_tms(z,0,modesBS,phi,params),2))
-  rho_gaussian_ent=V_tms(z,theta,modesBS,phi,params)
-  print('rho ent',np.round(V_tms(z,theta,modesBS,phi,params),2))
+def ratio_results(nongaussian_ops,z,theta,phi,params):
+  N=len(z)
+  print('Initialization parameters:',nongaussian_ops,z,theta,phi,params)
+  rho_gaussian_sep= V_tms(z,[0]*((N*(N-1))//2),[0]*N,params)
+  print('rho sep',np.round(rho_gaussian_sep,2))
+  rho_gaussian_ent=V_tms(z,theta,phi,params)
+  print('rho ent',np.round(rho_gaussian_ent,2))
 
   #GAUSSIAN QUANTITIES
   print('expvalN',expvalN(rho_gaussian_sep))
   print('N2', N2(rho_gaussian_sep))
   print('variance N',varianceN(rho_gaussian_sep))
-  print('ratio N/delta(N) gaussian',expvalN(rho_gaussian_sep)/varianceN(rho_gaussian_sep))
+  print('ratio N/delta(N) gaussian',SNR_gaussian(rho_gaussian_sep))
 
 
   print(' ')
   print('With beam splitter + phase shifter: (entanglement)')
-  print('N',expvalN(V_tms(z,theta,modesBS,phi,params)))
-  print('N2', N2(V_tms(z,theta,modesBS,phi,params)))
-  print('delta N',varianceN(V_tms(z,theta,modesBS,phi,params)))
-  print('ratio N/delta(N) gaussian',expvalN(V_tms(z,theta,modesBS,phi,params))/varianceN(V_tms(z,theta,modesBS,phi,params)))
+  print('N',expvalN(V_tms(z,theta,phi,params)))
+  print('N2', N2(V_tms(z,theta,phi,params)))
+  print('delta N',varianceN(V_tms(z,theta,phi,params)))
+  print('ratio N/delta(N) gaussian',SNR_gaussian(V_tms(z,theta,phi,params)))
   print(' ')
 
   #NON GAUSSIAN
@@ -48,40 +49,64 @@ def results_and_plots(nongaussian_ops,z,theta,modesBS,phi,params):
   print('N2_ng', N2_ng(rho_gaussian_sep,nongaussian_ops))
   print('variance N_ng',varianceN_ng(rho_gaussian_sep,nongaussian_ops))
   print('ratio N/delta(N) non gaussian',SNR_ng(rho_gaussian_sep,nongaussian_ops))
-
   print(' ')
   print('With beam splitter + phase shifter: (entanglement)')
 
-  print('expvalN_ng',expvalN_ng(V_tms(z,theta,modesBS,phi,params),nongaussian_ops))
-  print('N2_ng', N2_ng(V_tms(z,theta,modesBS,phi,params),nongaussian_ops))
-  print('variance N_ng',varianceN_ng(V_tms(z,theta,modesBS,phi,params),nongaussian_ops))
-  print('ratio N/delta(N) non gaussian',SNR_ng(V_tms(z,theta,modesBS,phi,params),nongaussian_ops))
+  print('expvalN_ng',expvalN_ng(V_tms(z,theta,phi,params),nongaussian_ops))
+  print('N2_ng', N2_ng(V_tms(z,theta,phi,params),nongaussian_ops))
+  print('variance N_ng',varianceN_ng(V_tms(z,theta,phi,params),nongaussian_ops))
+  print('ratio N/delta(N) non gaussian',SNR_ng(V_tms(z,theta,phi,params),nongaussian_ops))
   print(' ')
 
-  # angle interval for beam splitter
-  t = np.arange(0, 2*np.pi, 0.05)
-  s = np.arange(0,2*np.pi, 0.05)
-  w = np.arange(0,2*np.pi, 0.3)
-  T,S = np.meshgrid(t,s)
-  TS= np.stack([T,S])
-  t_vec=np.arange(0,2*np.pi,0.005)
+  return
+
+
+def ratio_plots(N,nongaussian_ops,params=None):  #only makes sense for N=2
+  # variable intervals
+  t = np.arange(0, 2*np.pi, 0.05) #for angles
+  s = np.arange(0.05,N+1.05, 0.05)  #for squeezing
+  
+  #gaussian case
+  
+  print('gaussian case')
+  phi=2*np.pi*np.random.rand(N)
+  z=[0.5,2]
+  fig, ((ax1, ax2, ax3),(ax4,ax5,ax6)) = plt.subplots(2, 3, figsize=(15, 8))
+  ax1.plot(t, [np.real(SNR_gaussian(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t], 'r')
+  ax1.plot(t,[np.real(expvalN(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t],'b')
+  ax1.plot(t,[np.real(varianceN(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t],'g')
+  ax1.set_title('ratio w/ BS (fixed PS and z)')
+  ax1.legend(['ratio','energy', 'variance'])
+
+
+  w_vec=[]
+  for i in range(10):
+    w_vec += [np.random.rand((N*(N-1))//2)]
+  for w in w_vec:
+    ax2.plot(t, [np.real(SNR_gaussian(V_tms(z,w,[value]+[0]*(N-1),params))) for value in t],'r')
+    ax2.set_title('ratio vs PS (fixed BS and sq)') 
+    ax3.plot(s, [np.real(SNR_gaussian(V_tms([sq,1/sq],w,phi,params))) for sq in s],'r')
+    ax3.set_title('ratio vs sq (fixed BS and PS)')
 
   #nongaussian case
   print(f"{nongaussian_ops}")
-  fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-  ax1.plot(t, [np.real(SNR_ng(V_tms(z,w,modesBS,phi,params),nongaussian_ops)) for w in t], 'r')
-  ax1.set_title('Evolution w/ Bsplitter (fixed phase)')
-  ax1.plot(t,[np.real(expvalN_ng(V_tms(z,w,modesBS,phi,params),nongaussian_ops)) for w in t],'b')
-  ax1.plot(t,[np.real(varianceN_ng(V_tms(z,w,modesBS,phi,params),nongaussian_ops)) for w in t],'g')
-  #ax1.plot(t_vec, [check(V_tms(z,t,modesBS,phi,params)) for t in t_vec],'-')
+  ax4.plot(t, [np.real(SNR_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
+  ax4.plot(t,[np.real(expvalN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'b')
+  ax4.plot(t,[np.real(varianceN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'g')
+  ax4.set_title('Ratio vs BS (fixed PS and z)')
+  ax4.legend(['ratio','energy', 'variance'])
 
-  ax1.legend(['ratio','energy', 'variance', 'PT eigenvalue nu_ '])
-  #plt.show()
-
-  t2_vec=np.arange(0,2*np.pi,0.4)
-  for w in t2_vec:
-    ax2.plot(s, [np.real(SNR_ng(V_tms(z,w,modesBS,[value,0,0,0],params),nongaussian_ops)) for value in s],'r')
-  ax2.set_title('Evolution w/ dephasing (fixed BS)')
+  
+  for w in w_vec:
+    ax5.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
+    ax6.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
+  ax5.set_title('ratio vs PS (fixed BS and z)')
+  ax6.set_title('ratio vs squeezing (fixed BS and PS)')
   plt.show()
   
   return
+
+
+
+
+
