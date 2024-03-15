@@ -275,7 +275,7 @@ def id4(sigma,l,k,ordering='xxpp'):  #function to compute Tr(a^_l a^dag_k rho)
     delta2=0
     if l==k:
         delta2+=1
-    return id3(sigma,l,k)+delta2
+    return np.conjugate(id3(sigma,l,k))+delta2
 
 #function to compute traces (defined in the paper)
 def trace_func(sigma,l,k,case):
@@ -319,4 +319,4 @@ for i in range(20):
   phi=2*np.pi*np.random.rand(N)
   params=None
   sigma=V_tms(z,x, phi, params,ordering='xxpp')
-  gauss_check(sigma)
+  #gauss_check(sigma)

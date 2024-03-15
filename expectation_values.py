@@ -63,7 +63,7 @@ def N2(sigma): #dispersion of number operator on gaussian state (rho0)
 
 
 def varianceN(sigma):
-    return  np.sqrt(N2(sigma) - (expvalN(sigma))**2)
+    return  np.round(np.sqrt(N2(sigma) - (expvalN(sigma))**2),7)
 
 def SNR_gaussian(sigma):
   return expvalN(sigma)/varianceN(sigma)
@@ -75,6 +75,12 @@ def SNR_gaussian(sigma):
 
 
 def K_ng(sigma, nongaussian_ops):
+    N= len(sigma)//2
+    if nongaussian_ops==[]:
+      K=0
+      for i in range(2*N):
+        K+=sigma[i][i]
+      return K
     ops=['rho']
     modes=['rho']
     for item in nongaussian_ops:
@@ -140,7 +146,8 @@ def N2_ng(sigma,nongaussian_ops):
     return (1/K_ng(sigma,nongaussian_ops))*sum
 
 def varianceN_ng(sigma,nongaussian_ops):
-  return  np.sqrt(N2_ng(sigma,nongaussian_ops) - (expvalN_ng(sigma,nongaussian_ops))**2)
+  return  np.round(np.sqrt(N2_ng(sigma,nongaussian_ops) - (expvalN_ng(sigma,nongaussian_ops))**2),9)
 
 def SNR_ng(sigma,nongaussian_ops):
   return expvalN_ng(sigma,nongaussian_ops)/varianceN_ng(sigma,nongaussian_ops)
+
