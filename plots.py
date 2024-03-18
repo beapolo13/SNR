@@ -61,17 +61,17 @@ def ratio_results(nongaussian_ops,z,theta,phi,params):
   return
 
 
-def ratio_plots(N,nongaussian_ops,params=None):  #only makes sense for N=2
+def ratio_plots(N,params=None):  #only makes sense for N=2
   # variable intervals
   t = np.arange(0, 2*np.pi, 0.05) #for angles
-  s = np.arange(0.05,N+1.05, 0.05)  #for squeezing
+  s = np.arange(0.05,0.95, 0.05)  #for squeezing
   
   #gaussian case
   
   print('gaussian case')
   phi=2*np.pi*np.random.rand(N)
   z=[0.5,2]
-  fig, ((ax1, ax2, ax3),(ax4,ax5,ax6)) = plt.subplots(2, 3, figsize=(15, 8))
+  fig, ((ax1, ax2, ax3),(ax4,ax5,ax6),(ax7,ax8,ax9),(ax10,ax11,ax12)) = plt.subplots(4, 3, figsize=(10, 10 ))
   ax1.plot(t, [np.real(SNR_gaussian(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t], 'r')
   ax1.plot(t,[np.real(expvalN(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t],'b')
   ax1.plot(t,[np.real(varianceN(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t],'g')
@@ -86,22 +86,46 @@ def ratio_plots(N,nongaussian_ops,params=None):  #only makes sense for N=2
     ax2.plot(t, [np.real(SNR_gaussian(V_tms(z,w,[value]+[0]*(N-1),params))) for value in t],'r')
     ax2.set_title('ratio vs PS (fixed BS and sq)') 
     ax3.plot(s, [np.real(SNR_gaussian(V_tms([sq,1/sq],w,phi,params))) for sq in s],'r')
-    ax3.set_title('ratio vs sq (fixed BS and PS)')
+    ax3.set_title('ratio vs squeezing (fixed BS and PS)')
 
   #nongaussian case
+  nongaussian_ops=[1]
   print(f"{nongaussian_ops}")
   ax4.plot(t, [np.real(SNR_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
   ax4.plot(t,[np.real(expvalN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'b')
   ax4.plot(t,[np.real(varianceN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'g')
-  ax4.set_title('Ratio vs BS (fixed PS and z)')
   ax4.legend(['ratio','energy', 'variance'])
 
   
   for w in w_vec:
     ax5.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
     ax6.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
-  ax5.set_title('ratio vs PS (fixed BS and z)')
-  ax6.set_title('ratio vs squeezing (fixed BS and PS)')
+  
+
+  nongaussian_ops=[1,1]
+  print(f"{nongaussian_ops}")
+  ax7.plot(t, [np.real(SNR_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
+  ax7.plot(t,[np.real(expvalN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'b')
+  ax7.plot(t,[np.real(varianceN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'g')
+  ax7.legend(['ratio','energy', 'variance'])
+
+  
+  for w in w_vec:
+    ax8.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
+    ax9.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
+
+
+  nongaussian_ops=[1,1,1]
+  print(f"{nongaussian_ops}")
+  ax10.plot(t, [np.real(SNR_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
+  ax10.plot(t,[np.real(expvalN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'b')
+  ax10.plot(t,[np.real(varianceN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'g')
+  ax10.legend(['ratio','energy', 'variance'])
+
+  
+  for w in w_vec:
+    ax11.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
+    ax12.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
   plt.show()
   
   return

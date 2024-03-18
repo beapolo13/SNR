@@ -132,8 +132,8 @@ from sympy import sqrt
 #Expectation value of N
 def expvalN_sym(sigma): #input a 2N x 2N np.array of parameters for M
     N = int(np.sqrt(len(sigma))//2)
-    print(N)
-    print('sigma',sigma)
+    #print(N)
+    #print('sigma',sigma)
     K=0
     for i in range(2*N):
         K+=sigma[i,i]
@@ -147,7 +147,7 @@ def expvalN_sym(sigma): #input a 2N x 2N np.array of parameters for M
       modes=[i,i]
       sum+=expectationvalue_sym(sigma,ops,modes)
 
-    return simplify(sum/np.abs(K))
+    return simplify(sum/K)
 
 #Expectation value of N^2
 
@@ -290,9 +290,24 @@ def analytical_results(z1,z2,x1,phi1,phi2): #so far only for N =2
   print('diff phi2=',diff_phi2)
   print('')
 
+   # Solve the expression for one variable in terms of the other 
+  solutions = sym.solve(diff_z1, z1)
+
+# Plot one variable as a function of the other
+# Let's say we plot x1 as a function of z1
+  x1_values = np.arange(0, 2*np.pi)  # Adjust the range as needed
+  for s in solutions:
+    z1_values = [s.evalf(subs={x1: x}) for x in x1_values]
+    plt.plot(x1_values, z1_values)
+  plt.xlabel('x1')
+  plt.ylabel('z1')
+  plt.title('Plot of z1 as a function of x1')
+  plt.grid(True)
+  plt.show()
+
 
   print('NON GAUSSIAN')
-  nongaussian_ops=[-1]
+  nongaussian_ops=[1]
   N_ng=expvalN_ng_sym(covmat,nongaussian_ops)
   N2_ng=N2_ng_sym(covmat,nongaussian_ops)
   delta_ng=varianceN_ng_sym(covmat,nongaussian_ops)
@@ -325,9 +340,10 @@ def analytical_results(z1,z2,x1,phi1,phi2): #so far only for N =2
 
 # Plot one variable as a function of the other
 # Let's say we plot x1 as a function of z1
-  x1_values = range(0, 2*np.pi)  # Adjust the range as needed
-  z1_values = [s.evalf(subs={x1: x}) for x in x1_values for s in solutions]
-  plt.plot(x1_values, z1_values)
+  x1_values = np.arange(0, 2*np.pi)  # Adjust the range as needed
+  for s in solutions:
+    z1_values = [s.evalf(subs={x1: x}) for x in x1_values]
+    plt.plot(x1_values, z1_values)
   plt.xlabel('x1')
   plt.ylabel('z1')
   plt.title('Plot of z1 as a function of x1')
@@ -337,7 +353,7 @@ def analytical_results(z1,z2,x1,phi1,phi2): #so far only for N =2
 
 
 N=2
-z1,z2,x1 =symbols('z1,z2,x1',real=True)
+z1,z2,x1 =symbols('z1,z2,x1',real=True, RealNumber=True)
 phi1,phi2 =symbols('phi1,phi2',zero=True)
 z2=1/z1
 z_values = [z1,z2]  #1:N+1
