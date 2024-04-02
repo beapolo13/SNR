@@ -16,7 +16,6 @@ from pprint import pprint
 from scipy.linalg import block_diag
 import os
 from mpl_toolkits.mplot3d import Axes3D
-from covariance_matrix import *
 from utils import * 
 
 
@@ -255,7 +254,7 @@ def SNR_ng_sym(sigma,nongaussian_ops):
 
 
 
-def analytical_results(z1,z2,x1,phi1,phi2): #so far only for N =2
+def analytical_results_gaussian(z1,z2,x1,phi1,phi2): #so far only for N =2
   z_values = [z1,z2]  #1:N+1
   theta_values = [x1] #N*(N-1)//2 +1
   phi_values = [phi1,phi2]  #1:N+1
@@ -264,6 +263,36 @@ def analytical_results(z1,z2,x1,phi1,phi2): #so far only for N =2
   N2_gauss=N2_sym(covmat)
   delta_gauss=varianceN_sym(covmat)
   ratio=SNR_gaussian_sym(covmat)
+  z1_left= np.arange(0.0001,1.0,0.0001)
+  z1_right=np.arange(1.0001,2.0,0.0001)
+  z1_right2=np.arange(2.0001,3.0,0.0001)
+  z1_right3=np.arange(3.0001,4.0,0.0001)
+  print(len(z1_left), len(z1_right), len(z1_right2), len(z1_right3))
+  z1_values=np.vstack((z1_left,z1_right,z1_right2,z1_right3)).flatten()
+  ratio_values=[ratio.evalf(subs={z1: z}) for z in z1_values]
+  fig, ((ax1, ax2),(ax3,ax4)) = plt.subplots(2, 2, figsize=(8, 10))
+  ax1.scatter(z1_values, ratio_values, s=7)
+  ax1.set_title('Generic BS and PS values')
+  ax1.set_xlabel('z (squeezing)')
+  ax1.set_ylabel('SNR')
+  covmat2= V_tms_sym(z_values,[0],[0,0], params=None)
+  ratio2=SNR_gaussian_sym(covmat2)
+  ratio_values2=[ratio2.evalf(subs={z1: z}) for z in z1_values]
+  ax2.scatter(z1_values, ratio_values2, s=4)
+  ax2.set_title('BS=PS=0')
+  ax2.set_xlabel('z (squeezing)')
+  ax2.set_ylabel('SNR')
+  diff_z1 = ratio.diff(z1)
+  diff_z1_values=[diff_z1.evalf(subs={z1: z}) for z in z1_values]
+  diff_z1_2 = ratio2.diff(z1)
+  diff_z1_values2=[diff_z1_2.evalf(subs={z1: z}) for z in z1_values]
+  ax3.plot(z1_values,diff_z1_values)
+  ax4.plot(z1_values, diff_z1_values2)
+  ax3.plot(z1_values,[0]*len(z1_values), '-')
+  ax4.plot(z1_values, [0]*len(z1_values),'-')
+  ax3.set_title('Derivative of SNR(z)')
+  ax4.set_title('Derivative of SNR(z)')
+  plt.show()
   print('covariance matrix:',covmat)
   print('')
   print('N=',N_gauss)
@@ -274,7 +303,6 @@ def analytical_results(z1,z2,x1,phi1,phi2): #so far only for N =2
   print('')
   print('SNR=',ratio)
   print('')
-  diff_z1 = ratio.diff(z1)
   print('diff z1=',diff_z1)
   print('')
   #diff_z2 = ratio.diff(z2)
@@ -288,26 +316,29 @@ def analytical_results(z1,z2,x1,phi1,phi2): #so far only for N =2
   print('')
   diff_phi2 = ratio.diff(phi2)
   print('diff phi2=',diff_phi2)
-  print('')
+  return 
 
    # Solve the expression for one variable in terms of the other 
-  solutions = sym.solve(diff_z1, z1)
+  #solutions = sym.solve(diff_z1, z1)
 
 # Plot one variable as a function of the other
 # Let's say we plot x1 as a function of z1
-  x1_values = np.arange(0, 2*np.pi)  # Adjust the range as needed
-  for s in solutions:
-    z1_values = [s.evalf(subs={x1: x}) for x in x1_values]
-    plt.plot(x1_values, z1_values)
-  plt.xlabel('x1')
-  plt.ylabel('z1')
-  plt.title('Plot of z1 as a function of x1')
-  plt.grid(True)
-  plt.show()
+  #x1_values = np.arange(0, 2*np.pi)  # Adjust the range as needed
+  #for s in solutions:
+    #z1_values = [s.evalf(subs={x1: x}) for x in x1_values]
+    #plt.plot(x1_values, z1_values)
+  #plt.xlabel('x1')
+  #plt.ylabel('z1')
+  #plt.title('Plot of z1 as a function of x1')
+  #plt.grid(True)
+  #plt.show()
 
 
-  print('NON GAUSSIAN')
-  nongaussian_ops=[1]
+def analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops): #so far only for N =2
+  z_values = [z1,z2]  #1:N+1
+  theta_values = [x1] #N*(N-1)//2 +1
+  phi_values = [phi1,phi2]  #1:N+1
+  covmat= V_tms_sym(z_values,theta_values,phi_values, params=None)
   N_ng=expvalN_ng_sym(covmat,nongaussian_ops)
   N2_ng=N2_ng_sym(covmat,nongaussian_ops)
   delta_ng=varianceN_ng_sym(covmat,nongaussian_ops)
@@ -320,8 +351,8 @@ def analytical_results(z1,z2,x1,phi1,phi2): #so far only for N =2
   print('')
   print('SNR=',ratio_ng)
   print('')
-  diff_z1_ng = ratio_ng.diff(z1)
-  print('diff z1=',diff_z1_ng)
+  #diff_z1_ng = ratio_ng.diff(z1)
+  #print('diff z1=',diff_z1_ng)
   print('')
   #diff_z2_ng = ratio_ng.diff(z2)
   #print('diff z2=',diff_z2_ng)
@@ -336,34 +367,58 @@ def analytical_results(z1,z2,x1,phi1,phi2): #so far only for N =2
   print('diff phi2=',diff_phi2_ng)
 
   # Solve the expression for one variable in terms of the other
-  solutions = sym.solve(diff_z1_ng, z1)
+  #solutions = sym.solve(diff_z1_ng, z1)
 
 # Plot one variable as a function of the other
 # Let's say we plot x1 as a function of z1
-  x1_values = np.arange(0, 2*np.pi)  # Adjust the range as needed
-  for s in solutions:
-    z1_values = [s.evalf(subs={x1: x}) for x in x1_values]
-    plt.plot(x1_values, z1_values)
-  plt.xlabel('x1')
-  plt.ylabel('z1')
-  plt.title('Plot of z1 as a function of x1')
-  plt.grid(True)
-  plt.show()
+  #x1_values = np.arange(0, 2*np.pi)  # Adjust the range as needed
+  #for s in solutions:
+    #z1_values = [s.evalf(subs={x1: x}) for x in x1_values]
+    #plt.plot(x1_values, z1_values)
+  #plt.xlabel('x1')
+  #plt.ylabel('z1')
+  #plt.title('Plot of z1 as a function of x1')
+  #plt.grid(True)
+  #plt.show()
   return
 
 
 N=2
 z1,z2,x1 =symbols('z1,z2,x1',real=True, RealNumber=True)
-phi1,phi2 =symbols('phi1,phi2',zero=True)
+phi1,phi2 =symbols('phi1,phi2',real=True)
 z2=1/z1
 z_values = [z1,z2]  #1:N+1
 theta_values = [x1] #N*(N-1)//2 +1
 phi_values = [phi1,phi2]  #1:N+1
+nongaussian_ops=[-1]
 
+
+sigmatest= create_test_matrix(2,'xxpp')
+print('test covariance matrix')
+print(sigmatest)
+print('reordering xpxp to apply serafinis criterion')
+print(convention_switch(sigmatest,'xxpp','string'))
 sigma=V_tms_sym(z_values,theta_values, phi_values, params=None, ordering='xxpp')
-#print(sigma)
+print('initial matrix ordered xxpp')
+print(sigma)
+corr_mat= Matrix(np.array([[sigma[0,1],sigma[0,3]],[sigma[2,1],sigma[2,3]]]))
+print('correlations matrix:', corr_mat)
+print('')
+print('determinant of correlations', simplify(sym.det(corr_mat)))
+
+
+
+
+
+
+
+
 #print(simplify(N2_sym(sigma)))
-print(analytical_results(z1,z2,x1,phi1,phi2))
+#print(analytical_results_gaussian(z1,z2,x1,phi1,phi2))
+#print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops))
+
+
+
 
 
 

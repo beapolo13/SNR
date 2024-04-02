@@ -16,7 +16,6 @@ import os
 from mpl_toolkits.mplot3d import Axes3D
 
 from utils import *
-from covariance_matrix import *
 from expectation_values import *
 
 def ratio_results(nongaussian_ops,z,theta,phi,params):
@@ -65,23 +64,24 @@ def ratio_plots(N,params=None):  #only makes sense for N=2
   # variable intervals
   t = np.arange(0, 2*np.pi, 0.05) #for angles
   s = np.arange(0.05,0.95, 0.05)  #for squeezing
-  
-  #gaussian case
-  
-  print('gaussian case')
+  fig, ((ax1, ax2, ax3),(ax4,ax5,ax6),(ax7,ax8,ax9),(ax10,ax11,ax12),(ax13,ax14,ax15),(ax16,ax17,ax18)) = plt.subplots(6, 3, figsize=(10, 10 ))
   phi=2*np.pi*np.random.rand(N)
   z=[0.5,2]
-  fig, ((ax1, ax2, ax3),(ax4,ax5,ax6),(ax7,ax8,ax9),(ax10,ax11,ax12)) = plt.subplots(4, 3, figsize=(10, 10 ))
-  ax1.plot(t, [np.real(SNR_gaussian(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t], 'r')
-  ax1.plot(t,[np.real(expvalN(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t],'b')
-  ax1.plot(t,[np.real(varianceN(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t],'g')
-  ax1.set_title('ratio w/ BS (fixed PS and z)')
-  ax1.legend(['ratio','energy', 'variance'])
-
+  z_vec=[]
+  for i in range(10):
+    z_vec+=[np.random.rand()]
 
   w_vec=[]
   for i in range(10):
     w_vec += [np.random.rand((N*(N-1))//2)]
+
+  #gaussian case
+  print('gaussian case')
+  
+  for q in z_vec:
+    ax1.plot(t, [np.real(SNR_gaussian(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t], 'r')
+    ax1.set_title('ratio w/ BS (fixed PS and z)')
+
   for w in w_vec:
     ax2.plot(t, [np.real(SNR_gaussian(V_tms(z,w,[value]+[0]*(N-1),params))) for value in t],'r')
     ax2.set_title('ratio vs PS (fixed BS and sq)') 
@@ -89,48 +89,93 @@ def ratio_plots(N,params=None):  #only makes sense for N=2
     ax3.set_title('ratio vs squeezing (fixed BS and PS)')
 
   #nongaussian case
-  nongaussian_ops=[1]
+  nongaussian_ops=[-1]
   print(f"{nongaussian_ops}")
-  ax4.plot(t, [np.real(SNR_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
-  ax4.plot(t,[np.real(expvalN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'b')
-  ax4.plot(t,[np.real(varianceN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'g')
-  ax4.legend(['ratio','energy', 'variance'])
-
+  for q in z_vec:
+    ax4.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
+  
   
   for w in w_vec:
     ax5.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
     ax6.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
   
 
-  nongaussian_ops=[1,1]
+  nongaussian_ops=[-1,-1]
   print(f"{nongaussian_ops}")
-  ax7.plot(t, [np.real(SNR_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
-  ax7.plot(t,[np.real(expvalN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'b')
-  ax7.plot(t,[np.real(varianceN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'g')
-  ax7.legend(['ratio','energy', 'variance'])
-
+  for q in z_vec:
+    ax7.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
   
   for w in w_vec:
     ax8.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
     ax9.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
 
 
-  nongaussian_ops=[1,1,1]
+  nongaussian_ops=[-1,-1,-1]
   print(f"{nongaussian_ops}")
-  ax10.plot(t, [np.real(SNR_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
-  ax10.plot(t,[np.real(expvalN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'b')
-  ax10.plot(t,[np.real(varianceN_ng(V_tms(z,[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t],'g')
-  ax10.legend(['ratio','energy', 'variance'])
-
+  for q in z_vec:
+    ax10.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
   
   for w in w_vec:
     ax11.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
     ax12.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
+
+  nongaussian_ops=[-1,-1,-1,-1]
+  print(f"{nongaussian_ops}")
+  for q in z_vec:
+    ax13.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
+  
+  for w in w_vec:
+    ax14.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
+    ax15.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
+
+  nongaussian_ops=[-1,-1,-1,-1,-1]
+  print(f"{nongaussian_ops}")
+  for q in z_vec:
+    ax16.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
+  
+  for w in w_vec:
+    ax17.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
+    ax18.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
+  
   plt.show()
   
   return
 
 
+def surface_plots(N,params=None):
+  fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+  X = np.arange(0, 2*np.pi, 0.05) #for angles
+  Y = np.arange(0.05,0.95, 0.05)  #for squeezing
+  X, Y = np.meshgrid(X, Y)
 
+  #gaussian case
+  Z= [[np.real(SNR_gaussian(V_tms([y,1/y],x,[0]*N,params))) for y in Y] for x in X]
+  # Plot the surface.
+  surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+  ax.zaxis.set_major_locator(LinearLocator(10))
+# A StrMethodFormatter is used automatically
+  ax.zaxis.set_major_formatter('{x:.02f}')
+# Add a color bar which maps values to colors.
+  fig.colorbar(surf, shrink=0.5, aspect=5)
+  plt.show()
 
+  #nongaussian case
+  nongaussian_ops=[-1]
+  for i in range(3):
+    for y in Y:
+      for x in X:
+        Z = np.real(SNR_ng(V_tms([y,1/y],x,[0]*N,params),nongaussian_ops)) 
+    # Plot the surface.
+    surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+    ax.zaxis.set_major_locator(LinearLocator(10))
+  # A StrMethodFormatter is used automatically
+    ax.zaxis.set_major_formatter('{x:.02f}')
+  # Add a color bar which maps values to colors.
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+    plt.show()
+    nongaussian_ops+=[-1]
+
+  return 
+
+  
 

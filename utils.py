@@ -142,7 +142,7 @@ def V_tms(z,x, phi, params,ordering='xxpp'):  #ordering is an optional parameter
       O1= Orth(params)
       result= P @ B_total @ O1 @ S @ transpose(O1) @ transpose(B_total) @ transpose(P)
     else:
-      result= P @ B_total @ S @ transpose(B_total) @ transpose(P)
+      result= B_total @P @ S  @ transpose(P) @ transpose(B_total) 
     
     if ordering == 'xpxp': 
       return convention_switch(result,'xxpp',format='number')
