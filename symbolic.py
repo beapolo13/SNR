@@ -83,7 +83,7 @@ def id4_sym(sigma,l,k,ordering='xxpp'):  #function to compute Tr(a^_l a^dag_k rh
     delta2=0
     if l==k:
         delta2+=1
-    return id3_sym(sigma,l,k)+delta2
+    return np.conjugate(id3_sym(sigma,l,k))+delta2
 
 #function to compute traces (defined in the paper)
 def trace_func_sym(sigma,l,k,case):
@@ -259,15 +259,14 @@ def analytical_results_gaussian(z1,z2,x1,phi1,phi2): #so far only for N =2
   theta_values = [x1] #N*(N-1)//2 +1
   phi_values = [phi1,phi2]  #1:N+1
   covmat= V_tms_sym(z_values,theta_values,phi_values, params=None)
-  N_gauss=expvalN_sym(covmat)
-  N2_gauss=N2_sym(covmat)
-  delta_gauss=varianceN_sym(covmat)
-  ratio=SNR_gaussian_sym(covmat)
+  N_gauss=simplify(expvalN_sym(covmat))
+  N2_gauss=simplify(N2_sym(covmat))
+  delta_gauss=simplify(varianceN_sym(covmat))
+  ratio=simplify(SNR_gaussian_sym(covmat))
   z1_left= np.arange(0.0001,1.0,0.0001)
   z1_right=np.arange(1.0001,2.0,0.0001)
   z1_right2=np.arange(2.0001,3.0,0.0001)
   z1_right3=np.arange(3.0001,4.0,0.0001)
-  print(len(z1_left), len(z1_right), len(z1_right2), len(z1_right3))
   z1_values=np.vstack((z1_left,z1_right,z1_right2,z1_right3)).flatten()
   ratio_values=[ratio.evalf(subs={z1: z}) for z in z1_values]
   fig, ((ax1, ax2),(ax3,ax4)) = plt.subplots(2, 2, figsize=(8, 10))
@@ -339,20 +338,20 @@ def analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops): #so far 
   theta_values = [x1] #N*(N-1)//2 +1
   phi_values = [phi1,phi2]  #1:N+1
   covmat= V_tms_sym(z_values,theta_values,phi_values, params=None)
-  N_ng=expvalN_ng_sym(covmat,nongaussian_ops)
-  N2_ng=N2_ng_sym(covmat,nongaussian_ops)
-  delta_ng=varianceN_ng_sym(covmat,nongaussian_ops)
-  ratio_ng=SNR_ng_sym(covmat,nongaussian_ops)
+  N_ng=simplify(expvalN_ng_sym(covmat,nongaussian_ops))
   print('N=',N_ng)
+  N2_ng=simplify(N2_ng_sym(covmat,nongaussian_ops))
   print('')
   print('N2=',N2_ng)
+  delta_ng=simplify(varianceN_ng_sym(covmat,nongaussian_ops))
   print('')
   print('deltaN=',delta_ng)
+  ratio_ng=simplify(SNR_ng_sym(covmat,nongaussian_ops))
   print('')
   print('SNR=',ratio_ng)
   print('')
-  #diff_z1_ng = ratio_ng.diff(z1)
-  #print('diff z1=',diff_z1_ng)
+  diff_z1_ng = ratio_ng.diff(z1)
+  print('diff z1=',diff_z1_ng)
   print('')
   #diff_z2_ng = ratio_ng.diff(z2)
   #print('diff z2=',diff_z2_ng)
@@ -392,29 +391,26 @@ theta_values = [x1] #N*(N-1)//2 +1
 phi_values = [phi1,phi2]  #1:N+1
 nongaussian_ops=[-1]
 
-
-sigmatest= create_test_matrix(2,'xxpp')
-print('test covariance matrix')
-print(sigmatest)
-print('reordering xpxp to apply serafinis criterion')
-print(convention_switch(sigmatest,'xxpp','string'))
-sigma=V_tms_sym(z_values,theta_values, phi_values, params=None, ordering='xxpp')
-print('initial matrix ordered xxpp')
-print(sigma)
-corr_mat= Matrix(np.array([[sigma[0,1],sigma[0,3]],[sigma[2,1],sigma[2,3]]]))
-print('correlations matrix:', corr_mat)
-print('')
-print('determinant of correlations', simplify(sym.det(corr_mat)))
-
-
-
+def separability_check():  #separability check using serafini's criterion for N=2
+  sigmatest= create_test_matrix(2,'xxpp')
+  print('test covariance matrix')
+  print(sigmatest)
+  print('reordering xpxp to apply serafinis criterion')
+  print(convention_switch(sigmatest,'xxpp','string'))
+  sigma=V_tms_sym(z_values,theta_values, phi_values, params=None, ordering='xxpp')
+  print('initial matrix ordered xxpp')
+  print(sigma)
+  corr_mat= Matrix(np.array([[sigma[0,1],sigma[0,3]],[sigma[2,1],sigma[2,3]]]))
+  print('correlations matrix:', corr_mat)
+  print('')
+  print('determinant of correlations', simplify(sym.det(corr_mat)))
+  return 
 
 
 
 
+print(analytical_results_gaussian(z1,z2,x1,phi1,phi2))
 
-#print(simplify(N2_sym(sigma)))
-#print(analytical_results_gaussian(z1,z2,x1,phi1,phi2))
 #print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops))
 
 

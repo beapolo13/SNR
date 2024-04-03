@@ -63,7 +63,7 @@ def N2(sigma): #dispersion of number operator on gaussian state (rho0)
 
 
 def varianceN(sigma):
-    return  np.round(np.sqrt(N2(sigma) - (expvalN(sigma))**2),7)
+    return  np.sqrt(N2(sigma) - (expvalN(sigma))**2)
 
 def SNR_gaussian(sigma):
   return expvalN(sigma)/varianceN(sigma)
@@ -146,7 +146,7 @@ def N2_ng(sigma,nongaussian_ops):
     return (1/K_ng(sigma,nongaussian_ops))*sum
 
 def varianceN_ng(sigma,nongaussian_ops):
-  return  np.round(np.sqrt(N2_ng(sigma,nongaussian_ops) - (expvalN_ng(sigma,nongaussian_ops))**2),9)
+  return  np.sqrt(N2_ng(sigma,nongaussian_ops) - (expvalN_ng(sigma,nongaussian_ops))**2)
 
 def SNR_ng(sigma,nongaussian_ops):
   return expvalN_ng(sigma,nongaussian_ops)/varianceN_ng(sigma,nongaussian_ops)

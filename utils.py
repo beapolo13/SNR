@@ -79,7 +79,6 @@ def sq(z,ordering='xxpp'): #ordering is optional parameter
     for item in z:
         d_vector+=[1/item]
     D=d_vector*np.eye(2*N)
-
   return D
 
 #function that builds an orthogonal matrix out of a random one
@@ -117,6 +116,9 @@ def Orth(params):
 def V_tms(z,x, phi, params,ordering='xxpp'):  #ordering is an optional parameter
     N=len(z)
     #beamsplitter
+    
+    if type(x)==np.float64:
+      x=[x]
     B_total=np.eye(2*N)
     #print('x:',cos(x),sin(x))
     index=0

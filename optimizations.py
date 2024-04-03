@@ -4,7 +4,7 @@ import scipy
 import matplotlib.pyplot as plt
 from itertools import combinations
 from scipy import optimize
-from scipy.optimize import minimize
+from scipy.optimize import minimize, Bounds
 import time
 import sys
 import matplotlib.pyplot as plt
@@ -15,7 +15,6 @@ from scipy.linalg import block_diag
 import os
 
 from utils import *
-from covariance_matrix import *
 from expectation_values import *
 
 def global_optimization():  #global optimizer: too slow even for fixed squeezing
@@ -185,67 +184,85 @@ def optimization_3():
   return
 
 
-def optimization_4(K): #K is the maximum number of non-gaussian operations to perform
+def optimization_4(K): #K is the maximum number of non-gaussian operations to perform. Fixed N=2
   nongaussian_ops=[]
   ratio_vec=[]
+  N=2
   for i in range(K):
-    for N in range(2,n_max):
-        print('Number of modes', N, 'Non-gaussian operations', nongaussian_ops)
-        z=[0.5]*N
-        theta=[0]*(N*(N-1))//2
-        phi=[0]*N
-        free_pars=2*np.pi*np.random.rand(N**2) #z is included in this parameter list
-        def cost(free_pars):
-            return np.real(1/SNR_ng(V_tms(z,theta,phi,free_pars),nongaussian_ops)) #we take the inverse of the SNR to minimize
-        start = time.time()
-        out=minimize(cost,free_pars)
-        ratio_vec+=[1/out.fun]
-        print(out)
-        end = time.time()
-        print('Time taken to find maximum ratio', end - start)
-        print('optimal ratio:',1/out.fun)
-        print('')
-    plt.plot(np.arange(2,n_max),ratio_vec,'o')
-    plt.show()
-    nongaussian_ops+=[1]
+    print('Number of modes', N, 'Non-gaussian operations', nongaussian_ops)
+    z=[0.5]
+    theta=[0]
+    phi=[0,0]
+    params=None
+    free_pars=[]
+    for i in range(len(z)):
+      free_pars+=[z[i]]
+    for i in range(len(theta)):
+      free_pars+=[theta[i]]
+    for i in range(len(phi)):
+      free_pars+=[phi[i]] 
+    def cost(free_pars):
+        return np.real(1/SNR_ng(V_tms([free_pars[0],1/free_pars[0]],free_pars[1],free_pars[2:],None),nongaussian_ops)) #we take the inverse of the SNR to minimize
+    bounds_opt = Bounds(0.001, 0.97)
+    start = time.time()
+    out=minimize(cost,free_pars, bounds=bounds_opt)
+    ratio_vec+=[1/out.fun]
+    print(out)
+    end = time.time()
+    print('Time taken to find maximum ratio', end - start)
+    print('optimal ratio:',1/out.fun)
+    print('')
+    nongaussian_ops+=[-1]
+  plt.plot(np.arange(0,K),ratio_vec,'o')
+  plt.show()
+  
 
   return
 
 
-#OPTIMIZATION ON NON-GAUSSIAN OPERATIONS
-#WE Do the same optimization as in opt_4, but now we only optimize in the passive optics operations that we know how to 'physically implement' (bs,ps)
-def optimization_5(nongaussian_ops):
-  ratios_mat=np.zeros((4,n_max-2))
-  nongaussian_ops=[]
-  for i in range(4):
-    for N in range(2,n_max):
-      print('Number of modes', N, 'Non-gaussian operations', nongaussian_ops)
-      z=[0.5]*N
-      theta=[0]*(N*(N-1))//2
-      phi=[0]*N
-      params=None
-      free_pars=[]
-      for i in range(len(theta)):
-          free_pars+=[theta[i]]
-      for i in range(len(phi)):
-        free_pars+=[phi[i]]  
-      def cost(free_pars):
-          return np.real(1/SNR_ng(V_tms(z,free_pars[(N*(N-1))//2:],free_pars[(N*(N-1))//2:],params),nongaussian_ops)) #we take the inverse of the SNR to minimize
-      start = time.time()
-      out=minimize(cost,free_pars)
-      ratios_mat[i][N-2]=1/out.fun
-      print(out)
-      end = time.time()
-      print('Time taken to find maximum ratio', end - start)
-      print('optimal ratio:',1/out.fun)
-      print('')
-    plt.plot(np.arange(2,n_max),ratios_mat[i],'o')
-    plt.show()
-    nongaussian_ops+=[1]
-  for i in range(4):
-    plt.plot(np.arange(2,n_max),ratios_mat[i],'o')
+#OPTIMIZATION ON NUMBER OF MODES
+#now we only optimize in the passive optics operations that we know how to 'physically implement' (z,bs,ps)
+def optimization_5(nongaussian_ops, n_max):
+  ratios=[0]*(n_max-2)
+  ratios_gaussian=[0]*(n_max-2)
+  for N in range(2,n_max):
+    print('Number of modes', N, 'Non-gaussian operations', nongaussian_ops)
+    z=[0.5]*N
+    theta=[0]*((N*(N-1))//2)
+    phi=[0]*N
+    params=None
+    free_pars=[]
+    for i in range(len(z)):
+        free_pars+=[z[i]]
+    for i in range(len(theta)):
+        free_pars+=[theta[i]]
+    for i in range(len(phi)):
+      free_pars+=[phi[i]] 
+    def cost_gaussian(free_pars):
+        return np.real(1/SNR_gaussian(V_tms(free_pars[:N],2*np.pi*free_pars[N:(N*(N-1))//2+N],2*np.pi*free_pars[(N*(N-1))//2+N:],params))) #we take the inverse of the SNR to minimize 
+    def cost(free_pars):
+        return np.real(1/SNR_ng(V_tms(free_pars[:N],2*np.pi*free_pars[N:(N*(N-1))//2+N],2*np.pi*free_pars[(N*(N-1))//2+N:],params),nongaussian_ops)) #we take the inverse of the SNR to minimize
+    bounds_opt = Bounds(0, 0.85)
+    start = time.time()
+    out_gaussian=minimize(cost_gaussian,free_pars, method='L-BFGS-B', bounds=bounds_opt)
+    out=minimize(cost,free_pars, method='L-BFGS-B', bounds=bounds_opt)
+    ratios_gaussian[N-2]=1/out_gaussian.fun
+    ratios[N-2]=1/out.fun
+    print(out_gaussian)
+    print(out)
+    end = time.time()
+    print('Time taken to find maximum ratio', end - start)
+    print('optimal gaussian ratio:',1/out_gaussian.fun)
+    print('optimal ratio:',1/out.fun)
+    print('')
+  plt.plot(np.arange(2,n_max),ratios_gaussian,'o')
+  plt.plot(np.arange(2,n_max),ratios,'o')
+  plt.title('One photon operation')
+  plt.legend('Gaussian', 'Non-gaussian')
   plt.show()
   return
 
 
-
+#print(optimization_5([-1],7))
+#print(optimization_5([1],7))
+print(optimization_4(6))

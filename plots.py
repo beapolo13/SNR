@@ -59,6 +59,70 @@ def ratio_results(nongaussian_ops,z,theta,phi,params):
 
   return
 
+def ratio_plots_reduced(N,params=None):  #only makes sense for N=2
+  # variable intervals
+  t = np.arange(0, 2*np.pi, 0.05) #for angles
+  s = np.arange(0.05,3.95, 0.05)  #for squeezing
+  fig, ((ax1, ax2, ax3),(ax4,ax5,ax6),(ax7,ax8,ax9),(ax10,ax11,ax12)) = plt.subplots(4, 3, figsize=(10, 10 ))
+  phi=2*np.pi*np.random.rand(N)
+  z=[0.5,2]
+  z_vec=np.linspace(0.05,0.95,15)
+
+  w_vec=[]
+  for i in range(15):
+    w_vec += [np.random.rand((N*(N-1))//2)]
+
+  #gaussian case
+  print('gaussian case')
+  
+  for q in z_vec:
+    ax1.plot(t, [np.real(SNR_gaussian(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t], 'r')
+    ax1.set_title('ratio w/ BS (fixed PS and z)')
+
+  for w in w_vec:
+    ax2.plot(t, [np.real(SNR_gaussian(V_tms(z,w,[value]+[0]*(N-1),params))) for value in t],'r')
+    ax2.set_title('ratio vs PS (fixed BS and sq)') 
+    ax3.plot(s, [np.real(SNR_gaussian(V_tms([sq,1/sq],w,phi,params))) for sq in s],'r')
+    ax3.set_title('ratio vs squeezing (fixed BS and PS)')
+
+  #nongaussian case
+  nongaussian_ops=[-1]
+  print(f"{nongaussian_ops}")
+  ax4.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'b')
+  for q in z_vec:
+    ax4.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
+  
+  
+  for w in w_vec:
+    ax5.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
+    ax6.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
+  
+
+  nongaussian_ops=[-1,-1]
+  print(f"{nongaussian_ops}")
+  ax7.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'b')
+  for q in z_vec:
+    ax7.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
+  
+  for w in w_vec:
+    ax8.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
+    ax9.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
+
+
+  nongaussian_ops=[-1,-1,-1]
+  print(f"{nongaussian_ops}")
+  ax10.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'b')
+  for q in z_vec:
+    ax10.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
+  
+  for w in w_vec:
+    ax11.plot(t, [np.real(SNR_ng(V_tms(z,w,[value]+[0]*(N-1),params),nongaussian_ops)) for value in t],'r')
+    ax12.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
+
+  plt.show()
+  
+  return
+
 
 def ratio_plots(N,params=None):  #only makes sense for N=2
   # variable intervals
@@ -177,5 +241,25 @@ def surface_plots(N,params=None):
 
   return 
 
-  
+def single_photon_op(N,operation): #just for N=2
+  nongaussian_ops=[operation]
+  z_vec=np.linspace(0.05,0.95,50)
+  w_vec=[]
+  for i in range(10):
+    w_vec += [np.random.rand((N*(N-1))//2)]
+  t = np.arange(0, 2*np.pi, 0.05) #for BS angles (PS doesn't affect)
+  s = np.arange(0.005,3.995, 0.005)  #for squeezing
+  print(f"{nongaussian_ops}")
+  fig,((ax1,ax2)) = plt.subplots(2, 1, figsize=(10, 10 ))
+  for q in z_vec:
+    ax1.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
+  for w in w_vec:
+    ax2.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
+  plt.show()
+  return
+
+
+ratio_plots_reduced(2)
+#single_photon_op(2,1)
+
 
