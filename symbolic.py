@@ -334,18 +334,19 @@ def analytical_results_gaussian(z1,z2,x1,phi1,phi2): #so far only for N =2
 
 
 def analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops): #so far only for N =2
+  N=2
   z_values = [z1,z2]  #1:N+1
   theta_values = [x1] #N*(N-1)//2 +1
   phi_values = [phi1,phi2]  #1:N+1
   covmat= V_tms_sym(z_values,theta_values,phi_values, params=None)
-  N_ng=simplify(expvalN_ng_sym(covmat,nongaussian_ops))
-  print('N=',N_ng)
-  N2_ng=simplify(N2_ng_sym(covmat,nongaussian_ops))
-  print('')
-  print('N2=',N2_ng)
-  delta_ng=simplify(varianceN_ng_sym(covmat,nongaussian_ops))
-  print('')
-  print('deltaN=',delta_ng)
+  #N_ng=simplify(expvalN_ng_sym(covmat,nongaussian_ops))
+  #print('N=',N_ng)
+  #N2_ng=simplify(N2_ng_sym(covmat,nongaussian_ops))
+  #print('')
+  #print('N2=',N2_ng)
+  #delta_ng=simplify(varianceN_ng_sym(covmat,nongaussian_ops))
+  #print('')
+  #print('deltaN=',delta_ng)
   ratio_ng=simplify(SNR_ng_sym(covmat,nongaussian_ops))
   print('')
   print('SNR=',ratio_ng)
@@ -386,10 +387,16 @@ N=2
 z1,z2,x1 =symbols('z1,z2,x1',real=True, RealNumber=True)
 phi1,phi2 =symbols('phi1,phi2',real=True)
 z2=1/z1
-z_values = [z1,z2]  #1:N+1
-theta_values = [x1] #N*(N-1)//2 +1
-phi_values = [phi1,phi2]  #1:N+1
-nongaussian_ops=[-1]
+
+nongaussian_ops=[-1,-1]
+for i in range(3):
+  print(nongaussian_ops)
+  print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops))
+  beep()
+  nongaussian_ops+=[-1]
+
+beep()
+beep()
 
 def separability_check():  #separability check using serafini's criterion for N=2
   sigmatest= create_test_matrix(2,'xxpp')
@@ -409,12 +416,51 @@ def separability_check():  #separability check using serafini's criterion for N=
 
 
 
-print(analytical_results_gaussian(z1,z2,x1,phi1,phi2))
+#print(analytical_results_gaussian(z1,z2,x1,phi1,phi2))
 
 #print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops))
 
+def surfaces_symbolic():
+  N=2
+  z1,z2,x1 =symbols('z1,z2,x1',real=True, RealNumber=True)
+  phi1,phi2 =symbols('phi1,phi2',real=True)
+  z2=1/z1
+  z_values = [z1,z2]  #1:N+1
+  theta_values = [x1] #N*(N-1)//2 +1
+  phi_values = [phi1,phi2]  #1:N+1
+  covmat=V_tms_sym(z_values,theta_values,phi_values, params=None)
+  fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+  X = np.linspace(0, 2*np.pi, 100) #for angles
+  Y = np.linspace(0.05,4, 100)  #for squeezing
 
+  #gaussian case
+  Z= 0.5*(Y- 1)**2/(np.sqrt(-0.25*(Y - 1)**2 + (Y**2 + 1)**2/Y)*abs(Y - 1)) 
+  # Plot the surface.
+  Z, X = np.meshgrid(Z, X)
+  surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+  ax.zaxis.set_major_locator(LinearLocator(10))
+# A StrMethodFormatter is used automatically
+  ax.zaxis.set_major_formatter('{x:.02f}')
+# Add a color bar which maps values to colors.
+  fig.colorbar(surf, shrink=0.5, aspect=5)
+  plt.show()
+  beep()
 
+  #One photon subtraction
+  fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+  Z= 2.0*(0.5*Y**2 - 0.5*Y + 0.5)/(Y*np.sqrt(0.5*Y**2 - 1 + 0.5/Y**2))
+  # Plot the surface.
+  Z, X = np.meshgrid(Z, X)
+  surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+  ax.zaxis.set_major_locator(LinearLocator(10))
+# A StrMethodFormatter is used automatically
+  ax.zaxis.set_major_formatter('{x:.02f}')
+# Add a color bar which maps values to colors.
+  fig.colorbar(surf, shrink=0.5, aspect=5)
+  plt.show()
+  beep()
+  return 
 
+#surfaces_symbolic()
 
 
