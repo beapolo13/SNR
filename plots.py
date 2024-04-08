@@ -14,6 +14,7 @@ from pprint import pprint
 from scipy.linalg import block_diag
 import os
 from mpl_toolkits.mplot3d import Axes3D
+from numpy import where
 
 from utils import *
 from expectation_values import *
@@ -259,7 +260,80 @@ def single_photon_op(N,operation): #just for N=2
   return
 
 
-ratio_plots_reduced(2)
+#ratio_plots_reduced(2)
 #single_photon_op(2,1)
 
 
+def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
+  # variable intervals
+  t = np.arange(0, 2*np.pi, 0.05) #for angles
+  s = np.arange(0.05,3.95, 0.05)  #for squeezing
+  fig, ((ax1),(ax2),(ax3),(ax4)) = plt.subplots(4, 1, figsize=(10, 25 ))
+  phi=2*np.pi*np.random.rand(N)
+  print(phi)
+  z=[0.5,2]
+  z_vec=np.linspace(0.05,0.95,15)
+  my_array=np.linspace(0, 1, len(z_vec))
+  colors = plt.cm.viridis(my_array)
+  idx=np.abs(my_array - 0.5).argmin()
+  print(idx)
+
+  w_vec=[]
+  for i in range(15):
+    w_vec += [np.random.rand((N*(N-1))//2)]
+
+  #gaussian case
+  print('gaussian case')
+  
+  i=0
+  for q in z_vec:
+    ax1.plot(t, [np.real(SNR_gaussian(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params))) for w in t], color=colors[i])
+    i+=1
+  ax1.set_xlabel('Beamsplitter angle')
+  ax1.set_ylabel('SNR')
+
+  
+  #nongaussian case
+  nongaussian_ops=[-1]
+  print(f"{nongaussian_ops}")
+  ax2.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[idx])
+  i=0
+  for q in z_vec:
+    ax2.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[i])
+    i+=1
+  ax2.set_xlabel('Beamsplitter angle')
+  ax2.set_ylabel('SNR')
+  
+
+  nongaussian_ops=[-1,-1]
+  print(f"{nongaussian_ops}")
+  ax3.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[idx])
+  i=0
+  for q in z_vec:
+    ax3.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[i])
+    i+=1
+  ax3.set_xlabel('Beamsplitter angle')
+  ax3.set_ylabel('SNR')
+
+  nongaussian_ops=[-1,-1,-1]
+  print(f"{nongaussian_ops}")
+  ax4.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[idx])
+  i=0
+  for q in z_vec:
+    ax4.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[i])
+    i+=1
+  ax4.set_xlabel('Beamsplitter angle')
+  ax4.set_ylabel('SNR')
+
+  cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'), ax=[ax1, ax2,ax3,ax4], location='right')
+  cbar.set_label('Squeezing factor z')
+
+# Adjust layout
+  plt.tight_layout(rect=[0.05, 0.05, 0.75, 0.95])  # Adjust the layout to make space for the colorbar
+  plt.show()
+  
+  return
+
+
+for j in range(10):
+  ratio_plots_superreduced(2)

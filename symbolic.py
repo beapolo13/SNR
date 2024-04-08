@@ -388,7 +388,7 @@ z1,z2,x1 =symbols('z1,z2,x1',real=True, RealNumber=True)
 phi1,phi2 =symbols('phi1,phi2',real=True)
 z2=1/z1
 
-nongaussian_ops=[-1,-1]
+nongaussian_ops=[-1]
 for i in range(3):
   print(nongaussian_ops)
   print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops))
