@@ -335,5 +335,30 @@ def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
   return
 
 
-for j in range(10):
-  ratio_plots_superreduced(2)
+def scaling_with_nongaussianity(N):
+  fig, ax = plt.subplots(1, 1, figsize=(15, 15 ))
+  s = np.arange(0.05,0.95, 0.05)  #for squeezing
+  my_array=np.linspace(0, 1, len(s))
+  colors = plt.cm.viridis(my_array)
+  #phi=np.random.rand(N)
+  phi=[0,0]
+  t = np.arange(0, 2*np.pi, 0.05) #for angles
+  #non_gauss_vect=[[],[-1],[-1,-1]]
+  non_gauss_vect=[[],[-1],[-1,-1]]
+  #non_gauss_vect=[[],[-1],[-1,-1],[-1,-1],[-1,-1,-1],[-1,-1,-1,-1]]
+  lengths= [len(item) for item in non_gauss_vect]
+  i=0
+  for sq in s:
+    SN_ratios=[]
+    for i in range(len(non_gauss_vect)):
+      SN_ratios+=[np.max([SNR_ng(V_tms([sq,1/sq],[w]+[0]*((N*(N-1))//2 -1),phi,None),non_gauss_vect[i]) for w in t])]
+    ax.plot(lengths, SN_ratios,'-o', color=colors[i])
+    i+=1
+  #plt.legend(s)
+  cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'),ax=ax, location='right')
+  cbar.set_label('Squeezing factor z')
+  plt.show()
+
+  return
+
+scaling_with_nongaussianity(2)
