@@ -14,6 +14,7 @@ from pprint import pprint
 from scipy.linalg import block_diag
 import os
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.ticker as ticker
 from numpy import where
 
 from utils import *
@@ -336,27 +337,47 @@ def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
 
 
 def scaling_with_nongaussianity(N):
-  fig, ax = plt.subplots(1, 1, figsize=(15, 15 ))
+  fig, ((ax1,ax2)) = plt.subplots(1, 2, figsize=(30, 10))
   s = np.arange(0.05,0.95, 0.05)  #for squeezing
   my_array=np.linspace(0, 1, len(s))
   colors = plt.cm.viridis(my_array)
   #phi=np.random.rand(N)
-  phi=[0,0]
+  phi1=[0,0]
+  phi2=[np.pi/2,0]
+  #phi3=[np.pi/2,0]
   t = np.arange(0, 2*np.pi, 0.05) #for angles
   #non_gauss_vect=[[],[-1],[-1,-1]]
-  non_gauss_vect=[[],[-1],[-1,-1]]
-  #non_gauss_vect=[[],[-1],[-1,-1],[-1,-1],[-1,-1,-1],[-1,-1,-1,-1]]
+  non_gauss_vect=[[],[1],[1,1],[1,1,1]]
   lengths= [len(item) for item in non_gauss_vect]
-  i=0
+  j=0
   for sq in s:
-    SN_ratios=[]
+    SN_ratios1=[]
+    SN_ratios2=[]
+    #SN_ratios3=[]
     for i in range(len(non_gauss_vect)):
-      SN_ratios+=[np.max([SNR_ng(V_tms([sq,1/sq],[w]+[0]*((N*(N-1))//2 -1),phi,None),non_gauss_vect[i]) for w in t])]
-    ax.plot(lengths, SN_ratios,'-o', color=colors[i])
-    i+=1
-  #plt.legend(s)
-  cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'),ax=ax, location='right')
+      SN_ratios1+=[np.max([SNR_ng(V_tms([sq,1/sq],[w]+[0]*((N*(N-1))//2 -1),phi1,None),non_gauss_vect[i]) for w in t])]
+      SN_ratios2+=[np.max([SNR_ng(V_tms([sq,1/sq],[w]+[0]*((N*(N-1))//2 -1),phi2,None),non_gauss_vect[i]) for w in t])]
+      #SN_ratios3+=[np.max([SNR_ng(V_tms([sq,1/sq],[w]+[0]*((N*(N-1))//2 -1),phi3,None),non_gauss_vect[i]) for w in t])]
+    ax1.plot(lengths, SN_ratios1,'-o', color=colors[j])
+    ax2.plot(lengths, SN_ratios2,'-o', color=colors[j])
+    #ax3.plot(lengths, SN_ratios3,'-o', color=colors[j])
+    j+=1
+  ax1.set_xlabel('Number of single-photon operations')
+  ax1.set_ylabel('Maximum attainable SNR')
+  ax2.set_xlabel('Number of single-photon operations')
+  ax2.set_ylabel('Maximum attainable SNR')
+  #ax3.set_xlabel('Number of single-photon operations')
+  #ax3.set_ylabel('Maximum attainable SNR')
+  ax1.set_title('No dephasing')
+  ax2.set_title(f'Fixed PS phi={phi2[0]}')
+  #ax3.set_title(f'Fixed PS phi={phi3[0]}')
+  # Change x-axis tick spacing
+  ax1.xaxis.set_major_locator(ticker.MultipleLocator(base=1))
+  ax2.xaxis.set_major_locator(ticker.MultipleLocator(base=1))
+  #ax3.xaxis.set_major_locator(ticker.MultipleLocator(base=1))
+  cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'),ax=[ax1,ax2], location='right')
   cbar.set_label('Squeezing factor z')
+  fig.suptitle(f'Scaling of Max(SNR) w.r.t photon subtractions.N=2. Nongauss ops: {non_gauss_vect}')
   plt.show()
 
   return
