@@ -339,14 +339,14 @@ def analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops): #so far 
   theta_values = [x1] #N*(N-1)//2 +1
   phi_values = [phi1,phi2]  #1:N+1
   covmat= V_tms_sym(z_values,theta_values,phi_values, params=None)
-  #N_ng=simplify(expvalN_ng_sym(covmat,nongaussian_ops))
-  #print('N=',N_ng)
+  N_ng=simplify(expvalN_ng_sym(covmat,nongaussian_ops))
+  print('N=',N_ng)
   #N2_ng=simplify(N2_ng_sym(covmat,nongaussian_ops))
   #print('')
   #print('N2=',N2_ng)
-  #delta_ng=simplify(varianceN_ng_sym(covmat,nongaussian_ops))
+  delta_ng=simplify(varianceN_ng_sym(covmat,nongaussian_ops))
   #print('')
-  #print('deltaN=',delta_ng)
+  print('deltaN=',delta_ng)
   ratio_ng=simplify(SNR_ng_sym(covmat,nongaussian_ops))
   print('')
   print('SNR=',ratio_ng)
@@ -387,6 +387,7 @@ N=2
 z1,z2,x1 =symbols('z1,z2,x1',real=True, RealNumber=True)
 phi1,phi2 =symbols('phi1,phi2',real=True)
 z2=1/z1
+print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,[+1]))
 
 nongaussian_ops=[+1]
 for i in range(3):
