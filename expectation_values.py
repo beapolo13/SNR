@@ -36,7 +36,7 @@ def expvalN(sigma): #input a 2N x 2N np.array of parameters for M
       ops=['adag','a']
       modes=[i,i]
       sum+=expectationvalue(sigma,ops,modes)
-
+      print(sum)
     return sum/np.abs(K)
 
 

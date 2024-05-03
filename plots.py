@@ -417,5 +417,5 @@ def evolution_with_squeezing():
 
 
 #scaling_with_nongaussianity(2)
-evolution_with_squeezing()
+#evolution_with_squeezing()
 #ratio_plots_superreduced(2,params=None)

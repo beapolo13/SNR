@@ -313,12 +313,3 @@ def expectationvalue(covmat,operatorlist,modeslist):
             factor*=trace_func(covmat,l,k,case)
         trace+=factor
     return trace
-
-N=2
-for i in range(20):
-  z=np.random.rand(N)
-  x=2*np.pi*np.random.rand((N*(N-1))//2)
-  phi=2*np.pi*np.random.rand(N)
-  params=None
-  sigma=V_tms(z,x, phi, params,ordering='xxpp')
-  #gauss_check(sigma)
