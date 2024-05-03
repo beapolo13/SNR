@@ -136,7 +136,7 @@ def expvalN_sym(sigma): #input a 2N x 2N np.array of parameters for M
     K=0
     for i in range(2*N):
         K+=sigma[i,i]
-    #print('K=',K) #K is tr(sigma)
+    print('K=',simplify(K)) #K is tr(sigma)
 
     #now let's calculate the tr(prod(a's)rho). The amount of ladder operators is twice the number of modes (2N)
     #the amount of destruction operators is N, and the amount of creation is also N
@@ -145,7 +145,6 @@ def expvalN_sym(sigma): #input a 2N x 2N np.array of parameters for M
       ops=['adag','a']
       modes=[i,i]
       sum+=expectationvalue_sym(sigma,ops,modes)
-
     return simplify(sum/K)
 
 #Expectation value of N^2
@@ -181,6 +180,11 @@ def SNR_gaussian_sym(sigma):
 def K_ng_sym(sigma, nongaussian_ops):
     ops=['rho']
     modes=['rho']
+    if nongaussian_ops==[]:
+      K=0
+      for i in range(2*N):
+        K+=sigma[i,i]
+      return simplify(K)
     for item in nongaussian_ops:
       if item<0: #subtraction
         ops=['a']+ops+['adag']
@@ -216,7 +220,11 @@ def expvalN_ng_sym(sigma,nongaussian_ops):
       #print(ops)
       #print(modes)
       sum+=expectationvalue_sym(sigma,ops,modes)
+      print(f"{i}",'mode',simplify(expectationvalue_sym(sigma,ops,modes)))
+    print(simplify(K_ng_sym(sigma,nongaussian_ops)))
+    print(simplify(sum))
     return (1/K_ng_sym(sigma,nongaussian_ops))*sum
+
 
 #expectation value of N^2 for the non-gaussian state
 def N2_ng_sym(sigma,nongaussian_ops):
@@ -259,7 +267,11 @@ def analytical_results_gaussian(z1,z2,x1,phi1,phi2): #so far only for N =2
   theta_values = [x1] #N*(N-1)//2 +1
   phi_values = [phi1,phi2]  #1:N+1
   covmat= V_tms_sym(z_values,theta_values,phi_values, params=None)
+  print(covmat)
+  print(len(covmat))
+  print(np.shape(covmat))
   N_gauss=simplify(expvalN_sym(covmat))
+  print(N_gauss)
   N2_gauss=simplify(N2_sym(covmat))
   delta_gauss=simplify(varianceN_sym(covmat))
   ratio=simplify(SNR_gaussian_sym(covmat))
@@ -341,6 +353,7 @@ def analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops): #so far 
   covmat= V_tms_sym(z_values,theta_values,phi_values, params=None)
   N_ng=simplify(expvalN_ng_sym(covmat,nongaussian_ops))
   print('N=',N_ng)
+  print('K',K_ng_sym(covmat, nongaussian_ops))
   #N2_ng=simplify(N2_ng_sym(covmat,nongaussian_ops))
   #print('')
   #print('N2=',N2_ng)
@@ -387,14 +400,22 @@ N=2
 z1,z2,x1 =symbols('z1,z2,x1',real=True, RealNumber=True)
 phi1,phi2 =symbols('phi1,phi2',real=True)
 z2=1/z1
-print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,[+1]))
+z_values = [z1,z2]  #1:N+1
+theta_values = [x1] #N*(N-1)//2 +1
+phi_values = [phi1,phi2]  #1:N+1
+covmat= V_tms_sym(z_values,theta_values,phi_values, params=None)
+print('subtraction',simplify(expvalN_ng_sym(covmat,[-1])))
+print('addition',simplify(expvalN_ng_sym(covmat,[+1])))
 
-nongaussian_ops=[+1]
-for i in range(3):
-  print(nongaussian_ops)
-  print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops))
-  beep()
-  nongaussian_ops+=[-1]
+#print(analytical_results_gaussian(z1,z2,x1,phi1,phi2))
+#print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,[-1]))
+
+#nongaussian_ops=[+1]
+#for i in range(3):
+  #print(nongaussian_ops)
+  #print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops))
+  #beep()
+  #nongaussian_ops+=[-1]
 
 beep()
 beep()

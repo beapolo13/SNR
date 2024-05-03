@@ -247,6 +247,7 @@ def single_photon_op(N,operation): #just for N=2
   nongaussian_ops=[operation]
   z_vec=np.linspace(0.05,0.95,50)
   w_vec=[]
+  phi=[0,0]
   for i in range(10):
     w_vec += [np.random.rand((N*(N-1))//2)]
   t = np.arange(0, 2*np.pi, 0.05) #for BS angles (PS doesn't affect)
@@ -257,19 +258,20 @@ def single_photon_op(N,operation): #just for N=2
     ax1.plot(t, [np.real(SNR_ng(V_tms([q,1/q],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], 'r')
   for w in w_vec:
     ax2.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'r')
+    ax2.plot(s, [np.real(expvalN_ng(V_tms([sq,1/sq],w,phi,params),nongaussian_ops)) for sq in s],'b')
   plt.show()
   return
 
 
 #ratio_plots_reduced(2)
-#single_photon_op(2,1)
+#single_photon_op(2,[-1,-2])
 
 
 def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
   # variable intervals
   t = np.arange(0, 2*np.pi, 0.05) #for angles
   s = np.arange(0.05,3.95, 0.05)  #for squeezing
-  fig, ((ax1),(ax2),(ax3),(ax4)) = plt.subplots(4, 1, figsize=(10, 25 ))
+  fig, ((ax1),(ax2),(ax3),(ax4)) = plt.subplots(4, 1, figsize=(10, 25))
   phi=2*np.pi*np.random.rand(N)
   print(phi)
   z=[0.5,2]
@@ -295,7 +297,7 @@ def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
 
   
   #nongaussian case
-  nongaussian_ops=[-1]
+  nongaussian_ops=[1]
   print(f"{nongaussian_ops}")
   ax2.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[idx])
   i=0
@@ -306,7 +308,7 @@ def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
   ax2.set_ylabel('SNR')
   
 
-  nongaussian_ops=[-1,-1]
+  nongaussian_ops=[1,1]
   print(f"{nongaussian_ops}")
   ax3.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[idx])
   i=0
@@ -316,7 +318,7 @@ def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
   ax3.set_xlabel('Beamsplitter angle')
   ax3.set_ylabel('SNR')
 
-  nongaussian_ops=[-1,-1,-1]
+  nongaussian_ops=[1,1,1]
   print(f"{nongaussian_ops}")
   ax4.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[idx])
   i=0
@@ -346,8 +348,8 @@ def scaling_with_nongaussianity(N):
   phi2=[np.pi/2,0]
   #phi3=[np.pi/2,0]
   t = np.arange(0, 2*np.pi, 0.05) #for angles
-  #non_gauss_vect=[[],[-1],[-1,-1]]
-  non_gauss_vect=[[],[1],[1,1],[1,1,1]]
+  non_gauss_vect=[[],[-1],[-1,-1]]
+  #non_gauss_vect=[[],[1],[1,1],[1,1,1]]
   lengths= [len(item) for item in non_gauss_vect]
   j=0
   for sq in s:
@@ -382,4 +384,38 @@ def scaling_with_nongaussianity(N):
 
   return
 
-scaling_with_nongaussianity(2)
+
+def evolution_with_squeezing():
+  N=2
+  s = np.arange(0.05,3.95, 0.05)  #for squeezing
+  bs= [2*np.pi*np.random.rand()]
+  phi=[0]*N
+  params=None
+  fig1, ax0 = plt.subplots(1, 1, figsize=(10, 10))
+  ax0.set_xlabel('Squeezing z')
+  ax0.set_ylabel('SNR')
+  ax0.plot(s, [SNR_gaussian(V_tms([w,1/w],bs,phi,params)) for w in s])
+  plt.show()
+  fig2, ((ax1,ax2,ax3,ax4),(ax5,ax6,ax7,ax8)) = plt.subplots(2, 4, figsize=(10, 25))
+  ax1.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1])) for sq in s],'r')
+  ax1.set_title('[-1]')
+  ax2.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1,-1])) for sq in s],'r')
+  ax2.set_title('[-1,-1]')
+  ax3.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1,-1,-1])) for sq in s],'r')
+  ax3.set_title('[-1,-1,-1]')
+  ax4.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1,-1,-1,-1])) for sq in s],'r')
+  ax4.set_title('[-1,-1,-1,-1]')
+  ax5.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[1])) for sq in s],'r')
+  ax5.set_title('[1]')
+  ax6.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[1,1])) for sq in s],'r')
+  ax6.set_title('[1,1]')
+  ax7.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[1,1,1])) for sq in s],'r')
+  ax7.set_title('[1,1,1]')
+  ax8.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[1,1,1,1])) for sq in s],'r')
+  ax8.set_title('[1,1,1,1]')
+  plt.show()
+
+
+#scaling_with_nongaussianity(2)
+evolution_with_squeezing()
+#ratio_plots_superreduced(2,params=None)
