@@ -422,8 +422,8 @@ def evolution_with_squeezing():
 
 z_vec=list(np.arange(0.01,4.99,0.01))
 index=z_vec.index(1)
-yvec_left= [SNR_gaussian(V_tms([z,1/z],[np.pi/4],[0,0],params=None)) for z in z_vec[0:index]]
-yvec_right= [SNR_gaussian(V_tms([z,1/z],[np.pi/4],[0,0],params=None)) for z in z_vec[index+1:]]
+yvec_left= [SNR_gaussian(V_tms([z,1/z],[0],[0,0],params=None)) for z in z_vec[0:index]]
+yvec_right= [SNR_gaussian(V_tms([z,1/z],[0],[0,0],params=None)) for z in z_vec[index+1:]]
 #yvec_2=[normalization(0,0,z) for z in z_vec]
 plt.plot(z_vec[0:index],yvec_left)
 plt.plot(z_vec[index+1:],yvec_right)

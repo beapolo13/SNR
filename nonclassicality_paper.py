@@ -1,12 +1,11 @@
 #Following ref: 'Nonclassicality and entanglement of photon subtracted TMS coherent states
 
 import numpy as np
-from sympy import symbols, diff, exp, log
+from sympy import symbols, diff, exp, simplify
 import math
-from math import factorial
+from math import factorial, sqrt
 import matplotlib.pyplot as plt
-import sympy as sym
-from sympy import symbols, Matrix, simplify
+
 
 #in out zero-mean case, the variables A and B are zero. We compute the hermite polynomials for these values of x=y=0
 
@@ -22,8 +21,7 @@ def hermite_polynomial00(m,n):  #m is the number of photon subtractions on mode 
 print(hermite_polynomial00(0,0))
 
 def sqfactor(z): #find the lambda squeezing factor as a function of z of the covariance matrix
-    #return z
-        return np.log(z)/2
+    return np.log(z)/2
     
 
 def normalization(m,n,z):
@@ -76,13 +74,14 @@ def checks(m,n,z): #we define a function to check if all expressions from the pa
 
 
 def delta_n(m,n,z):
-    return arbitrary_expval(m,n,z,2,2,0,0) + arbitrary_expval(m,n,z,1,1,0,0) + 2*arbitrary_expval(m,n,z,1,1,1,1) + arbitrary_expval(m,n,z,0,0,2,2) + arbitrary_expval(m,n,z,0,0,1,1) - (arbitrary_expval(m,n,z,1,1,0,0) + arbitrary_expval(m,n,z,0,0,1,1))**2
+    return sqrt(arbitrary_expval(m,n,z,2,2,0,0) + arbitrary_expval(m,n,z,1,1,0,0) + 2*arbitrary_expval(m,n,z,1,1,1,1) + arbitrary_expval(m,n,z,0,0,2,2) + arbitrary_expval(m,n,z,0,0,1,1) - (arbitrary_expval(m,n,z,1,1,0,0) + arbitrary_expval(m,n,z,0,0,1,1))**2)
 
 def signal_to_noise(m,n,z):
     numerator= arbitrary_expval(m,n,z,1,1,0,0) + arbitrary_expval(m,n,z,0,0,1,1)
     denominator= arbitrary_expval(m,n,z,2,2,0,0) + arbitrary_expval(m,n,z,1,1,0,0) + 2*arbitrary_expval(m,n,z,1,1,1,1) + arbitrary_expval(m,n,z,0,0,2,2) + arbitrary_expval(m,n,z,0,0,1,1) - numerator**2
-    return numerator/denominator
+    return numerator/sqrt(denominator)
 
+print(math.sqrt(0))
 z_vec=list(np.arange(0.01,4.99,0.01))
 index=z_vec.index(1)
 #yvec_left= [N1(0,0,z)+N2(0,0,z) for z in z_vec[0:index]]
@@ -98,5 +97,4 @@ plt.plot(z_vec[index+1:],yvec_right)
 plt.show()
 
 
-L,Z=symbols('L,Z',real=True, RealNumber=True)
-print(delta_n(0,0,Z))
+
