@@ -1,9 +1,12 @@
 #Following ref: 'Nonclassicality and entanglement of photon subtracted TMS coherent states
 
 import numpy as np
-from sympy import symbols, diff, exp
+from sympy import symbols, diff, exp, log
 import math
 from math import factorial
+import matplotlib.pyplot as plt
+import sympy as sym
+from sympy import symbols, Matrix, simplify
 
 #in out zero-mean case, the variables A and B are zero. We compute the hermite polynomials for these values of x=y=0
 
@@ -16,12 +19,15 @@ def hermite_polynomial00(m,n):  #m is the number of photon subtractions on mode 
         f= diff(f,rho)
     return f.subs({tau: 0, rho:0})
 
-#hermite_polynomial00(0,0)
+print(hermite_polynomial00(0,0))
 
 def sqfactor(z): #find the lambda squeezing factor as a function of z of the covariance matrix
-    return np.log(z)/2
+    #return z
+        return np.log(z)/2
+    
 
-def normalization(m,n,lamb):
+def normalization(m,n,z):
+    lamb=sqfactor(z)
     multiplicative_constant= ((factorial(m)*factorial(n))**2) * (0.5*np.sinh(2*lamb))**(m+n)
     acc=0
     for l in range(m+1):
@@ -29,23 +35,68 @@ def normalization(m,n,lamb):
             acc+=(np.tanh(lamb)**(l+k)*(np.abs(hermite_polynomial00(m-l,n-k))**2) )/ (factorial(l)*factorial(k)*((factorial(m-l)*factorial(n-k))**2))
     return multiplicative_constant*acc
 
-#normalization(0,1,1)
-
-
 #sanity checks (we apply formulas 16 and 17 from the paper to check thet our results are consistent with those obtained with our NN
-def N1(m,n,lamb):
-    return normalization(m+1,n,lamb)/normalization(m,n,lamb)
+def N1(m,n,z):
+    lamb=sqfactor(z)
+    return normalization(m+1,n,z)/normalization(m,n,z)
+
+def N2(m,n,z):
+    lamb=sqfactor(z)
+    return normalization(m,n+1,z)/normalization(m,n,z)
+
+def N1_squared(m,n,z):
+    lamb=sqfactor(z)
+    return normalization(m+2,n,z)/normalization(m,n,z)
+
+def N2_squared(m,n,z):
+    lamb=sqfactor(z)
+    return normalization(m,n+2,z)/normalization(m,n,z)
+
+def arbitrary_expval(m,n,z,p,q,r,s):
+    #m and n are the number of photon subtractions (on modes 1 and 2) of our non-gaussian state
+    #lamb is the squeezing factor of our state, associated to parameter z
+    lamb=sqfactor(z) 
+    #p, q, r, s are the exponents of adag_1, a_1, adag_2, a_2, respectively, of the single-photon operations we perform on each mode
+    #first we calculate de summatory:
+    sum=0
+    for l in range(min(m+p+1,m+q+1)):
+        for k in range(min(n+r+1,n+s+1)):
+            sum+=(np.tanh(lamb)**(l+k)/(factorial(l)*factorial(k)))*((factorial(m+p)*factorial(n+r))/(factorial(m+p-l)*factorial(n+r-k)))*((factorial(m+q)*factorial(n+s))/(factorial(m+q-l)*factorial(n+s-k)))*hermite_polynomial00(m+q-l,n+s-k)*hermite_polynomial00(m+p-l,n+r-k)
+    return sum*(0.5*np.sinh(2*lamb))**(m+n)*(-1)**(q+s)*(-0.5*np.sinh(2*lamb))**((p+q+r+s)/2)/normalization(m,n,z)
+
+def checks(m,n,z): #we define a function to check if all expressions from the paper's equation (16,17) yield the same as the arbitrary one
+    check1, check2, check3, check4 = np.random.rand(4)
+    check1= arbitrary_expval(m,n,z,1,1,0,0)-normalization(m+1,n,z)/normalization(m,n,z)
+    check2= arbitrary_expval(m,n,z,0,0,1,1)-normalization(m,n+1,z)/normalization(m,n,z)
+    check3= arbitrary_expval(m,n,z,2,2,0,0)-normalization(m+2,n,z)/normalization(m,n,z)
+    check4= arbitrary_expval(m,n,z,0,0,2,2)-normalization(m,n+2,z)/normalization(m,n,z)
+    return np.round(float(check1)), np.round(float(check2)), np.round(float(check3),4), np.round(float(check4),4)
+
+#print(checks(1,3,0.7))
 
 
-def N2(m,n,lamb):
-    return normalization(m,n+1,lamb)/normalization(m,n,lamb)
+def delta_n(m,n,z):
+    return arbitrary_expval(m,n,z,2,2,0,0) + arbitrary_expval(m,n,z,1,1,0,0) + 2*arbitrary_expval(m,n,z,1,1,1,1) + arbitrary_expval(m,n,z,0,0,2,2) + arbitrary_expval(m,n,z,0,0,1,1) - (arbitrary_expval(m,n,z,1,1,0,0) + arbitrary_expval(m,n,z,0,0,1,1))**2
 
-def N1_squared(m,n,lamb):
-    return normalization(m+2,n,lamb)/normalization(m,n,lamb)
+def signal_to_noise(m,n,z):
+    numerator= arbitrary_expval(m,n,z,1,1,0,0) + arbitrary_expval(m,n,z,0,0,1,1)
+    denominator= arbitrary_expval(m,n,z,2,2,0,0) + arbitrary_expval(m,n,z,1,1,0,0) + 2*arbitrary_expval(m,n,z,1,1,1,1) + arbitrary_expval(m,n,z,0,0,2,2) + arbitrary_expval(m,n,z,0,0,1,1) - numerator**2
+    return numerator/denominator
 
-def N2_squared(m,n,lamb):
-    return normalization(m,n+2,lamb)/normalization(m,n,lamb)
+z_vec=list(np.arange(0.01,4.99,0.01))
+index=z_vec.index(1)
+#yvec_left= [N1(0,0,z)+N2(0,0,z) for z in z_vec[0:index]]
+#yvec_right= [N1(0,0,z)+N2(0,0,z) for z in z_vec[index+1:]]
+yvec_left= [signal_to_noise(0,0,z) for z in z_vec[0:index]]
+yvec_right= [signal_to_noise(0,0,z) for z in z_vec[index+1:]]
+#yvec_left= [delta_n(0,0,z) for z in z_vec[0:index]]
+#yvec_right= [delta_n(0,0,z) for z in z_vec[index+1:]]
+#yvec_2=[normalization(0,0,z) for z in z_vec]
+plt.plot(z_vec[0:index],yvec_left)
+plt.plot(z_vec[index+1:],yvec_right)
+#plt.plot(z_vec,yvec_2)
+plt.show()
 
-print(normalization(1,0,0.5))
-print(N1(1,0,sqfactor(0.5)))
-print(N2(1,0,sqfactor(0.5)))
+
+L,Z=symbols('L,Z',real=True, RealNumber=True)
+print(delta_n(0,0,Z))

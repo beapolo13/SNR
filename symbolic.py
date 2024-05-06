@@ -133,11 +133,6 @@ def expvalN_sym(sigma): #input a 2N x 2N np.array of parameters for M
     N = int(np.sqrt(len(sigma))//2)
     #print(N)
     #print('sigma',sigma)
-    K=0
-    for i in range(2*N):
-        K+=sigma[i,i]
-    print('K=',simplify(K)) #K is tr(sigma)
-
     #now let's calculate the tr(prod(a's)rho). The amount of ladder operators is twice the number of modes (2N)
     #the amount of destruction operators is N, and the amount of creation is also N
     sum=0
@@ -145,17 +140,13 @@ def expvalN_sym(sigma): #input a 2N x 2N np.array of parameters for M
       ops=['adag','a']
       modes=[i,i]
       sum+=expectationvalue_sym(sigma,ops,modes)
-    return simplify(sum/K)
+    return sum
 
 #Expectation value of N^2
 
 def N2_sym(sigma): #dispersion of number operator on gaussian state (rho0)
     N = int(np.sqrt(len(sigma))//2)
     #We now compute exp(N^2):
-    K=0
-    for i in range(2*N):
-        K+=sigma[i,i]
-    #print('K=',K) #K is tr(sigma)
     sum=0
     for i in range(1,N+1):
       ops= ['adag','a','adag','a']
@@ -166,7 +157,7 @@ def N2_sym(sigma): #dispersion of number operator on gaussian state (rho0)
         ops= ['adag','a','adag','a']
         modes=[i,i,j,j]
         sum+=2*expectationvalue_sym(sigma,ops,modes)
-    return simplify((1/K)*sum)
+    return sum
 
 
 def varianceN_sym(sigma):
@@ -181,10 +172,7 @@ def K_ng_sym(sigma, nongaussian_ops):
     ops=['rho']
     modes=['rho']
     if nongaussian_ops==[]:
-      K=0
-      for i in range(2*N):
-        K+=sigma[i,i]
-      return simplify(K)
+      return 1
     for item in nongaussian_ops:
       if item<0: #subtraction
         ops=['a']+ops+['adag']
@@ -404,8 +392,9 @@ z_values = [z1,z2]  #1:N+1
 theta_values = [x1] #N*(N-1)//2 +1
 phi_values = [phi1,phi2]  #1:N+1
 covmat= V_tms_sym(z_values,theta_values,phi_values, params=None)
-print('subtraction',simplify(expvalN_ng_sym(covmat,[-1])))
-print('addition',simplify(expvalN_ng_sym(covmat,[+1])))
+print('gaussian','N', expvalN_sym(covmat), 'variance', varianceN_sym(covmat),'snr', SNR_gaussian_sym(covmat) )
+#print('subtraction',simplify(expvalN_ng_sym(covmat,[-1])))
+#print('addition',simplify(expvalN_ng_sym(covmat,[+1])))
 
 #print(analytical_results_gaussian(z1,z2,x1,phi1,phi2))
 #print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,[-1]))

@@ -10,6 +10,8 @@ diff x1= 0
 diff phi1= 0
 diff phi2= 0
 
+
+
 b) One photon subtraction:
 N= 1.0*z1 - 1.0 + 1.0/z1
 N2= 1.5*z1**2 - 2.0*z1 + 2.0 - 2.0/z1 + 1.5/z1**2

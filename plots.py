@@ -388,7 +388,7 @@ def scaling_with_nongaussianity(N):
 def evolution_with_squeezing():
   N=2
   s = np.arange(0.05,3.95, 0.05)  #for squeezing
-  bs= [2*np.pi*np.random.rand()]
+  bs= [np.pi/4]
   phi=[0]*N
   params=None
   fig1, ax0 = plt.subplots(1, 1, figsize=(10, 10))
@@ -399,7 +399,7 @@ def evolution_with_squeezing():
   fig2, ((ax1,ax2,ax3,ax4),(ax5,ax6,ax7,ax8)) = plt.subplots(2, 4, figsize=(10, 25))
   ax1.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1])) for sq in s],'r')
   ax1.set_title('[-1]')
-  ax2.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1,-1])) for sq in s],'r')
+  ax2.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1,-2])) for sq in s],'r')
   ax2.set_title('[-1,-1]')
   ax3.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1,-1,-1])) for sq in s],'r')
   ax3.set_title('[-1,-1,-1]')
@@ -419,3 +419,13 @@ def evolution_with_squeezing():
 #scaling_with_nongaussianity(2)
 #evolution_with_squeezing()
 #ratio_plots_superreduced(2,params=None)
+
+z_vec=list(np.arange(0.01,4.99,0.01))
+index=z_vec.index(1)
+yvec_left= [SNR_gaussian(V_tms([z,1/z],[np.pi/4],[0,0],params=None)) for z in z_vec[0:index]]
+yvec_right= [SNR_gaussian(V_tms([z,1/z],[np.pi/4],[0,0],params=None)) for z in z_vec[index+1:]]
+#yvec_2=[normalization(0,0,z) for z in z_vec]
+plt.plot(z_vec[0:index],yvec_left)
+plt.plot(z_vec[index+1:],yvec_right)
+#plt.plot(z_vec,yvec_2)
+plt.show()

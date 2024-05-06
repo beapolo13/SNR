@@ -24,10 +24,6 @@ from utils import *
 def expvalN(sigma): #input a 2N x 2N np.array of parameters for M
     N=len(sigma)//2
     #print('sigma',np.round(sigma,3))
-    K=0
-    for i in range(2*N):
-        K+=sigma[i][i]
-    #print('K=',K) #K is tr(sigma)
 
     #now let's calculate the tr(prod(a's)rho). The amount of ladder operators is twice the number of modes (2N)
     #the amount of destruction operators is N, and the amount of creation is also N
@@ -37,7 +33,7 @@ def expvalN(sigma): #input a 2N x 2N np.array of parameters for M
       modes=[i,i]
       sum+=expectationvalue(sigma,ops,modes)
       print(sum)
-    return sum/np.abs(K)
+    return sum
 
 
 #Expectation value of N^2
@@ -45,10 +41,6 @@ def expvalN(sigma): #input a 2N x 2N np.array of parameters for M
 def N2(sigma): #dispersion of number operator on gaussian state (rho0)
     #We now compute exp(N^2):
     N=len(sigma)//2
-    K=0
-    for i in range(2*N):
-        K+=sigma[i][i]
-    #print('K=',K) #K is tr(sigma)
     sum=0
     for i in range(1,N+1):
       ops= ['adag','a','adag','a']
@@ -59,7 +51,8 @@ def N2(sigma): #dispersion of number operator on gaussian state (rho0)
         ops= ['adag','a','adag','a']
         modes=[i,i,j,j]
         sum+=2*expectationvalue(sigma,ops,modes)
-    return (1/K)*sum
+    return sum
+
 
 
 def varianceN(sigma):
@@ -77,10 +70,7 @@ def SNR_gaussian(sigma):
 def K_ng(sigma, nongaussian_ops):
     N= len(sigma)//2
     if nongaussian_ops==[]:
-      K=0
-      for i in range(2*N):
-        K+=sigma[i][i]
-      return K
+      return 1
     ops=['rho']
     modes=['rho']
     for item in nongaussian_ops:
