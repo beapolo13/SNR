@@ -32,7 +32,6 @@ def expvalN(sigma): #input a 2N x 2N np.array of parameters for M
       ops=['adag','a']
       modes=[i,i]
       sum+=expectationvalue(sigma,ops,modes)
-      print(sum)
     return sum
 
 
@@ -140,4 +139,141 @@ def varianceN_ng(sigma,nongaussian_ops):
 
 def SNR_ng(sigma,nongaussian_ops):
   return expvalN_ng(sigma,nongaussian_ops)/varianceN_ng(sigma,nongaussian_ops)
+
+def antibunching(sigma,nongaussian_ops): #N=2 only
+  N= len(sigma)//2
+  sum1=0
+  ops=['rho']
+  modes=['rho']
+  for item in nongaussian_ops:
+    if item<0: #subtraction
+      ops=['a']+ops+['adag']
+    if item>0: #addition
+      ops=['adag']+ops+['a']
+    modes=[np.abs(item)]+ modes+[np.abs(item)]
+  ops=['adag','adag','a','a']+ops
+  modes=[1,1,1,1]+modes
+  cut = ops.index('rho')
+  ops= ops[cut+1:]+ops[:cut]
+  modes= modes[cut+1:]+modes[:cut]
+  #print(ops)
+  #print(modes)
+  sum1+=expectationvalue(sigma,ops,modes)
+    
+  sum2=0
+  ops=['rho']
+  modes=['rho']
+  for item in nongaussian_ops:
+    if item<0: #subtraction
+      ops=['a']+ops+['adag']
+    if item>0: #addition
+      ops=['adag']+ops+['a']
+    modes=[np.abs(item)]+ modes+[np.abs(item)]
+  ops=['adag','adag','a','a']+ops
+  modes=[2,2,2,2]+modes
+  cut = ops.index('rho')
+  ops= ops[cut+1:]+ops[:cut]
+  modes= modes[cut+1:]+modes[:cut]
+  #print(ops)
+  #print(modes)
+  sum2+=expectationvalue(sigma,ops,modes)
+
+  sum3=0
+  ops=['rho']
+  modes=['rho']
+  for item in nongaussian_ops:
+    if item<0: #subtraction
+      ops=['a']+ops+['adag']
+    if item>0: #addition
+      ops=['adag']+ops+['a']
+    modes=[np.abs(item)]+ modes+[np.abs(item)]
+  ops=['adag','a','adag','a']+ops
+  modes=[1,2,1,2]+modes
+  cut = ops.index('rho')
+  ops= ops[cut+1:]+ops[:cut]
+  modes= modes[cut+1:]+modes[:cut]
+  #print(ops)
+  #print(modes)
+  sum3+=expectationvalue(sigma,ops,modes)
+
+  return (sum1+sum2)/2*sum3 -1
+
+
+def SV(sigma,nongaussian_ops): #N=2 only
+  N= len(sigma)//2
+  sum1=0
+  ops=['rho']
+  modes=['rho']
+  for item in nongaussian_ops:
+    if item<0: #subtraction
+      ops=['a']+ops+['adag']
+    if item>0: #addition
+      ops=['adag']+ops+['a']
+    modes=[np.abs(item)]+ modes+[np.abs(item)]
+  ops=['adag','a']+ops
+  modes=[1,1]+modes
+  cut = ops.index('rho')
+  ops= ops[cut+1:]+ops[:cut]
+  modes= modes[cut+1:]+modes[:cut]
+  #print(ops)
+  #print(modes)
+  sum1+=expectationvalue(sigma,ops,modes)/K_ng(sigma,nongaussian_ops)-0.5
+    
+  sum2=0
+  ops=['rho']
+  modes=['rho']
+  for item in nongaussian_ops:
+    if item<0: #subtraction
+      ops=['a']+ops+['adag']
+    if item>0: #addition
+      ops=['adag']+ops+['a']
+    modes=[np.abs(item)]+ modes+[np.abs(item)]
+  ops=['adag','a']+ops
+  modes=[2,2]+modes
+  cut = ops.index('rho')
+  ops= ops[cut+1:]+ops[:cut]
+  modes= modes[cut+1:]+modes[:cut]
+  #print(ops)
+  #print(modes)
+  sum2+=expectationvalue(sigma,ops,modes)/K_ng(sigma,nongaussian_ops)-0.5
+
+  sum3=0
+  ops=['rho']
+  modes=['rho']
+  for item in nongaussian_ops:
+    if item<0: #subtraction
+      ops=['a']+ops+['adag']
+    if item>0: #addition
+      ops=['adag']+ops+['a']
+    modes=[np.abs(item)]+ modes+[np.abs(item)]
+  ops=['adag','adag']+ops
+  modes=[1,2]+modes
+  cut = ops.index('rho')
+  ops= ops[cut+1:]+ops[:cut]
+  modes= modes[cut+1:]+modes[:cut]
+  #print(ops)
+  #print(modes)
+  sum3+=expectationvalue(sigma,ops,modes)/K_ng(sigma,nongaussian_ops)
+
+  sum4=0
+  ops=['rho']
+  modes=['rho']
+  for item in nongaussian_ops:
+    if item<0: #subtraction
+      ops=['a']+ops+['adag']
+    if item>0: #addition
+      ops=['adag']+ops+['a']
+    modes=[np.abs(item)]+ modes+[np.abs(item)]
+  ops=['a','a']+ops
+  modes=[1,2]+modes
+  cut = ops.index('rho')
+  ops= ops[cut+1:]+ops[:cut]
+  modes= modes[cut+1:]+modes[:cut]
+  #print(ops)
+  #print(modes)
+  sum4+=expectationvalue(sigma,ops,modes)/K_ng(sigma,nongaussian_ops)
+
+  return ((sum1*sum2)-(sum3*sum4))
+  
+
 

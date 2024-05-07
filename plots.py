@@ -281,9 +281,6 @@ def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
   idx=np.abs(my_array - 0.5).argmin()
   print(idx)
 
-  w_vec=[]
-  for i in range(15):
-    w_vec += [np.random.rand((N*(N-1))//2)]
 
   #gaussian case
   print('gaussian case')
@@ -297,7 +294,7 @@ def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
 
   
   #nongaussian case
-  nongaussian_ops=[1]
+  nongaussian_ops=[-1]
   print(f"{nongaussian_ops}")
   ax2.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[idx])
   i=0
@@ -308,7 +305,7 @@ def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
   ax2.set_ylabel('SNR')
   
 
-  nongaussian_ops=[1,1]
+  nongaussian_ops=[-1,-1]
   print(f"{nongaussian_ops}")
   ax3.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[idx])
   i=0
@@ -318,7 +315,7 @@ def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
   ax3.set_xlabel('Beamsplitter angle')
   ax3.set_ylabel('SNR')
 
-  nongaussian_ops=[1,1,1]
+  nongaussian_ops=[-1,-1,-1]
   print(f"{nongaussian_ops}")
   ax4.plot(t, [np.real(SNR_ng(V_tms([0.5,2],[w]+[0]*((N*(N-1))//2 -1),phi,params),nongaussian_ops)) for w in t], color=colors[idx])
   i=0
@@ -399,7 +396,7 @@ def evolution_with_squeezing():
   fig2, ((ax1,ax2,ax3,ax4),(ax5,ax6,ax7,ax8)) = plt.subplots(2, 4, figsize=(10, 25))
   ax1.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1])) for sq in s],'r')
   ax1.set_title('[-1]')
-  ax2.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1,-2])) for sq in s],'r')
+  ax2.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1,-1])) for sq in s],'r')
   ax2.set_title('[-1,-1]')
   ax3.plot(s, [np.real(SNR_ng(V_tms([sq,1/sq],bs,phi,params),[-1,-1,-1])) for sq in s],'r')
   ax3.set_title('[-1,-1,-1]')
@@ -416,6 +413,27 @@ def evolution_with_squeezing():
   plt.show()
 
 
+def SV_plots(nongaussian_ops):
+  t = np.arange(0, 2*np.pi, 0.05) #for angles
+  z_vec=np.linspace(0.25,0.90,10) #squeezing values
+  colors = plt.cm.viridis(z_vec)
+  fig,(ax1,ax2)=plt.subplots(2,1)
+  phi=np.random.rand(2)
+  i=0
+  for q in z_vec:
+    ax1.plot(t, [SV(V_tms([q,1/q],[w],phi,params=None),nongaussian_ops) for w in t], color=colors[i]) 
+    ax1.set_title('SV criterion')
+    ax2.plot(t,[SNR_ng(V_tms([q,1/q],[w],phi,params=None),nongaussian_ops) for w in t], color=colors[i])
+    ax2.set_title('SNR')
+    i+=1
+  cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'), ax=(ax1,ax2), location='right')
+  cbar.set_label('Squeezing factor z')
+  #plt.legend(z_vec)
+  plt.show()
+  return 
+
+SV_plots([])
+
 #scaling_with_nongaussianity(2)
 #evolution_with_squeezing()
 #ratio_plots_superreduced(2,params=None)
@@ -428,4 +446,4 @@ yvec_right= [SNR_gaussian(V_tms([z,1/z],[0],[0,0],params=None)) for z in z_vec[i
 plt.plot(z_vec[0:index],yvec_left)
 plt.plot(z_vec[index+1:],yvec_right)
 #plt.plot(z_vec,yvec_2)
-plt.show()
+#plt.show()

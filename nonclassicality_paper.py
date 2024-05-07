@@ -74,25 +74,54 @@ def checks(m,n,z): #we define a function to check if all expressions from the pa
 
 
 def delta_n(m,n,z):
-    return sqrt(arbitrary_expval(m,n,z,2,2,0,0) + arbitrary_expval(m,n,z,1,1,0,0) + 2*arbitrary_expval(m,n,z,1,1,1,1) + arbitrary_expval(m,n,z,0,0,2,2) + arbitrary_expval(m,n,z,0,0,1,1) - (arbitrary_expval(m,n,z,1,1,0,0) + arbitrary_expval(m,n,z,0,0,1,1))**2)
+    return arbitrary_expval(m,n,z,2,2,0,0) + arbitrary_expval(m,n,z,1,1,0,0) + 2*arbitrary_expval(m,n,z,1,1,1,1) + arbitrary_expval(m,n,z,0,0,2,2) + arbitrary_expval(m,n,z,0,0,1,1) - (arbitrary_expval(m,n,z,1,1,0,0) + arbitrary_expval(m,n,z,0,0,1,1))**2
 
 def signal_to_noise(m,n,z):
     numerator= arbitrary_expval(m,n,z,1,1,0,0) + arbitrary_expval(m,n,z,0,0,1,1)
     denominator= arbitrary_expval(m,n,z,2,2,0,0) + arbitrary_expval(m,n,z,1,1,0,0) + 2*arbitrary_expval(m,n,z,1,1,1,1) + arbitrary_expval(m,n,z,0,0,2,2) + arbitrary_expval(m,n,z,0,0,1,1) - numerator**2
-    return numerator/sqrt(denominator)
+    return numerator/denominator
 
-print(math.sqrt(0))
-z_vec=list(np.arange(0.01,4.99,0.01))
-index=z_vec.index(1)
-#yvec_left= [N1(0,0,z)+N2(0,0,z) for z in z_vec[0:index]]
-#yvec_right= [N1(0,0,z)+N2(0,0,z) for z in z_vec[index+1:]]
-yvec_left= [signal_to_noise(0,0,z) for z in z_vec[0:index]]
-yvec_right= [signal_to_noise(0,0,z) for z in z_vec[index+1:]]
+def sv_criterion(m,n,z):
+    sum1= (normalization(m+1,n,z)/normalization(m,n,z) -0.5)*(normalization(m,n+1,z)/normalization(m,n,z) -0.5)
+    sum2= arbitrary_expval(m,n,z,1,0,1,0)*arbitrary_expval(m,n,z,0,1,0,1)
+    return sum1-sum2
+
+
+
+z_vec=list(np.arange(0.10,0.95,0.01))
+index=len(z_vec)
+yvec_n= [N1(2,0,z)+N2(2,0,z) for z in z_vec]
+yvec_delta= [delta_n(2,0,z) for z in z_vec]
+yvec_snr=[signal_to_noise(2,0,z) for z in z_vec]
+yvec_left0= [sv_criterion(0,0,z) for z in z_vec[0:index]]
+yvec_left1= [sv_criterion(1,0,z) for z in z_vec[0:index]]
+#yvec_right1= [sv_criterion(1,0,z) for z in z_vec[index+1:]]
+yvec_left2= [sv_criterion(2,0,z) for z in z_vec[0:index]]
+#yvec_right2= [sv_criterion(2,0,z) for z in z_vec[index+1:]]
+yvec_left3= [sv_criterion(3,0,z) for z in z_vec[0:index]]
+#yvec_right3= [sv_criterion(3,0,z) for z in z_vec[index+1:]]
+yvec_left4= [sv_criterion(4,0,z) for z in z_vec[0:index]]
+#yvec_right4= [sv_criterion(4,0,z) for z in z_vec[index+1:]]
+yvec_left5= [sv_criterion(5,0,z) for z in z_vec[0:index]]
+#yvec_right5= [sv_criterion(5,0,z) for z in z_vec[index+1:]]
 #yvec_left= [delta_n(0,0,z) for z in z_vec[0:index]]
 #yvec_right= [delta_n(0,0,z) for z in z_vec[index+1:]]
 #yvec_2=[normalization(0,0,z) for z in z_vec]
-plt.plot(z_vec[0:index],yvec_left)
-plt.plot(z_vec[index+1:],yvec_right)
+plt.plot(z_vec,yvec_n)
+plt.plot(z_vec,yvec_delta)
+plt.plot(z_vec, yvec_snr)
+plt.legend(['n', 'delta n', 'snr'])
+plt.title('1 photon subtraction, balanced beamsplitter')
+#plt.plot(z_vec[0:index],yvec_left0)
+#plt.plot(z_vec[0:index],yvec_left2)
+#plt.plot(z_vec[index+1:],yvec_right2)
+#plt.plot(z_vec[0:index],yvec_left3)
+#plt.plot(z_vec[index+1:],yvec_right3)
+#plt.plot(z_vec[0:index],yvec_left4)
+#plt.plot(z_vec[index+1:],yvec_right4)
+#plt.plot(z_vec[0:index],yvec_left5)
+#plt.plot(z_vec[index+1:],yvec_right5)
+#plt.legend(['gaussian','1','2','3','4','5'])
 #plt.plot(z_vec,yvec_2)
 plt.show()
 
