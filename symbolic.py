@@ -157,11 +157,11 @@ def N2_sym(sigma): #dispersion of number operator on gaussian state (rho0)
         ops= ['adag','a','adag','a']
         modes=[i,i,j,j]
         sum+=2*expectationvalue_sym(sigma,ops,modes)
-    return sum
+    return simplify(sum)
 
 
 def varianceN_sym(sigma):
-    return  simplify(N2_sym(sigma) - (expvalN_sym(sigma))**2)
+    return  simplify(sqrt(N2_sym(sigma) - (expvalN_sym(sigma))**2))
 
 def SNR_gaussian_sym(sigma):
   return simplify(expvalN_sym(sigma)/varianceN_sym(sigma))
@@ -239,7 +239,7 @@ def N2_ng_sym(sigma,nongaussian_ops):
     return (1/K_ng_sym(sigma,nongaussian_ops))*sum
 
 def varianceN_ng_sym(sigma,nongaussian_ops):
-    return  N2_ng_sym(sigma,nongaussian_ops) - (expvalN_ng_sym(sigma,nongaussian_ops))**2
+    return  sqrt(N2_ng_sym(sigma,nongaussian_ops) - (expvalN_ng_sym(sigma,nongaussian_ops))**2)
 
 def SNR_ng_sym(sigma,nongaussian_ops):
   return expvalN_ng_sym(sigma,nongaussian_ops)/varianceN_ng_sym(sigma,nongaussian_ops)
@@ -392,7 +392,7 @@ z_values = [z1,z2]  #1:N+1
 theta_values = [x1] #N*(N-1)//2 +1
 phi_values = [phi1,phi2]  #1:N+1
 covmat= V_tms_sym(z_values,theta_values,phi_values, params=None)
-print('gaussian','N', expvalN_sym(covmat), 'variance', varianceN_sym(covmat),'snr', SNR_gaussian_sym(covmat) )
+print('gaussian','N', expvalN_sym(covmat), 'N2', N2_sym(covmat),'variance', varianceN_sym(covmat),'snr', SNR_gaussian_sym(covmat) )
 #print('subtraction',simplify(expvalN_ng_sym(covmat,[-1])))
 #print('addition',simplify(expvalN_ng_sym(covmat,[+1])))
 

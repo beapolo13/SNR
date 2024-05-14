@@ -432,18 +432,19 @@ def SV_plots(nongaussian_ops):
   plt.show()
   return 
 
-SV_plots([])
+#SV_plots([])
 
-#scaling_with_nongaussianity(2)
-#evolution_with_squeezing()
-#ratio_plots_superreduced(2,params=None)
-
-z_vec=list(np.arange(0.01,4.99,0.01))
-index=z_vec.index(1)
-yvec_left= [SNR_gaussian(V_tms([z,1/z],[0],[0,0],params=None)) for z in z_vec[0:index]]
-yvec_right= [SNR_gaussian(V_tms([z,1/z],[0],[0,0],params=None)) for z in z_vec[index+1:]]
-#yvec_2=[normalization(0,0,z) for z in z_vec]
-plt.plot(z_vec[0:index],yvec_left)
-plt.plot(z_vec[index+1:],yvec_right)
+fig, ax = plt.subplots(1, 1, figsize=(15, 15))
+z_vec=list(np.arange(0.001,4.99,0.001))
+noise=np.linspace(0.1,1,10)
+my_array=np.linspace(0.1, 1, len(noise))
+colors = plt.cm.YlOrRd(my_array)
+for i in range(len(noise)): 
+  yvec= [SNR_ng(V_thermal([noise[i]]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None),[1,1]) for z in z_vec]
+  plt.plot(z_vec,yvec, color=colors[i])
 #plt.plot(z_vec,yvec_2)
-#plt.show()
+cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='YlOrRd'), ax=ax, location='right')
+cbar.set_label('Noise')
+ax.set_xlabel('z')
+ax.set_title('SNR as a function of squeezing')
+plt.show()

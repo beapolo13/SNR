@@ -1,6 +1,7 @@
 import sympy as sp
+from sympy import sqrt
 import numpy as np
-from numpy import tanh, sinh, log, sqrt
+from numpy import tanh, sinh, log
 import matplotlib.pyplot as plt
 
 def hermite_polynomial00(m, n):
@@ -46,15 +47,18 @@ def checks(m, n, z):
     check4 = arbitrary_expval(m, n, z, 0, 0, 2, 2) - normalization(m, n + 2, z) / normalization(m, n, z)
     return sp.round(check1, 4), sp.round(check2, 4), sp.round(check3, 4), sp.round(check4, 4)
 
+def n(m, n, z):
+    return arbitrary_expval(m, n, z, 1, 1, 0, 0) +arbitrary_expval(m, n, z, 0, 0, 1, 1)
+
 def delta_n(m, n, z):
-    return (arbitrary_expval(m, n, z, 2, 2, 0, 0) + arbitrary_expval(m, n, z, 1, 1, 0, 0) +
+    return sqrt(arbitrary_expval(m, n, z, 2, 2, 0, 0) + arbitrary_expval(m, n, z, 1, 1, 0, 0) +
             2 * arbitrary_expval(m, n, z, 1, 1, 1, 1) + arbitrary_expval(m, n, z, 0, 0, 2, 2) +
             arbitrary_expval(m, n, z, 0, 0, 1, 1) - (arbitrary_expval(m, n, z, 1, 1, 0, 0) +
                                                      arbitrary_expval(m, n, z, 0, 0, 1, 1))**2)
 
 def signal_to_noise(m, n, z):
     numerator = arbitrary_expval(m, n, z, 1, 1, 0, 0) + arbitrary_expval(m, n, z, 0, 0, 1, 1)
-    denominator = (arbitrary_expval(m, n, z, 2, 2, 0, 0) + arbitrary_expval(m, n, z, 1, 1, 0, 0) +
+    denominator = sqrt(arbitrary_expval(m, n, z, 2, 2, 0, 0) + arbitrary_expval(m, n, z, 1, 1, 0, 0) +
                    2 * arbitrary_expval(m, n, z, 1, 1, 1, 1) + arbitrary_expval(m, n, z, 0, 0, 2, 2) +
                    arbitrary_expval(m, n, z, 0, 0, 1, 1) - numerator**2)
     return numerator / denominator
@@ -62,12 +66,21 @@ def signal_to_noise(m, n, z):
 
 z = sp.symbols('z')
 # Define the expression for delta_n using the previously defined functions
-delta_expr = delta_n(0, 0, z)
+n_expr= sp.simplify(n(0,0,z))
+delta_expr = sp.simplify(delta_n(0, 0, z))
 snr_exp=signal_to_noise(0,0,z)
+print('N2', sp.simplify(arbitrary_expval(0, 0, z, 2, 2, 0, 0) + arbitrary_expval(0, 0, z, 1, 1, 0, 0) +
+            2 * arbitrary_expval(0, 0, z, 1, 1, 1, 1) + arbitrary_expval(0, 0, z, 0, 0, 2, 2) +
+            arbitrary_expval(0, 0, z, 0, 0, 1, 1)))
+print('N', n_expr)
 print('delta N',delta_expr)
 print('snr',snr_exp)
 
+
+#comparison between the expression for the snr in the paper's and isserlis formulations
 z_vec=np.arange(0.01,3.99,0.01)
-y_vec=[sqrt(-1.0*(-sinh(log(z)))**1.0*tanh(log(z)/2) + 0.5*(-sinh(log(z)))**2.0*(tanh(log(z)/2)**2 + 1)) for z in z_vec]
-plt.plot(z_vec,y_vec)
+y_vec1=[-1.0*(-sinh(log(z)))**1.0*tanh(log(z)/2)/sqrt(-1.0*(-sinh(log(z)))**1.0*tanh(log(z)/2) + 0.5*(-sinh(log(z)))**2.0*(tanh(log(z)/2)**2 + 1)) for z in z_vec]
+y_vec2=[0.707106781186547*(z1 - 1)**2/(z1*sqrt(0.5 + 1.0/z1 + 0.5/z1**2)*abs(z1 - 1)) for z1 in z_vec]
+plt.plot(z_vec,y_vec1)
+plt.plot(z_vec,y_vec2)
 plt.show()

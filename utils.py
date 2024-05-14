@@ -63,7 +63,7 @@ def p_matchings(elements):  #input is an array/list of numbers #output is a resh
     return np.reshape(perfect_matchings(x),(1,y,int(x/2),2)).tolist()[0]
 
 
-#COVARIANCE MATRIX BUILDING
+#BUILDING OF THE COVARIANCE MATRIX OF A GAUSSIAN SQUEEZED STATE
 #function that builds squeezing matrix D
 def sq(z,ordering='xxpp'): #ordering is optional parameter
   N=len(z)
@@ -80,6 +80,21 @@ def sq(z,ordering='xxpp'): #ordering is optional parameter
         d_vector+=[1/item]
     D=d_vector*np.eye(2*N)
   return D
+
+#diagonal matrix for thermal states
+def Temp(temp,ordering='xxpp'): #ordering is optional parameter
+  N=len(temp)
+  if ordering == 'xpxp':
+    temp_vector=[]
+    for item in temp:
+        temp_vector+=[item, item]
+    t=temp_vector*np.eye(2*N)
+
+    #convention x1,x2,p1,p2
+  elif ordering == 'xxpp':
+    temp_vector=[item for item in temp]+[item for item in temp]
+    t=temp_vector*np.eye(2*N)
+  return t
 
 #function that builds an orthogonal matrix out of a random one
 def Orth(params):
@@ -189,6 +204,75 @@ def convention_switch(sigma,ordering,format):
         newarray2[N+k, :] = newarray[2*k+1, :]
     #print('swapped array:',newarray2)
     return newarray2
+  
+#now we're going to construct the covariance matrix of a thermal state
+#Everything is exactly the same except that instead of stating from vacuum we start from some diagonal noise matrix
+def V_thermal(temp,z,x1,x2,phi1,phi2,params1=None,params2=None,ordering='xxpp'):  #ordering and params are optional parameters
+  #first we change the inverse temperature to the mean photon number \bar{n} 
+  for i in range(len(temp)):
+     temp[i]= 1+ 2/(np.exp(1/(temp[i]))-1)
+  N=len(z)
+  #beamsplitter
+  if type(x1)==np.float64:
+    x1=[x1]
+  if type(x2)==np.float64:
+    x2=[x2]
+  B_total1=np.eye(2*N)
+  #print('x:',cos(x),sin(x))
+  index=0
+  for i in range(N):
+      for j in range(i+1,N):
+          B=np.eye(2*N)
+          B[i,i]=B[j,j]=B[N+i,N+i]=B[N+j,N+j]= cos(x1[index])
+          B[i,j]=B[N+i,N+j]= sin(x1[index])
+          B[j,i]=B[N+j,N+i]= -sin(x1[index])
+          index+=1
+          B_total1=B_total1@B
+  B_total2=np.eye(2*N)
+  #print('x:',cos(x),sin(x))
+  index=0
+  for i in range(N):
+      for j in range(i+1,N):
+          B=np.eye(2*N)
+          B[i,i]=B[j,j]=B[N+i,N+i]=B[N+j,N+j]= cos(x2[index])
+          B[i,j]=B[N+i,N+j]= sin(x2[index])
+          B[j,i]=B[N+j,N+i]= -sin(x2[index])
+          index+=1
+          B_total2=B_total2@B
+  #print('B',np.round(B_total,2))
+  #dephasing
+  P1= np.zeros((2*N, 2*N))
+  for i in range(N):
+    P1[i,i]=P1[i+N,i+N]= cos(phi1[i])
+    P1[i,i+N]=sin(phi1[i])
+    P1[i+N,i]=-sin(phi1[i])
+  P2= np.zeros((2*N, 2*N))
+  for i in range(N):
+    P2[i,i]=P2[i+N,i+N]= cos(phi2[i])
+    P2[i,i+N]=sin(phi2[i])
+    P2[i+N,i]=-sin(phi2[i])
+  #print('P',P)
+  S=np.sqrt(sq(z)) #we apply the square root since we are going to apply the squeezing matrix twice 
+  T=Temp(temp,ordering='xxpp')
+  #print('S',S)
+  if params1 is not None:
+    O1= Orth(params1)
+    set_1= P1 @ B_total1 @ O1
+  else:
+    set_1= P1 @ B_total1
+  if params2 is not None:
+    O2= Orth(params2)
+    set_2= O2 @ B_total2 @ O2
+  else:
+    set_2= P2 @ B_total2
+  
+  result= set_1 @ S @ set_2 @ T @ transpose(set_2) @ S  @ transpose(set_1)
+  
+  if ordering == 'xpxp': 
+    return convention_switch(result,'xxpp',format='number')
+  else:
+    return result
+
   
 def create_test_matrix(N,ordering):   #creation of a test matrix to test the convention switch
   def generate_labels(N,ordering):
@@ -313,3 +397,4 @@ def expectationvalue(covmat,operatorlist,modeslist):
             factor*=trace_func(covmat,l,k,case)
         trace+=factor
     return trace
+
