@@ -334,6 +334,76 @@ def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
   
   return
 
+def ratio_plots_superreduced_thermal(N,params=None):  #only makes sense for N=2
+  # variable intervals
+  t = np.arange(0, 2*np.pi, 0.05) #for angles
+  s = np.arange(0.05,3.95, 0.05)  #for squeezing
+  fig, ((ax1),(ax2),(ax3),(ax4)) = plt.subplots(4, 1, figsize=(10, 25))
+  phi1=2*np.pi*np.random.rand(N)
+  phi2=2*np.pi*np.random.rand(N)
+  z_vec=np.linspace(0.05,0.95,15)
+  my_array=np.linspace(0, 1, len(z_vec))
+  colors = plt.cm.YlOrRd(my_array)
+  idx=np.abs(my_array - 0.5).argmin()
+  print(idx)
+
+
+  #gaussian case
+  print('gaussian case')
+
+  
+  
+  i=0
+  for q in z_vec:
+    ax1.plot(t, [np.real(SNR_gaussian(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None))) for w in t], color=colors[i])
+    i+=1
+  ax1.set_xlabel('Beamsplitter angle')
+  ax1.set_ylabel('SNR')
+
+  
+  #nongaussian case
+  nongaussian_ops=[-1]
+  print(f"{nongaussian_ops}")
+  ax2.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[idx])
+  i=0
+  for q in z_vec:
+    ax2.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[i])
+    i+=1
+  ax2.set_xlabel('Beamsplitter angle')
+  ax2.set_ylabel('SNR')
+  
+
+  nongaussian_ops=[-1,-1]
+  print(f"{nongaussian_ops}")
+  ax3.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[idx])
+  i=0
+  for q in z_vec:
+    ax3.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[i])
+    i+=1
+  ax3.set_xlabel('Beamsplitter angle')
+  ax3.set_ylabel('SNR')
+
+  nongaussian_ops=[-1,-1,-1]
+  print(f"{nongaussian_ops}")
+  ax4.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[idx])
+  i=0
+  for q in z_vec:
+    ax4.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[i])
+    i+=1
+  ax4.set_xlabel('Beamsplitter angle')
+  ax4.set_ylabel('SNR')
+
+  cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='YlOrRd'), ax=[ax1, ax2,ax3,ax4], location='right')
+  cbar.set_label('Squeezing factor z')
+
+# Adjust layout
+  plt.tight_layout(rect=[0.05, 0.05, 0.75, 0.95])  # Adjust the layout to make space for the colorbar
+  plt.show()
+  
+  return
+
+#ratio_plots_superreduced_thermal(2,params=None)
+
 
 def scaling_with_nongaussianity(N):
   fig, ((ax1,ax2)) = plt.subplots(1, 2, figsize=(30, 10))
@@ -434,17 +504,37 @@ def SV_plots(nongaussian_ops):
 
 #SV_plots([])
 
-fig, ax = plt.subplots(1, 1, figsize=(15, 15))
-z_vec=list(np.arange(0.001,4.99,0.001))
-noise=np.linspace(0.1,1,10)
-my_array=np.linspace(0.1, 1, len(noise))
-colors = plt.cm.YlOrRd(my_array)
-for i in range(len(noise)): 
-  yvec= [SNR_ng(V_thermal([noise[i]]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None),[1,1]) for z in z_vec]
-  plt.plot(z_vec,yvec, color=colors[i])
-#plt.plot(z_vec,yvec_2)
-cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='YlOrRd'), ax=ax, location='right')
-cbar.set_label('Noise')
-ax.set_xlabel('z')
-ax.set_title('SNR as a function of squeezing')
-plt.show()
+
+def evolution_with_noise_gaussian():
+  fig, (ax1,ax2) = plt.subplots(2, 1, figsize=(30, 15))
+  z=0.5
+  noise=np.linspace(0,1,10)
+  yvec= [expvalN(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
+  yvec_2=[varianceN(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
+  yvec_3=[SNR_gaussian(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
+  ax1.plot(noise,yvec)
+  ax1.plot(noise,yvec_2)
+  ax1.plot(noise,yvec_3)
+
+  ax1.set_xlabel('noise')
+  ax1.set_title('SNR as a function of temperature for fixed z=0.5')
+  legend=['Signal N','delta N', 'SNR']
+  ax1.legend(legend)
+
+  #second plot
+  z_vec=list(np.arange(0.001,4.99,0.001))
+  my_array=np.linspace(0.1, 1, len(noise))
+  colors = plt.cm.YlOrRd(my_array)
+  for i in range(len(noise)): 
+    yvec= [SNR_ng(V_thermal([noise[i]]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None),[]) for z in z_vec]
+    ax2.plot(z_vec,yvec, color=colors[i])
+  cbar = plt.colorbar(plt.cm.ScalarMappable(cmap='YlOrRd'), ax=ax2, location='right')
+  cbar.set_label('Noise')
+  ax2.set_xlabel('z')
+  ax2.set_title('SNR as a function of squeezing')
+  plt.show()
+  return
+
+#evolution_with_noise_gaussian()
+
+
