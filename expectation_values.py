@@ -32,7 +32,7 @@ def expvalN(sigma): #input a 2N x 2N np.array of parameters for M
       ops=['adag','a']
       modes=[i,i]
       sum+=expectationvalue(sigma,ops,modes)
-    return sum
+    return sum 
 
 
 #Expectation value of N^2
@@ -55,10 +55,10 @@ def N2(sigma): #dispersion of number operator on gaussian state (rho0)
 
 
 def varianceN(sigma):
-    return  np.sqrt(N2(sigma) - (expvalN(sigma))**2)
+    return  np.sqrt(N2(sigma) - (expvalN(sigma))**2) 
 
 def SNR_gaussian(sigma):
-  return expvalN(sigma)/varianceN(sigma)
+  return (expvalN(sigma)+1)/varianceN(sigma) 
 
 
 #NON-GAUSSIAN STATE
@@ -138,7 +138,7 @@ def varianceN_ng(sigma,nongaussian_ops):
   return  np.sqrt(N2_ng(sigma,nongaussian_ops) - (expvalN_ng(sigma,nongaussian_ops))**2)
 
 def SNR_ng(sigma,nongaussian_ops):
-  return expvalN_ng(sigma,nongaussian_ops)/varianceN_ng(sigma,nongaussian_ops)
+  return (expvalN_ng(sigma,nongaussian_ops)+1)/varianceN_ng(sigma,nongaussian_ops)
 
 def antibunching(sigma,nongaussian_ops): #N=2 only
   N= len(sigma)//2

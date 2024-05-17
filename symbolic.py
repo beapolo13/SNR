@@ -116,7 +116,6 @@ def V_thermal_sym(temp,z,x1,x2,phi1,phi2,params1=None,params2=None,ordering='xxp
   if ordering == 'xpxp': 
     return convention_switch(result,'xxpp',format='number')
   else:
-    print(simplify(result))
     return simplify(result)
 
 def id1_sym(sigma,l,k,ordering='xxpp'): #function to compute Tr(a^dag_l a^dag_k rho)
@@ -205,7 +204,7 @@ def expvalN_sym(sigma): #input a 2N x 2N np.array of parameters for M
       ops=['adag','a']
       modes=[i,i]
       sum+=expectationvalue_sym(sigma,ops,modes)
-    return sum
+    return simplify(sum) 
 
 #Expectation value of N^2
 
@@ -226,10 +225,10 @@ def N2_sym(sigma): #dispersion of number operator on gaussian state (rho0)
 
 
 def varianceN_sym(sigma):
-    return  sym.sqrt(N2_sym(sigma) - (expvalN_sym(sigma))**2)
+    return  simplify(sym.sqrt(N2_sym(sigma) - (expvalN_sym(sigma))**2))
 
 def SNR_gaussian_sym(sigma):
-  return simplify(expvalN_sym(sigma)/varianceN_sym(sigma))
+  return simplify((expvalN_sym(sigma)+1)/varianceN_sym(sigma))
 
 
 
@@ -309,7 +308,7 @@ def varianceN_ng_sym(sigma,nongaussian_ops):
     return  sym.sqrt(N2_ng_sym(sigma,nongaussian_ops) - (expvalN_ng_sym(sigma,nongaussian_ops))**2)
 
 def SNR_ng_sym(sigma,nongaussian_ops):
-  return expvalN_ng_sym(sigma,nongaussian_ops)/varianceN_ng_sym(sigma,nongaussian_ops)
+  return (expvalN_ng_sym(sigma,nongaussian_ops)+1)/varianceN_ng_sym(sigma,nongaussian_ops)
 
 #Print results of analytical calculations:
 
@@ -452,19 +451,22 @@ def analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops): #so far 
 
 
 N=2
-t,z1,z2,x1 =symbols('t,z1,z2,x1',real=True, RealNumber=True, zero=False)
+t,z,z2,x =symbols('t,z,z2,x',real=True, RealNumber=True, zero=False)
 x2=symbols('x2', zero=True)
-phi1,phi2, phi3, phi4 =symbols('phi1,phi2,phi3,phi4',real=True, zero=True)
-z2=1/z1
-z_values = [z1,z2]  #1:N+1
+phi1,phi2 = symbols('phi1,phi2',real=True)
+phi3, phi4 =symbols('phi3,phi4',real=True, zero=True)
+z2=1/z
+z_values = [z,z2]  #1:N+1
 t_values=[t,t]
-theta_values1 = [x1] #N*(N-1)//2 +1
+theta_values1 = [x] #N*(N-1)//2 +1
 theta_values2=[x2]
-phi_values1 = [phi1,phi2]  #1:N+1
+phi_values = [phi1,phi2]  #1:N+1
 phi_values2 = [phi3,phi4]  #1:N+1
-thermal_covmat=V_thermal_sym(t_values,z_values,theta_values1,theta_values2,phi_values1,phi_values2,params1=None,params2=None)
+covmat=V_tms_sym(z_values,theta_values1,phi_values, params=None)
+thermal_covmat=V_thermal_sym(t_values,z_values,theta_values1,theta_values2,phi_values,phi_values2,params1=None,params2=None)
 #covmat= V_tms_sym(z_values,theta_values,phi_values1, params=None)
-print('gaussian','N', expvalN_sym(thermal_covmat), 'N2', N2_sym(thermal_covmat),'variance', varianceN_sym(thermal_covmat),'snr', SNR_gaussian_sym(thermal_covmat) )
+print('gaussian','N', expvalN_sym(covmat), 'N2', N2_sym(covmat),'variance', varianceN_sym(covmat),'snr', SNR_gaussian_sym(covmat) )
+print('gaussian thermal','N', expvalN_sym(thermal_covmat), 'N2', N2_sym(thermal_covmat),'variance', varianceN_sym(thermal_covmat),'snr', SNR_gaussian_sym(thermal_covmat) )
 #print('subtraction',simplify(expvalN_ng_sym(covmat,[-1])))
 #print('addition',simplify(expvalN_ng_sym(covmat,[+1])))
 

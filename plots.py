@@ -455,7 +455,7 @@ def scaling_with_nongaussianity(N):
 def evolution_with_squeezing():
   N=2
   s = np.arange(0.05,3.95, 0.05)  #for squeezing
-  bs= [np.pi/4]
+  bs= [np.pi/5]
   phi=[0]*N
   params=None
   fig1, ax0 = plt.subplots(1, 1, figsize=(10, 10))
@@ -482,18 +482,20 @@ def evolution_with_squeezing():
   ax8.set_title('[1,1,1,1]')
   plt.show()
 
+#evolution_with_squeezing()
+
 
 def SV_plots(nongaussian_ops):
   t = np.arange(0, 2*np.pi, 0.05) #for angles
-  z_vec=np.linspace(0.25,0.90,10) #squeezing values
+  z_vec=np.linspace(0.25,0.80,10) #squeezing values
   colors = plt.cm.viridis(z_vec)
   fig,(ax1,ax2)=plt.subplots(2,1)
   phi=np.random.rand(2)
   i=0
   for q in z_vec:
-    ax1.plot(t, [SV(V_tms([q,1/q],[w],phi,params=None),nongaussian_ops) for w in t], color=colors[i]) 
+    ax1.plot(t, [SV(V_thermal([0.5]*2,[q,1/q],[w],[0],[0,0],[0,0],params1=None,params2=None),nongaussian_ops) for w in t], color=colors[i]) 
     ax1.set_title('SV criterion')
-    ax2.plot(t,[SNR_ng(V_tms([q,1/q],[w],phi,params=None),nongaussian_ops) for w in t], color=colors[i])
+    ax2.plot(t,[SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],[0,0],[0,0],params1=None,params2=None),nongaussian_ops) for w in t], color=colors[i])
     ax2.set_title('SNR')
     i+=1
   cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'), ax=(ax1,ax2), location='right')
@@ -502,13 +504,13 @@ def SV_plots(nongaussian_ops):
   plt.show()
   return 
 
-#SV_plots([])
+SV_plots([-1,-1])
 
 
 def evolution_with_noise_gaussian():
   fig, (ax1,ax2) = plt.subplots(2, 1, figsize=(30, 15))
   z=0.5
-  noise=np.linspace(0,1,10)
+  noise=np.linspace(0.2,2,15)
   yvec= [expvalN(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
   yvec_2=[varianceN(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
   yvec_3=[SNR_gaussian(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
