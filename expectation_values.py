@@ -58,7 +58,11 @@ def varianceN(sigma):
     return  np.sqrt(N2(sigma) - (expvalN(sigma))**2) 
 
 def SNR_gaussian(sigma):
-  return (expvalN(sigma)+1)/varianceN(sigma) 
+  N=len(sigma)//2
+  return (expvalN(sigma)+N/2)/varianceN(sigma) 
+
+def SNR_gaussian_extr(sigma,sigma0):
+  return (expvalN(sigma)-expvalN(sigma0))/varianceN(sigma) 
 
 
 #NON-GAUSSIAN STATE
@@ -138,7 +142,12 @@ def varianceN_ng(sigma,nongaussian_ops):
   return  np.sqrt(N2_ng(sigma,nongaussian_ops) - (expvalN_ng(sigma,nongaussian_ops))**2)
 
 def SNR_ng(sigma,nongaussian_ops):
-  return (expvalN_ng(sigma,nongaussian_ops)+1)/varianceN_ng(sigma,nongaussian_ops)
+  N=len(sigma)//2
+  return (expvalN_ng(sigma,nongaussian_ops)+N/2)/varianceN_ng(sigma,nongaussian_ops)
+
+def SNR_ng_extr(sigma,nongaussian_ops,sigma0):
+  N=len(sigma)//2
+  return (expvalN_ng(sigma,nongaussian_ops)-expvalN_ng(sigma0,[]))/varianceN_ng(sigma,nongaussian_ops)
 
 def antibunching(sigma,nongaussian_ops): #N=2 only
   N= len(sigma)//2

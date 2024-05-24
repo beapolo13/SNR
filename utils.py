@@ -207,67 +207,41 @@ def convention_switch(sigma,ordering,format):
   
 #now we're going to construct the covariance matrix of a thermal state
 #Everything is exactly the same except that instead of stating from vacuum we start from some diagonal noise matrix
-def V_thermal(temp,z,x1,x2,phi1,phi2,params1=None,params2=None,ordering='xxpp'):  #ordering and params are optional parameters
+def V_thermal(temp,z,x,phi,params=None,ordering='xxpp'):  #ordering and params are optional parameters
   #first we change the inverse temperature to the mean photon number \bar{n} 
   for i in range(len(temp)):
      temp[i]= 1+ 2/(np.exp(1/(temp[i]))-1)
   N=len(z)
   #beamsplitter
-  if type(x1)==np.float64:
-    x1=[x1]
-  if type(x2)==np.float64:
-    x2=[x2]
-  B_total1=np.eye(2*N)
+  if type(x)==np.float64:
+    x=[x]
+  B_total=np.eye(2*N)
   #print('x:',cos(x),sin(x))
   index=0
   for i in range(N):
       for j in range(i+1,N):
           B=np.eye(2*N)
-          B[i,i]=B[j,j]=B[N+i,N+i]=B[N+j,N+j]= cos(x1[index])
-          B[i,j]=B[N+i,N+j]= sin(x1[index])
-          B[j,i]=B[N+j,N+i]= -sin(x1[index])
+          B[i,i]=B[j,j]=B[N+i,N+i]=B[N+j,N+j]= cos(x[index])
+          B[i,j]=B[N+i,N+j]= sin(x[index])
+          B[j,i]=B[N+j,N+i]= -sin(x[index])
           index+=1
-          B_total1=B_total1@B
-  B_total2=np.eye(2*N)
-  #print('x:',cos(x),sin(x))
-  index=0
-  for i in range(N):
-      for j in range(i+1,N):
-          B=np.eye(2*N)
-          B[i,i]=B[j,j]=B[N+i,N+i]=B[N+j,N+j]= cos(x2[index])
-          B[i,j]=B[N+i,N+j]= sin(x2[index])
-          B[j,i]=B[N+j,N+i]= -sin(x2[index])
-          index+=1
-          B_total2=B_total2@B
-  #print('B',np.round(B_total,2))
+          B_total=B_total@B
   #dephasing
-  P1= np.zeros((2*N, 2*N))
+  P= np.zeros((2*N, 2*N))
   for i in range(N):
-    P1[i,i]=P1[i+N,i+N]= cos(phi1[i])
-    P1[i,i+N]=sin(phi1[i])
-    P1[i+N,i]=-sin(phi1[i])
-  P2= np.zeros((2*N, 2*N))
-  for i in range(N):
-    P2[i,i]=P2[i+N,i+N]= cos(phi2[i])
-    P2[i,i+N]=sin(phi2[i])
-    P2[i+N,i]=-sin(phi2[i])
+    P[i,i]=P[i+N,i+N]= cos(phi[i])
+    P[i,i+N]=sin(phi[i])
+    P[i+N,i]=-sin(phi[i])
   #print('P',P)
-  S=np.sqrt(sq(z)) #we apply the square root since we are going to apply the squeezing matrix twice 
-  T=Temp(temp,ordering='xxpp')
+  S=sq(z) #we apply the square root since we are going to apply the squeezing matrix twice 
+
   #print('S',S)
-  if params1 is not None:
-    O1= Orth(params1)
-    set_1= P1 @ B_total1 @ O1
+  if params is not None:
+    O1= Orth(params)
+    result= temp[0]*(P @ B_total @ O1 @ S @ transpose(O1) @ transpose(B_total) @ transpose(P))
   else:
-    set_1= P1 @ B_total1
-  if params2 is not None:
-    O2= Orth(params2)
-    set_2= O2 @ B_total2 @ O2
-  else:
-    set_2= P2 @ B_total2
-  
-  result= set_1 @ S @ set_2 @ T @ transpose(set_2) @ S  @ transpose(set_1)
-  
+     result= temp[0]*(B_total @P @ S  @ transpose(P) @ transpose(B_total) )
+    
   if ordering == 'xpxp': 
     return convention_switch(result,'xxpp',format='number')
   else:

@@ -223,46 +223,39 @@ def optimization_4(K): #K is the maximum number of non-gaussian operations to pe
 #OPTIMIZATION ON NUMBER OF MODES
 #now we only optimize in the passive optics operations that we know how to 'physically implement' (z,bs,ps)
 def optimization_5(nongaussian_ops, n_max):
-  ratios=[0]*(n_max-2)
-  ratios_gaussian=[0]*(n_max-2)
-  for N in range(2,n_max):
-    print('Number of modes', N, 'Non-gaussian operations', nongaussian_ops)
-    z=[0.5]*N
-    theta=[0]*((N*(N-1))//2)
-    phi=[0]*N
-    params=None
-    free_pars=[]
-    for i in range(len(z)):
-        free_pars+=[z[i]]
-    for i in range(len(theta)):
-        free_pars+=[theta[i]]
-    for i in range(len(phi)):
-      free_pars+=[phi[i]] 
-    def cost_gaussian(free_pars):
-        return np.real(1/SNR_gaussian(V_tms(free_pars[:N],2*np.pi*free_pars[N:(N*(N-1))//2+N],2*np.pi*free_pars[(N*(N-1))//2+N:],params))) #we take the inverse of the SNR to minimize 
-    def cost(free_pars):
-        return np.real(1/SNR_ng(V_tms(free_pars[:N],2*np.pi*free_pars[N:(N*(N-1))//2+N],2*np.pi*free_pars[(N*(N-1))//2+N:],params),nongaussian_ops)) #we take the inverse of the SNR to minimize
-    bounds_opt = Bounds(0, 0.85)
-    start = time.time()
-    out_gaussian=minimize(cost_gaussian,free_pars, method='L-BFGS-B', bounds=bounds_opt)
-    out=minimize(cost,free_pars, method='L-BFGS-B', bounds=bounds_opt)
-    ratios_gaussian[N-2]=1/out_gaussian.fun
-    ratios[N-2]=1/out.fun
-    print(out_gaussian)
-    print(out)
-    end = time.time()
-    print('Time taken to find maximum ratio', end - start)
-    print('optimal gaussian ratio:',1/out_gaussian.fun)
-    print('optimal ratio:',1/out.fun)
-    print('')
-  plt.plot(np.arange(2,n_max),ratios_gaussian,'o')
-  plt.plot(np.arange(2,n_max),ratios,'o')
-  plt.title('One photon operation')
-  plt.legend('Gaussian', 'Non-gaussian')
+  ratios=[[0]*(n_max-2)]*len(nongaussian_ops)
+  for j in range(len(nongaussian_ops)):
+    for N in range(2,n_max):
+      print('Number of modes', N, 'Non-gaussian operations', nongaussian_ops[j])
+      z=[0.5]*N
+      theta=[0.5]*((N*(N-1))//2)
+      phi=[0]*N
+      params=None
+      free_pars=[]
+      for i in range(len(z)):
+          free_pars+=[z[i]]
+      for i in range(len(theta)):
+          free_pars+=[theta[i]]
+      for i in range(len(phi)):
+        free_pars+=[phi[i]] 
+      def cost(free_pars):
+          return np.real(1/SNR_ng(V_tms(free_pars[:N],2*np.pi*free_pars[N:(N*(N-1))//2+N],2*np.pi*free_pars[(N*(N-1))//2+N:],params),nongaussian_ops[j])) #we take the inverse of the SNR to minimize
+      bounds_opt = Bounds(0.25, 0.75)
+      start = time.time()
+      out=minimize(cost,free_pars, method='L-BFGS-B',bounds=bounds_opt)
+      ratios[j][N-2]=1/out.fun
+      print(out)
+      end = time.time()
+      print('Time taken to find maximum ratio', end - start)
+      print('optimal ratio:',1/out.fun)
+      print('')
+    plt.plot(np.arange(2,n_max),ratios[j],linestyle='dashdot', marker='o')
+  plt.title('Evolution of maximum SNR with number of modes N')
+  plt.legend(nongaussian_ops)
   plt.show()
   return
 
 
-#print(optimization_5([-1],7))
+print(optimization_5([[],[-1],[-1,-1],[-1,-1,-1],[-1,-1,-1,-1]],7))
 #print(optimization_5([1],7))
-print(optimization_4(6))
+#print(optimization_4(6))

@@ -339,8 +339,7 @@ def ratio_plots_superreduced_thermal(N,params=None):  #only makes sense for N=2
   t = np.arange(0, 2*np.pi, 0.05) #for angles
   s = np.arange(0.05,3.95, 0.05)  #for squeezing
   fig, ((ax1),(ax2),(ax3),(ax4)) = plt.subplots(4, 1, figsize=(10, 25))
-  phi1=2*np.pi*np.random.rand(N)
-  phi2=2*np.pi*np.random.rand(N)
+  phi=2*np.pi*np.random.rand(N)
   z_vec=np.linspace(0.05,0.95,15)
   my_array=np.linspace(0, 1, len(z_vec))
   colors = plt.cm.YlOrRd(my_array)
@@ -355,7 +354,7 @@ def ratio_plots_superreduced_thermal(N,params=None):  #only makes sense for N=2
   
   i=0
   for q in z_vec:
-    ax1.plot(t, [np.real(SNR_gaussian(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None))) for w in t], color=colors[i])
+    ax1.plot(t, [np.real(SNR_gaussian(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None))) for w in t], color=colors[i])
     i+=1
   ax1.set_xlabel('Beamsplitter angle')
   ax1.set_ylabel('SNR')
@@ -364,10 +363,10 @@ def ratio_plots_superreduced_thermal(N,params=None):  #only makes sense for N=2
   #nongaussian case
   nongaussian_ops=[-1]
   print(f"{nongaussian_ops}")
-  ax2.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[idx])
+  ax2.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[idx])
   i=0
   for q in z_vec:
-    ax2.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[i])
+    ax2.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[i])
     i+=1
   ax2.set_xlabel('Beamsplitter angle')
   ax2.set_ylabel('SNR')
@@ -375,20 +374,20 @@ def ratio_plots_superreduced_thermal(N,params=None):  #only makes sense for N=2
 
   nongaussian_ops=[-1,-1]
   print(f"{nongaussian_ops}")
-  ax3.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[idx])
+  ax3.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[idx])
   i=0
   for q in z_vec:
-    ax3.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[i])
+    ax3.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[i])
     i+=1
   ax3.set_xlabel('Beamsplitter angle')
   ax3.set_ylabel('SNR')
 
   nongaussian_ops=[-1,-1,-1]
   print(f"{nongaussian_ops}")
-  ax4.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[idx])
+  ax4.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[idx])
   i=0
   for q in z_vec:
-    ax4.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi1,phi2,params1=None,params2=None),nongaussian_ops)) for w in t], color=colors[i])
+    ax4.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[i])
     i+=1
   ax4.set_xlabel('Beamsplitter angle')
   ax4.set_ylabel('SNR')
@@ -499,7 +498,7 @@ def SV_plots(nongaussian_ops):
     for q in z_vec:
       axup.plot(t, [SV(V_tms([q,1/q],[w],[0,0],params=None),nongaussian_ops[j]) for w in t], color=colors[i]) 
       axup.set_title('SV criterion')
-      axdown.plot(t,[SNR_ng(V_tms([q,1/q],[w],[0,0],params=None),nongaussian_ops[j]) for w in t], color=colors[i])
+      axdown.plot(t,[SNR_ng_extr(V_tms([q,1/q],[w],[0,0],params=None),nongaussian_ops[j],V_tms([1,1],[0],[0,0],params=None)) for w in t], color=colors[i])
       axdown.set_title('SNR')
       i+=1
   # Adjust layout to make room for the colorbar
@@ -515,7 +514,7 @@ def SV_plots(nongaussian_ops):
   plt.show()
   return 
 
-SV_plots([[],[-1],[-1,-1],[-1,-1,-1]])
+SV_plots([[],[-1],[-1,-1]])
 
 
 def evolution_with_noise_gaussian():
