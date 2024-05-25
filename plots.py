@@ -514,7 +514,7 @@ def SV_plots(nongaussian_ops):
   plt.show()
   return 
 
-SV_plots([[],[-1],[-1,-1]])
+
 
 
 def evolution_with_noise_gaussian():
