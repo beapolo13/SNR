@@ -8,7 +8,7 @@ z_vec=np.linspace(0.2,4,1000)
 mat=[V_thermal([T]*2,[z,1/z],[0],[0,0],params=None) for z in z_vec]
 sigma0=V_thermal([T]*2,[1,1],[0],[0,0],params=None)
 print(sigma0)
-operations=[-1]
+operations=[]
 print(K_ng(sigma0,operations))
 print(expvalN_ng(sigma0,operations))
 #mat2=[V_thermal([1]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None) for z in z_vec]
