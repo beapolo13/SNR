@@ -147,7 +147,7 @@ def SNR_ng(sigma,nongaussian_ops):
 
 def SNR_ng_extr(sigma,nongaussian_ops,sigma0):
   N=len(sigma)//2
-  return (expvalN_ng(sigma,nongaussian_ops)-expvalN_ng(sigma0,[]))/varianceN_ng(sigma,nongaussian_ops)
+  return (expvalN_ng(sigma,nongaussian_ops)-expvalN_ng(sigma0,nongaussian_ops))/varianceN_ng(sigma,nongaussian_ops)
 
 def antibunching(sigma,nongaussian_ops): #N=2 only
   N= len(sigma)//2
