@@ -230,7 +230,7 @@ def optimization_5(nongaussian_ops, n_max):
       print('Number of modes', N, 'Non-gaussian operations', nongaussian_ops[j])
       sigma0=V_thermal([T]*N,[1]*N,[0]*((N*(N-1))//2),[0]*N,params=None)
       z=[0.5]*N
-      theta=[0.1]*((N*(N-1))//2)
+      theta=[0.125]*((N*(N-1))//2)
       phi=[0]*N
       params=None
       free_pars=[]
@@ -259,6 +259,6 @@ def optimization_5(nongaussian_ops, n_max):
   return
 
 
-print(optimization_5([[],[-1],[-1,-1]],6))
+print(optimization_5([[],[-1],[-1,-1],[-1,-1,-1]],6))
 #print(optimization_5([1],7))
 #print(optimization_4(6))
