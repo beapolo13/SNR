@@ -490,16 +490,17 @@ def SV_plots(nongaussian_ops):
   colors = plt.cm.viridis(z_vec)
   fig,axes=plt.subplots(4,2)
   phi=np.random.rand(2)
-  sigma0=V_thermal([0.000001]*2,[1,1],[0],[0]*2,params=None)
+  T=0.25
+  sigma0=V_thermal([T]*2,[1,1],[0],[0]*2,params=None)
   j=0
   for j in range(len(nongaussian_ops)):
     axup = axes[(j//2)*2][j%2]
     axdown= axes[(j//2)*2+1][j%2]
     i=0
     for q in z_vec:
-      axup.plot(t, [SV(V_thermal([0.000001]*2,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j]) for w in t], color=colors[i]) 
+      axup.plot(t, [SV(V_thermal([T]*2,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j]) for w in t], color=colors[i]) 
       axup.set_title('SV criterion')
-      axdown.plot(t,[SNR_ng_extr(V_thermal([0.000001]*2,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j],sigma0) for w in t], color=colors[i])
+      axdown.plot(t,[SNR_ng_extr(V_thermal([T]*2,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j],sigma0) for w in t], color=colors[i])
       axdown.set_title('SNR')
       i+=1
   # Adjust layout to make room for the colorbar
@@ -515,7 +516,7 @@ def SV_plots(nongaussian_ops):
   plt.show()
   return 
 
-#SV_plots([[],[-1],[-1,-1],[-1,-1,-1]])
+SV_plots([[],[-1],[-1,-1],[-1,-1,-1]])
 
 
 
