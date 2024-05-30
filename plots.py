@@ -490,7 +490,7 @@ def SV_plots(nongaussian_ops):
   colors = plt.cm.viridis(z_vec)
   fig,axes=plt.subplots(4,2)
   phi=np.random.rand(2)
-  T=0.25
+  T=0.0000001
   sigma0=V_thermal([T]*2,[1,1],[0],[0]*2,params=None)
   j=0
   for j in range(len(nongaussian_ops)):
