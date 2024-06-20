@@ -14,11 +14,12 @@ from pprint import pprint
 from scipy.linalg import block_diag
 import os
 from mpl_toolkits.mplot3d import Axes3D
+import winsound
 
 
 def beep(): #definition of sounds 
-    os.system("afplay /System/Library/Sounds/Ping.aiff")
-
+  #os.system("afplay /System/Library/Sounds/Ping.aiff")
+  winsound.Beep(2000, 1000)
 
 '''Auxiliary functions for perfect matchings'''
 
