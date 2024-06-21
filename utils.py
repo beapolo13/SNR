@@ -123,11 +123,11 @@ def Orth(params):
     return O
 
 #function that builds covariance matrix
-#z is the squeezing (it has to fulfill certain properties)
+#z is the squeezing 
 #phi is a vector of dephasing angles for each  mode
 #x is the beamsplitter angles between each of the modes N(N-1)//2 total combinatios 
 #params is the vector of passive optics O
-#no params2 since i have checked that the correct definition is with O and O transpose (same orthogonal matrix)
+
 
 def V_tms(z,x, phi, params,ordering='xxpp'):  #ordering is an optional parameter
     N=len(z)
