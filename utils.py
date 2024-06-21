@@ -14,7 +14,7 @@ from pprint import pprint
 from scipy.linalg import block_diag
 import os
 from mpl_toolkits.mplot3d import Axes3D
-import winsound
+#import winsound
 
 
 def beep(): #definition of sounds 
