@@ -16,9 +16,11 @@ import os
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.ticker as ticker
 from numpy import where
+import matplotlib.colors as mcolors
 
 from utils import *
 from expectation_values import *
+plt.rc('font', family='serif')
 
 def ratio_results(nongaussian_ops,z,theta,phi,params):
   N=len(z)
@@ -485,24 +487,25 @@ def evolution_with_squeezing():
 
 
 def SV_plots(nongaussian_ops):
-  t = np.arange(0, 2*np.pi, 0.05) #for angles
-  z_vec=np.linspace(0.25,0.8,10) #squeezing values
+  x = np.arange(0, np.pi, 0.005) #for angles
+  z_vec=np.linspace(0.25,0.85,10) #squeezing values
   colors = plt.cm.viridis(z_vec)
-  fig,axes=plt.subplots(4,2)
-  phi=np.random.rand(2)
-  T=1.1
+  T=1.5
   sigma0=V_thermal(T,[1,1],[0],[0]*2,params=None)
+  phi=np.random.rand(2)
+  fig,axes=plt.subplots(2,1)
   j=0
   for j in range(len(nongaussian_ops)):
-    axup = axes[(j//2)*2][j%2]
-    axdown= axes[(j//2)*2+1][j%2]
+    axup = axes[(j//2)*2]
+    axdown= axes[(j//2)*2+1]
     i=0
     for q in z_vec:
-      axup.plot(t, [SV(V_thermal(T,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j]) for w in t], color=colors[i]) 
+      axup.plot(x, [SV(V_thermal(T,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j]) for w in x], color=colors[i]) 
       axup.set_title('SV criterion')
-      axdown.plot(t,[SNR_ng_extr(V_thermal(T,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j],sigma0) for w in t], color=colors[i])
+      axdown.plot(x,[SNR_ng_extr(V_thermal(T,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j],sigma0) for w in x], color=colors[i])
       axdown.set_title('SNR')
       i+=1
+  
   # Adjust layout to make room for the colorbar
   plt.subplots_adjust(right=0.85)
 
@@ -510,7 +513,7 @@ def SV_plots(nongaussian_ops):
   cbar_ax = fig.add_axes([0.9, 0.15, 0.02, 0.7])  # [left, bottom, width, height]
   cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'), cax=cbar_ax)
   cbar.set_label('Squeezing factor z')
-  plt.savefig('SV-SNR plots_ T=0')
+  plt.savefig('SV-SNR plots nu=1.5.png')
 
   #plt.legend(z_vec)
   plt.show()
@@ -521,36 +524,63 @@ def SV_plots(nongaussian_ops):
 
 
 def evolution_with_noise_gaussian():
-  fig, ax = plt.subplots(1, 1, figsize=(30, 15))
-  noise=np.linspace(1,3,15)
-  #yvec= [expvalN(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
-  #yvec_2=[varianceN(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
-  #yvec_3=[SNR_gaussian(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
-  #ax1.plot(noise,yvec)
-  #ax1.plot(noise,yvec_2)
-  #ax1.plot(noise,yvec_3)
-
-  #ax1.set_xlabel('noise')
-  #ax1.set_title('SNR as a function of temperature for fixed z=0.5')
-  #legend=['Signal N','delta N', 'SNR']
-  #ax1.legend(legend)
-
+  
+  plt.rc('font', family='serif')
+  fig, ax = plt.subplots(1, 1, figsize=(15, 15))
+  noise=np.linspace(1,3,10)
   #second plot
-  z_vec=list(np.arange(0.1,1,0.001))
-  my_array=np.linspace(0, 1, 15)
-  colors = plt.cm.YlOrRd(my_array)
-  for i in range(len(noise)): 
+  z_vec=list(np.arange(0.001,1,0.001))
+  cmap=cm.rainbow
+  norm = mcolors.Normalize(vmin=1, vmax=3)
+  for i in range(len(noise)):
+    print(noise[i]) 
     sigma0=V_thermal(noise[i],[1,1],[0],[0]*2,params=None)
     yvec= [SNR_ng_extr(V_thermal(noise[i],[z,1/z],[0],[0,0],params=None),[],sigma0) for z in z_vec]
-    ax.plot(z_vec,yvec, color=colors[i])
-  cbar = plt.colorbar(plt.cm.ScalarMappable(cmap='YlOrRd'), ax=ax, location='right')
-  cbar.set_label('Noise')
-  ax.set_xlabel('z')
-  ax.set_title('SNR as a function of squeezing')
+    ax.plot(z_vec,yvec, color=cmap(norm(noise[i])))
+  cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, location='right') 
+  cbar.set_label('Noise',fontsize=13)
+  ax.set_xlabel('Squeezing parameter z',fontsize=13)
+  ax.set_ylabel('SNR extractable',fontsize=13)
+  #ax.set_title('SNR as a function of squeezing')
   plt.savefig('gaussian_extr_snr_with noise.png')
   plt.show()
   return
 
-evolution_with_noise_gaussian()
+def bounds():
+  fig, ax = plt.subplots(1, 1, figsize=(20, 15))
+  plt.rc('font', family='serif')
+  x=np.linspace(0.00000001,np.pi,100)
+  nu=10
+  z_vec=np.linspace(0.0001,1,1000)
+  mat_worst=[V_thermal(nu,[z,1/z],[0],[0,0],params=None) for z in z_vec]
+  sigma0=V_thermal(nu,[1,1],[0],[0,0],params=None)
+  mat_best=[V_thermal(nu,[z,1/z],[np.pi/4],[0,0],params=None) for z in z_vec]
 
+  factor=-1
+  if factor==-1:
+    operation='subtraction'
+  else:
+    operation='addition'
+  ax.plot(z_vec,[SNR_gaussian_extr(mat_worst[i],sigma0) for i in range(len(z_vec))])
+  ax.plot(z_vec,[SNR_ng_extr(mat_worst[i],[factor],sigma0) for i in range(len(z_vec))])
+  two_worst=[SNR_ng_extr(mat_worst[i],[factor,factor],sigma0) for i in range(len(z_vec))]
+  two_best=[SNR_ng_extr(mat_best[i],[factor,factor],sigma0) for i in range(len(z_vec))]
+  three_worst=[SNR_ng_extr(mat_worst[i],[factor,factor,factor],sigma0) for i in range(len(z_vec))]
+  three_best=[SNR_ng_extr(mat_best[i],[factor,factor,factor],sigma0) for i in range(len(z_vec))]
+  ax.plot(z_vec,two_worst)
+  ax.plot(z_vec,two_best)
+  ax.plot(z_vec,three_worst)
+  ax.plot(z_vec,three_best)
+  ax.fill_between(z_vec,two_worst,two_best, color='c',alpha=0.3)
+  ax.fill_between(z_vec,three_worst,three_best, color='c', alpha=0.3)
+  plt.legend(['Gaussian',f'1 photon {operation}',f'2 photon {operation}s (worst)',f'2 photon {operation}s (best)',f'3 photon {operation}s (worst)',f'3 photon {operation}s (best)'], fontsize=9)
+  ax.set_xlabel('Squeezing factor z',fontsize=13)
+  ax.set_ylabel('SNR extractable',fontsize=13) 
+  #plt.title('Evolution of SNR and extractable SNR with squeezing factor' )
+  plt.savefig(f'bounds {operation}')
+  plt.show()
 
+#PLOTS FOR THESIS:
+#bounds()
+#evolution_with_noise_gaussian()
+SV_plots([[-1,-1]])

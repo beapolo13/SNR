@@ -25,7 +25,7 @@ plt.plot(z_vec,[SNR_ng_extr(mat_best[i],[+1,+1,+1],sigma0) for i in range(len(z_
 plt.legend(['gaussian','1 photon sub','1 photon add','worst 2 photon sub','best 2 photon sub','worst 2 photon add','best 2 photon add'])
 plt.xlabel('squeezing factor z')
 #plt.title('Evolution of SNR and extractable SNR with squeezing factor' )
-plt.savefig('bounds')
+plt.savefig('bounds sub')
 plt.show()
 
 
