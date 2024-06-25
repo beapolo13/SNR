@@ -490,17 +490,17 @@ def SV_plots(nongaussian_ops):
   colors = plt.cm.viridis(z_vec)
   fig,axes=plt.subplots(4,2)
   phi=np.random.rand(2)
-  T=0.0000001
-  sigma0=V_thermal([T]*2,[1,1],[0],[0]*2,params=None)
+  T=1.1
+  sigma0=V_thermal(T,[1,1],[0],[0]*2,params=None)
   j=0
   for j in range(len(nongaussian_ops)):
     axup = axes[(j//2)*2][j%2]
     axdown= axes[(j//2)*2+1][j%2]
     i=0
     for q in z_vec:
-      axup.plot(t, [SV(V_thermal([T]*2,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j]) for w in t], color=colors[i]) 
+      axup.plot(t, [SV(V_thermal(T,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j]) for w in t], color=colors[i]) 
       axup.set_title('SV criterion')
-      axdown.plot(t,[SNR_ng_extr(V_thermal([T]*2,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j],sigma0) for w in t], color=colors[i])
+      axdown.plot(t,[SNR_ng_extr(V_thermal(T,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j],sigma0) for w in t], color=colors[i])
       axdown.set_title('SNR')
       i+=1
   # Adjust layout to make room for the colorbar
@@ -516,14 +516,13 @@ def SV_plots(nongaussian_ops):
   plt.show()
   return 
 
-SV_plots([[],[-1],[-1,-1],[-1,-1,-1]])
+
 
 
 
 def evolution_with_noise_gaussian():
   fig, ax = plt.subplots(1, 1, figsize=(30, 15))
-  z=0.5
-  noise=np.linspace(0.2,2,15)
+  noise=np.linspace(1,3,15)
   #yvec= [expvalN(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
   #yvec_2=[varianceN(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
   #yvec_3=[SNR_gaussian(V_thermal([n]*2,[z,1/z],[np.pi/4],[0],[0,0],[0,0],params1=None,params2=None)) for n in noise]
@@ -537,12 +536,12 @@ def evolution_with_noise_gaussian():
   #ax1.legend(legend)
 
   #second plot
-  z_vec=list(np.arange(0.1,4,0.001))
-  my_array=np.linspace(0.1, 1, len(noise))
+  z_vec=list(np.arange(0.1,1,0.001))
+  my_array=np.linspace(0, 1, 15)
   colors = plt.cm.YlOrRd(my_array)
   for i in range(len(noise)): 
-    sigma0=V_thermal([noise[i]]*2,[1,1],[0],[0]*2,params=None)
-    yvec= [SNR_ng_extr(V_thermal([noise[i]]*2,[z,1/z],[np.pi/4],[0,0],params=None),[],sigma0) for z in z_vec]
+    sigma0=V_thermal(noise[i],[1,1],[0],[0]*2,params=None)
+    yvec= [SNR_ng_extr(V_thermal(noise[i],[z,1/z],[0],[0,0],params=None),[],sigma0) for z in z_vec]
     ax.plot(z_vec,yvec, color=colors[i])
   cbar = plt.colorbar(plt.cm.ScalarMappable(cmap='YlOrRd'), ax=ax, location='right')
   cbar.set_label('Noise')
@@ -552,6 +551,6 @@ def evolution_with_noise_gaussian():
   plt.show()
   return
 
-#evolution_with_noise_gaussian()
+evolution_with_noise_gaussian()
 
 

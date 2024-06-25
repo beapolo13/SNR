@@ -210,8 +210,9 @@ def convention_switch(sigma,ordering,format):
 #Everything is exactly the same except that instead of stating from vacuum we start from some diagonal noise matrix
 def V_thermal(temp,z,x,phi,params=None,ordering='xxpp'):  #ordering and params are optional parameters
   #first we change the inverse temperature to the mean photon number \bar{n} 
-  for i in range(len(temp)):
-     temp[i]= 1+ 2/(np.exp(1/(temp[i]))-1)
+  #just for now we are going to directly multiply my nu to get simpler symbolic expressions
+  # for i in range(len(temp)):
+  #    temp[i]= 1+ 2/(np.exp(1/(temp[i]))-1)
   N=len(z)
   #beamsplitter
   if type(x)==np.float64:
@@ -239,9 +240,9 @@ def V_thermal(temp,z,x,phi,params=None,ordering='xxpp'):  #ordering and params a
   #print('S',S)
   if params is not None:
     O1= Orth(params)
-    result= temp[0]*(P @ B_total @ O1 @ S @ transpose(O1) @ transpose(B_total) @ transpose(P))
+    result= temp*(P @ B_total @ O1 @ S @ transpose(O1) @ transpose(B_total) @ transpose(P))
   else:
-     result= temp[0]*(B_total @P @ S  @ transpose(P) @ transpose(B_total) )
+     result= temp*(B_total @P @ S  @ transpose(P) @ transpose(B_total) )
     
   if ordering == 'xpxp': 
     return convention_switch(result,'xxpp',format='number')
