@@ -490,7 +490,7 @@ def SV_plots(nongaussian_ops):
   x = np.arange(0, np.pi, 0.005) #for angles
   z_vec=np.linspace(0.25,0.85,10) #squeezing values
   colors = plt.cm.viridis(z_vec)
-  T=1.5
+  T=5
   sigma0=V_thermal(T,[1,1],[0],[0]*2,params=None)
   phi=np.random.rand(2)
   fig,axes=plt.subplots(2,1)
@@ -501,9 +501,10 @@ def SV_plots(nongaussian_ops):
     i=0
     for q in z_vec:
       axup.plot(x, [SV(V_thermal(T,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j]) for w in x], color=colors[i]) 
-      axup.set_title('SV criterion')
+      axup.set_ylabel('SV criterion')
       axdown.plot(x,[SNR_ng_extr(V_thermal(T,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j],sigma0) for w in x], color=colors[i])
-      axdown.set_title('SNR')
+      axdown.set_ylabel('SNR extractable')
+      axdown.set_xlabel('Beam splitter angle θ')
       i+=1
   
   # Adjust layout to make room for the colorbar
@@ -513,7 +514,7 @@ def SV_plots(nongaussian_ops):
   cbar_ax = fig.add_axes([0.9, 0.15, 0.02, 0.7])  # [left, bottom, width, height]
   cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'), cax=cbar_ax)
   cbar.set_label('Squeezing factor z')
-  plt.savefig('SV-SNR plots nu=1.5.png')
+  plt.savefig('SV-SNR plots nu=1.3, 2 subtractions.png')
 
   #plt.legend(z_vec)
   plt.show()
@@ -533,14 +534,13 @@ def evolution_with_noise_gaussian():
   cmap=cm.rainbow
   norm = mcolors.Normalize(vmin=1, vmax=3)
   for i in range(len(noise)):
-    print(noise[i]) 
     sigma0=V_thermal(noise[i],[1,1],[0],[0]*2,params=None)
     yvec= [SNR_ng_extr(V_thermal(noise[i],[z,1/z],[0],[0,0],params=None),[],sigma0) for z in z_vec]
     ax.plot(z_vec,yvec, color=cmap(norm(noise[i])))
   cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, location='right') 
   cbar.set_label('Noise',fontsize=13)
-  ax.set_xlabel('Squeezing parameter z',fontsize=13)
-  ax.set_ylabel('SNR extractable',fontsize=13)
+  ax.set_xlabel('Squeezing parameter z',fontsize=20)
+  ax.set_ylabel('SNR extractable',fontsize=20)
   #ax.set_title('SNR as a function of squeezing')
   plt.savefig('gaussian_extr_snr_with noise.png')
   plt.show()
@@ -549,38 +549,64 @@ def evolution_with_noise_gaussian():
 def bounds():
   fig, ax = plt.subplots(1, 1, figsize=(20, 15))
   plt.rc('font', family='serif')
-  x=np.linspace(0.00000001,np.pi,100)
-  nu=10
-  z_vec=np.linspace(0.0001,1,1000)
-  mat_worst=[V_thermal(nu,[z,1/z],[0],[0,0],params=None) for z in z_vec]
-  sigma0=V_thermal(nu,[1,1],[0],[0,0],params=None)
-  mat_best=[V_thermal(nu,[z,1/z],[np.pi/4],[0,0],params=None) for z in z_vec]
-
+  x_vec=np.linspace(0.00000001,np.pi,100)
+  nu=1.3
   factor=-1
   if factor==-1:
     operation='subtraction'
   else:
     operation='addition'
-  ax.plot(z_vec,[SNR_gaussian_extr(mat_worst[i],sigma0) for i in range(len(z_vec))])
-  ax.plot(z_vec,[SNR_ng_extr(mat_worst[i],[factor],sigma0) for i in range(len(z_vec))])
-  two_worst=[SNR_ng_extr(mat_worst[i],[factor,factor],sigma0) for i in range(len(z_vec))]
-  two_best=[SNR_ng_extr(mat_best[i],[factor,factor],sigma0) for i in range(len(z_vec))]
-  three_worst=[SNR_ng_extr(mat_worst[i],[factor,factor,factor],sigma0) for i in range(len(z_vec))]
-  three_best=[SNR_ng_extr(mat_best[i],[factor,factor,factor],sigma0) for i in range(len(z_vec))]
+  z_vec=np.linspace(0.0001,1,100)
+  sigma=[V_thermal(nu,[z_vec[i],1/z_vec[i]],[0],[0,0],params=None) for i in range(len(z_vec))]
+  sigma0=V_thermal(nu,[1,1],[0],[0,0],params=None)
+  two_worst=[]
+  two_best=[]
+  three_worst=[]
+  three_best=[]
+  for z in z_vec:
+    two_worst+=[np.min([SNR_ng_extr(V_thermal(nu,[z,1/z],[0],[0,0]),[factor,factor],sigma0),SNR_ng_extr(V_thermal(nu,[z,1/z],[np.pi/4],[0,0]),[factor,factor],sigma0)])]
+    two_best+=[np.max([SNR_ng_extr(V_thermal(nu,[z,1/z],[0],[0,0]),[factor,factor],sigma0),SNR_ng_extr(V_thermal(nu,[z,1/z],[np.pi/4],[0,0]),[factor,factor],sigma0)])]
+    three_worst+=[np.min([SNR_ng_extr(V_thermal(nu,[z,1/z],[0],[0,0]),[factor,factor,factor],sigma0),SNR_ng_extr(V_thermal(nu,[z,1/z],[np.pi/4],[0,0]),[factor,factor,factor],sigma0)])]
+    three_best+=[np.max([SNR_ng_extr(V_thermal(nu,[z,1/z],[0],[0,0]),[factor,factor,factor],sigma0),SNR_ng_extr(V_thermal(nu,[z,1/z],[np.pi/4],[0,0]),[factor,factor,factor],sigma0)])]
+
+  
+  ax.plot(z_vec,[SNR_gaussian_extr(sigma[i],sigma0) for i in range(len(z_vec))])
+  ax.plot(z_vec,[SNR_ng_extr(sigma[i],[factor],sigma0) for i in range(len(z_vec))])
   ax.plot(z_vec,two_worst)
   ax.plot(z_vec,two_best)
   ax.plot(z_vec,three_worst)
   ax.plot(z_vec,three_best)
   ax.fill_between(z_vec,two_worst,two_best, color='c',alpha=0.3)
   ax.fill_between(z_vec,three_worst,three_best, color='c', alpha=0.3)
-  plt.legend(['Gaussian',f'1 photon {operation}',f'2 photon {operation}s (worst)',f'2 photon {operation}s (best)',f'3 photon {operation}s (worst)',f'3 photon {operation}s (best)'], fontsize=9)
+  plt.legend(['Gaussian',f'1 photon {operation}',f'2 photon {operation}s (worst)',f'2 photon {operation}s (best)',f'3 photon {operation}s (worst)',f'3 photon {operation}s (best)'], fontsize=12)
   ax.set_xlabel('Squeezing factor z',fontsize=13)
   ax.set_ylabel('SNR extractable',fontsize=13) 
   #plt.title('Evolution of SNR and extractable SNR with squeezing factor' )
   plt.savefig(f'bounds {operation}')
   plt.show()
 
+def critical_temp():
+  epsilon=0.001
+  nu_vec=np.linspace(1.5,100,1000)
+  sigma0=[V_thermal(nu,[1,1],[0],[0,0],params=None) for nu in nu_vec]
+  sigma_right=[V_thermal(nu,[1,1],[0],[0,0],params=None) for nu in nu_vec]
+  sigma_left=[V_thermal(nu,[1-epsilon,1/(1-epsilon)],[0],[0,0],params=None) for nu in nu_vec]
+  derivative_0 = [(SNR_gaussian_extr(sigma_right[i],sigma0[i])-SNR_gaussian_extr(sigma_left[i],sigma0[i]))/epsilon for i in range(len(nu_vec))]
+  derivative_1 = [(SNR_ng_extr(sigma_right[i],[1],sigma0[i])-SNR_ng_extr(sigma_left[i],[1],sigma0[i]))/epsilon for i in range(len(nu_vec))]
+  derivative_2 = [(SNR_ng_extr(sigma_right[i],[+1,+1],sigma0[i])-SNR_ng_extr(sigma_left[i],[+1,+1],sigma0[i]))/epsilon for i in range(len(nu_vec))]
+  derivative_3 = [(SNR_ng_extr(sigma_right[i],[+1,+1,+1],sigma0[i])-SNR_ng_extr(sigma_left[i],[+1,+1,+1],sigma0[i]))/epsilon for i in range(len(nu_vec))]
+  plt.plot(nu_vec,derivative_0)
+  plt.plot(nu_vec,derivative_1)
+  plt.plot(nu_vec,derivative_2)
+  plt.plot(nu_vec,derivative_3)
+  plt.plot(nu_vec,[0]*len(nu_vec),'--')
+  plt.xlabel('Noise', fontsize=13)
+  plt.ylabel('Slope of SNR function at the Fock state', fontsize=13)
+  plt.show()
+
+
+#critical_temp()
 #PLOTS FOR THESIS:
-#bounds()
+bounds()
 #evolution_with_noise_gaussian()
-SV_plots([[-1,-1]])
+#SV_plots([[+1,+1]])
