@@ -224,11 +224,11 @@ def optimization_4(K): #K is the maximum number of non-gaussian operations to pe
 #now we only optimize in the passive optics operations that we know how to 'physically implement' (z,bs,ps)
 def optimization_5(nongaussian_ops, n_max):
   ratios=[[0]*(n_max-2)]*len(nongaussian_ops)
-  T=0.25
+  T=1.3
   for j in range(len(nongaussian_ops)):
     for N in range(2,n_max):
       print('Number of modes', N, 'Non-gaussian operations', nongaussian_ops[j])
-      sigma0=V_thermal([T]*N,[1]*N,[0]*((N*(N-1))//2),[0]*N,params=None)
+      sigma0=V_thermal(T,[1]*N,[0]*((N*(N-1))//2),[0]*N,params=None)
       z=[0.5]*N
       theta=[0.125]*((N*(N-1))//2)
       phi=[0]*N
@@ -241,8 +241,8 @@ def optimization_5(nongaussian_ops, n_max):
       for i in range(len(phi)):
         free_pars+=[phi[i]] 
       def cost(free_pars):
-          return np.real(1/SNR_ng_extr(V_thermal([T]*N,free_pars[:N],2*np.pi*free_pars[N:(N*(N-1))//2+N],2*np.pi*free_pars[(N*(N-1))//2+N:],params),nongaussian_ops[j],sigma0)) #we take the inverse of the SNR to minimize
-      bounds_opt = Bounds([0.25]*N+[0]*(len(free_pars)-N), [0.75]*N+[1]*(len(free_pars)-N))
+          return np.real(1/SNR_ng_extr(V_thermal(T,free_pars[:N],2*np.pi*free_pars[N:(N*(N-1))//2+N],2*np.pi*free_pars[(N*(N-1))//2+N:],params),nongaussian_ops[j],sigma0)) #we take the inverse of the SNR to minimize
+      bounds_opt = Bounds([0.15]*N+[0]*(len(free_pars)-N), [0.95]*N+[1]*(len(free_pars)-N))
       start = time.time()
       out=minimize(cost,free_pars,bounds=bounds_opt, method='L-BFGS-B')
       ratios[j][N-2]=1/out.fun
@@ -253,8 +253,8 @@ def optimization_5(nongaussian_ops, n_max):
       print('')
     plt.plot(np.arange(2,n_max),ratios[j],linestyle='dashdot', marker='o')
   plt.title('Evolution of maximum SNR with number of modes N')
-  plt.legend(nongaussian_ops)
-  plt.savefig('opti.png')
+  plt.legend(['Gaussian','1 photon subtraction', '2 photon subtractions', '3 photon subtractions'])
+  plt.savefig('opti T=1.3.png')
   plt.show()
   return
 
