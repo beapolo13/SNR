@@ -401,6 +401,8 @@ def analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops): #so far 
   #plt.show()
   return
 
+z=symbols('z',real=True, RealNumber=True, zero=False)
+print(simplify(expvalN_ng_sym(V_thermal_sym(1.0000,[z,1/z],[0],[0,0], params=None),[])))
 
 N=2
 nu,z,x =symbols('nu,z,x',real=True, RealNumber=True, zero=False)
