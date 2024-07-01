@@ -221,6 +221,19 @@ def optimization_4(K): #K is the maximum number of non-gaussian operations to pe
 
 
 #OPTIMIZATION ON NUMBER OF MODES
+params = {'axes.linewidth': 1.4,
+         'axes.labelsize': 16,
+         'axes.titlesize': 18,
+         'axes.linewidth': 1.5,
+         'lines.markeredgecolor': "black",
+     	'lines.linewidth': 1.5,
+         'xtick.labelsize': 11,
+         'ytick.labelsize': 13,
+         "text.usetex": True,
+         "font.family": "serif",
+         "font.serif": ["Palatino"]
+         }
+plt.rcParams.update(params)
 #now we only optimize in the passive optics operations that we know how to 'physically implement' (z,bs,ps)
 def optimization_5(nongaussian_ops, n_max):
   ratios=[[0]*(n_max-2)]*len(nongaussian_ops)
@@ -242,7 +255,7 @@ def optimization_5(nongaussian_ops, n_max):
         free_pars+=[phi[i]] 
       def cost(free_pars):
           return np.real(1/SNR_ng_extr(V_thermal(T,free_pars[:N],2*np.pi*free_pars[N:(N*(N-1))//2+N],2*np.pi*free_pars[(N*(N-1))//2+N:],params),nongaussian_ops[j],sigma0)) #we take the inverse of the SNR to minimize
-      bounds_opt = Bounds([0.15]*N+[0]*(len(free_pars)-N), [0.95]*N+[1]*(len(free_pars)-N))
+      bounds_opt = Bounds([0.05]*N+[0]*(len(free_pars)-N), [0.95]*N+[1]*(len(free_pars)-N))
       start = time.time()
       out=minimize(cost,free_pars,bounds=bounds_opt, method='L-BFGS-B')
       ratios[j][N-2]=1/out.fun
@@ -252,7 +265,10 @@ def optimization_5(nongaussian_ops, n_max):
       print('optimal ratio:',1/out.fun)
       print('')
     plt.plot(np.arange(2,n_max),ratios[j],linestyle='dashdot', marker='o')
-  plt.title('Evolution of maximum SNR with number of modes N')
+  #plt.title('Evolution of maximum SNR with number of modes N')
+  plt.ylabel('Maximum SNR extractable')
+  plt.xticks(range(2,n_max),['2','3','4','5'])
+  plt.xlabel('Number of modes N')
   plt.legend(['Gaussian','1 photon subtraction', '2 photon subtractions', '3 photon subtractions'])
   plt.savefig('opti T=1.3.png')
   plt.show()

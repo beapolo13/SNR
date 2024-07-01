@@ -20,7 +20,20 @@ import matplotlib.colors as mcolors
 
 from utils import *
 from expectation_values import *
-plt.rc('font', family='serif')
+params = {'axes.linewidth': 1.4,
+         'axes.labelsize': 25,
+         'axes.titlesize': 30,
+         'axes.linewidth': 1.5,
+         'lines.markeredgecolor': "black",
+     	'lines.linewidth': 1.5,
+         'xtick.labelsize': 14,
+         'ytick.labelsize': 15,
+         "text.usetex": True,
+         "font.family": "serif",
+         "font.serif": ["Palatino"]
+         }
+plt.rcParams.update(params)
+
 
 def ratio_results(nongaussian_ops,z,theta,phi,params):
   N=len(z)
@@ -490,10 +503,10 @@ def SV_plots(nongaussian_ops):
   x = np.arange(0, np.pi, 0.005) #for angles
   z_vec=np.linspace(0.25,0.85,10) #squeezing values
   colors = plt.cm.viridis(z_vec)
-  T=5
+  T=1.3
   sigma0=V_thermal(T,[1,1],[0],[0]*2,params=None)
   phi=np.random.rand(2)
-  fig,axes=plt.subplots(2,1)
+  fig,axes=plt.subplots(2,1,figsize=(15,15))
   j=0
   for j in range(len(nongaussian_ops)):
     axup = axes[(j//2)*2]
@@ -504,7 +517,7 @@ def SV_plots(nongaussian_ops):
       axup.set_ylabel('SV criterion')
       axdown.plot(x,[SNR_ng_extr(V_thermal(T,[q,1/q],[w],[0,0],params=None),nongaussian_ops[j],sigma0) for w in x], color=colors[i])
       axdown.set_ylabel('SNR extractable')
-      axdown.set_xlabel('Beam splitter angle θ')
+      axdown.set_xlabel(r' Beam splitter angle $\displaystyle \theta$')
       i+=1
   
   # Adjust layout to make room for the colorbar
@@ -527,7 +540,7 @@ def SV_plots(nongaussian_ops):
 def evolution_with_noise_gaussian():
   
   plt.rc('font', family='serif')
-  fig, ax = plt.subplots(1, 1, figsize=(15, 15))
+  fig, ax = plt.subplots(1, 1, figsize=(30, 15))
   noise=np.linspace(1,3,10)
   #second plot
   z_vec=list(np.arange(0.001,1,0.001))
@@ -538,16 +551,16 @@ def evolution_with_noise_gaussian():
     yvec= [SNR_ng_extr(V_thermal(noise[i],[z,1/z],[0],[0,0],params=None),[],sigma0) for z in z_vec]
     ax.plot(z_vec,yvec, color=cmap(norm(noise[i])))
   cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, location='right') 
-  cbar.set_label('Noise',fontsize=13)
-  ax.set_xlabel('Squeezing parameter z',fontsize=20)
-  ax.set_ylabel('SNR extractable',fontsize=20)
+  cbar.set_label('Noise')
+  ax.set_xlabel('Squeezing parameter z')
+  ax.set_ylabel('SNR extractable')
   #ax.set_title('SNR as a function of squeezing')
   plt.savefig('gaussian_extr_snr_with noise.png')
   plt.show()
   return
 
 def bounds():
-  fig, ax = plt.subplots(1, 1, figsize=(20, 15))
+  fig, ax = plt.subplots(1, 1, figsize=(15, 15))
   plt.rc('font', family='serif')
   x_vec=np.linspace(0.00000001,np.pi,100)
   nu=1.3
@@ -569,18 +582,25 @@ def bounds():
     three_worst+=[np.min([SNR_ng_extr(V_thermal(nu,[z,1/z],[0],[0,0]),[factor,factor,factor],sigma0),SNR_ng_extr(V_thermal(nu,[z,1/z],[np.pi/4],[0,0]),[factor,factor,factor],sigma0)])]
     three_best+=[np.max([SNR_ng_extr(V_thermal(nu,[z,1/z],[0],[0,0]),[factor,factor,factor],sigma0),SNR_ng_extr(V_thermal(nu,[z,1/z],[np.pi/4],[0,0]),[factor,factor,factor],sigma0)])]
 
-  
-  ax.plot(z_vec,[SNR_gaussian_extr(sigma[i],sigma0) for i in range(len(z_vec))])
-  ax.plot(z_vec,[SNR_ng_extr(sigma[i],[factor],sigma0) for i in range(len(z_vec))])
-  ax.plot(z_vec,two_worst)
-  ax.plot(z_vec,two_best)
-  ax.plot(z_vec,three_worst)
-  ax.plot(z_vec,three_best)
+  gaussian=[SNR_gaussian_extr(sigma[i],sigma0) for i in range(len(z_vec))]
+  ax.plot(z_vec,gaussian, 'black',linestyle='dashed',label='Gaussian')
+  ax.annotate('Gaussian',xy  = ( z_vec[20], gaussian[20]), xytext = (1.02*z_vec[20], gaussian[20]),color  = 'black',fontsize=16)
+  y=[SNR_ng_extr(sigma[i],[factor],sigma0) for i in range(len(z_vec))]
+  ax.plot(z_vec,y, 'b',label= '1 photon {operation}')
+  ax.annotate(f'1 photon {operation}',xy  = ( z_vec[25], 0.85*y[25]), xytext = (1.02*z_vec[25], 0.8*y[25]),color  = 'black',fontsize=16)
+  ax.plot(z_vec,two_worst,'b')
+  ax.plot(z_vec,two_best, 'b',label='2 photon {operation}')
+  y=two_best
+  ax.annotate(f'2 photon {operation}s',xy  = ( z_vec[30], 0.90*y[30]), xytext = (0.9*z_vec[30], 0.80*y[30]),color  = 'black',fontsize=16)
+  ax.plot(z_vec,three_worst, 'b')
+  ax.plot(z_vec,three_best,'b', label='3 photon {operation}')
+  y=three_best
+  ax.annotate(f'3 photon {operation}s',xy  = ( z_vec[80], 0.9*y[80]), xytext = (1.02*z_vec[80], 1.02*y[80]),color  = 'black',fontsize=16)
   ax.fill_between(z_vec,two_worst,two_best, color='c',alpha=0.3)
   ax.fill_between(z_vec,three_worst,three_best, color='c', alpha=0.3)
-  plt.legend(['Gaussian',f'1 photon {operation}',f'2 photon {operation}s (worst)',f'2 photon {operation}s (best)',f'3 photon {operation}s (worst)',f'3 photon {operation}s (best)'], fontsize=12)
-  ax.set_xlabel('Squeezing factor z',fontsize=13)
-  ax.set_ylabel('SNR extractable',fontsize=13) 
+  #plt.legend(['Gaussian',f'1 photon {operation}',f'2 photon {operation}s (worst)',f'2 photon {operation}s (best)',f'3 photon {operation}s (worst)',f'3 photon {operation}s (best)'], fontsize=12)
+  ax.set_xlabel('Squeezing factor z')
+  ax.set_ylabel('SNR extractable') 
   #plt.title('Evolution of SNR and extractable SNR with squeezing factor' )
   plt.savefig(f'bounds {operation}')
   plt.show()
@@ -609,4 +629,4 @@ def critical_temp():
 #PLOTS FOR THESIS:
 bounds()
 #evolution_with_noise_gaussian()
-#SV_plots([[+1,+1]])
+#SV_plots([[-1,-1]])

@@ -226,7 +226,7 @@ def SV(sigma,nongaussian_ops): #N=2 only
   modes= modes[cut+1:]+modes[:cut]
   #print(ops)
   #print(modes)
-  sum1+=expectationvalue(sigma,ops,modes)/K_ng(sigma,nongaussian_ops)-0.5
+  sum1+=expectationvalue(sigma,ops,modes)/K_ng(sigma,nongaussian_ops)
     
   sum2=0
   ops=['rho']
@@ -244,7 +244,7 @@ def SV(sigma,nongaussian_ops): #N=2 only
   modes= modes[cut+1:]+modes[:cut]
   #print(ops)
   #print(modes)
-  sum2+=expectationvalue(sigma,ops,modes)/K_ng(sigma,nongaussian_ops)-0.5
+  sum2+=expectationvalue(sigma,ops,modes)/K_ng(sigma,nongaussian_ops)
 
   sum3=0
   ops=['rho']
