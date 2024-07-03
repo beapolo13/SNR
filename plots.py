@@ -624,9 +624,22 @@ def critical_temp():
   plt.ylabel('Slope of SNR function at the Fock state', fontsize=13)
   plt.show()
 
+def critical_temp_version2(nu,n_adds):
+  z_vec=np.linspace(0.0001,1,100)
 
-#critical_temp()
+  sigma=[V_thermal(nu,[z,1/z],[0],[0,0],params=None) for z in z_vec]
+  sigma0=V_thermal(nu,[1,1],[0],[0,0],params=None) 
+  y=[SNR_ng_extr(V_thermal(nu,[z,1/z],[0],[0,0]),[1]*n_adds,sigma0) for z in z_vec]
+  plt.plot(z_vec,y)
+  plt.xlabel('squeezing parameter z', fontsize=13)
+  plt.xticks(ticks=[0,0.2,0.4,0.6,0.8,1], labels=['0.0','0.2','0.4','0.6','0.8',r'$| 1 \rangle$'])
+  plt.ylabel('Extractable SNR', fontsize=13)
+  plt.title(r'One photon addition $\nu = 2.5$', fontsize=13)
+  plt.show()
+
+
+critical_temp_version2(2.5,1)
 #PLOTS FOR THESIS:
-bounds()
+#bounds()
 #evolution_with_noise_gaussian()
 #SV_plots([[-1,-1]])
