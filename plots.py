@@ -21,14 +21,14 @@ import matplotlib.colors as mcolors
 from utils import *
 from expectation_values import *
 params = {'axes.linewidth': 1.4,
-         'axes.labelsize': 25,
-         'axes.titlesize': 30,
+         'axes.labelsize': 15,
+         'axes.titlesize': 20,
          'axes.linewidth': 2.5,
          'lines.markeredgecolor': "black",
      	'lines.linewidth': 2.5,
          'xtick.labelsize': 14,
          'ytick.labelsize': 15,
-         "text.usetex": True,
+         "text.usetex": False,
          "font.family": "serif",
          "font.serif": ["Palatino"]
          }
@@ -624,9 +624,43 @@ def critical_temp():
   plt.ylabel('Slope of SNR function at the Fock state', fontsize=13)
   plt.show()
 
+def density_plot_temp(): 
+  nu_vec=np.linspace(1.1,5,200)
+  z_vec=np.linspace(0.0001,1,100)
+  X=z_vec
+  Y=nu_vec
+  sigma0=[V_thermal(nu,[1],[0],[0,0],params=None) for nu in nu_vec]
+  sigma=[[V_thermal(nu,[z,1/z],[0],[0,0],params=None) for z in z_vec] for nu in nu_vec]
+
+  X_grid, Y_grid =np.meshgrid(X,Y)
+  grid= np.vstack([X_grid.ravel(),Y_grid.ravel()]).T 
+  W= [[np.real(SNR_ng_extr(sigma[j][i],[+1],sigma0[j])) for i in range(len(X))] for j in range(len(Y))]
+  print(np.shape(W))
+  #W= [[qutip.expect(plaquette_operator(X[j],1,1),result_vectors[i][j])for j in range(len(X))]for i in range(len(Y))]
+
+
+  fig,ax=plt.subplots(figsize=(10,6))
+  # for i in range(len(Y)):
+  #   for j in range(len(X)):
+  #     ax.text(X_grid[i,j],Y_grid[i,j], f'{X_grid[i,j]:.1},{Y_grid[i,j]}', ha='center', va='center', fontsize=8, color='blue')
+  c=ax.pcolormesh(X_grid,Y_grid,W,norm=mcolors.LogNorm(vmin=np.min(W), vmax=np.max(W)), cmap='jet')
+  cbar=fig.colorbar(c,ax=ax, label='SNR extr')
+  ax.set_xlim(X.min(), X.max())
+  ax.set_yscale('log')
+  ax.set_ylim(Y.min() , Y.max())
+  ax.grid(True, which='both', linestyle='--')
+  ax.set_xlabel('Squeezing parameter z', fontsize=14)
+  ax.set_ylabel('Noise', fontsize=14)
+  ax.set_xticks(ticks=[0,0.2,0.4,0.6,0.8,1], labels=['0','0.2','0.4','0.6','0.8','Fock state |1>'])
+  ax.set_yticks(ticks=[2,3,4,5], labels=['2','3','4','5'])
+  c.set_label('SNR extr')
+  cbar.ax.set_yticks(ticks=[1,2],labels=['1','2'])
+  plt.show()
+
+density_plot_temp()
 
 #critical_temp()
 #PLOTS FOR THESIS:
-bounds()
+#bounds()
 #evolution_with_noise_gaussian()
 #SV_plots([[-1,-1]])
