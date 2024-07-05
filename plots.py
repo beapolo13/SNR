@@ -555,7 +555,7 @@ def evolution_with_noise_gaussian():
   cbar.set_label('Temperature (K)')
   ax.set_xlabel('Squeezing parameter z')
   ax.set_ylabel('SNR extractable')
-  #ax.set_title('SNR as a function of squeezing')
+  ax.set_title('SNR as a function of squeezing')
   plt.savefig('gaussian_extr_snr_with noise.pdf')
   plt.show()
   return
