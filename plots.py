@@ -21,13 +21,13 @@ import matplotlib.colors as mcolors
 from utils import *
 from expectation_values import *
 params = {'axes.linewidth': 1.4,
-         'axes.labelsize': 15,
-         'axes.titlesize': 20,
+         'axes.labelsize': 35,
+         'axes.titlesize': 35,
          'axes.linewidth': 2.5,
          'lines.markeredgecolor': "black",
      	'lines.linewidth': 2.5,
-         'xtick.labelsize': 14,
-         'ytick.labelsize': 15,
+         'xtick.labelsize': 20,
+         'ytick.labelsize': 20,
          "text.usetex": False,
          "font.family": "serif",
          "font.serif": ["Palatino"]
@@ -542,25 +542,26 @@ def evolution_with_noise_gaussian():
   plt.rc('font', family='serif')
   fig, ax = plt.subplots(1, 1, figsize=(30, 15))
   noise=np.linspace(1,3,10)
+  T=1/np.log((2/(noise-1) +1))
   #second plot
   z_vec=list(np.arange(0.001,1,0.001))
   cmap=cm.rainbow
-  norm = mcolors.Normalize(vmin=1, vmax=3)
+  norm = mcolors.Normalize(vmin=T.min(),vmax=T.max())
   for i in range(len(noise)):
     sigma0=V_thermal(noise[i],[1,1],[0],[0]*2,params=None)
     yvec= [SNR_ng_extr(V_thermal(noise[i],[z,1/z],[0],[0,0],params=None),[],sigma0) for z in z_vec]
-    ax.plot(z_vec,yvec, color=cmap(norm(noise[i])))
+    ax.plot(z_vec,yvec, color=cmap(norm(T[i])))
   cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, location='right') 
-  cbar.set_label('Noise')
+  cbar.set_label('Temperature (K)')
   ax.set_xlabel('Squeezing parameter z')
   ax.set_ylabel('SNR extractable')
   #ax.set_title('SNR as a function of squeezing')
-  plt.savefig('gaussian_extr_snr_with noise.png')
+  plt.savefig('gaussian_extr_snr_with noise.pdf')
   plt.show()
   return
 
 def bounds():
-  fig, ax = plt.subplots(1, 1, figsize=(15, 15))
+  fig, ax = plt.subplots(1, 1, figsize=(30, 15))
   plt.rc('font', family='serif')
   x_vec=np.linspace(0.00000001,np.pi,100)
   nu=1.3
@@ -584,25 +585,25 @@ def bounds():
 
   gaussian=[SNR_gaussian_extr(sigma[i],sigma0) for i in range(len(z_vec))]
   ax.plot(z_vec,gaussian, 'black',linestyle='dashed',label='Gaussian')
-  ax.annotate('Gaussian',xy  = ( z_vec[20], gaussian[20]), xytext = (1.02*z_vec[20], gaussian[20]),color  = 'black',fontsize=16)
+  ax.annotate('Gaussian',xy  = ( z_vec[20], gaussian[20]), xytext = (1.02*z_vec[20], gaussian[20]),color  = 'black',fontsize=27)
   y=[SNR_ng_extr(sigma[i],[factor],sigma0) for i in range(len(z_vec))]
   ax.plot(z_vec,y, 'b',label= '1 photon {operation}')
-  ax.annotate(f'1 photon {operation}',xy  = ( z_vec[25], 0.85*y[25]), xytext = (1.02*z_vec[25], 0.8*y[25]),color  = 'black',fontsize=16)
+  ax.annotate(f'1 photon {operation}',xy  = ( z_vec[25], 0.85*y[25]), xytext = (1.02*z_vec[25], 0.8*y[25]),color  = 'black',fontsize=27)
   ax.plot(z_vec,two_worst,'b')
   ax.plot(z_vec,two_best, 'b',label='2 photon {operation}')
   y=two_best
-  ax.annotate(f'2 photon {operation}s',xy  = ( z_vec[30], 0.90*y[30]), xytext = (0.9*z_vec[30], 0.80*y[30]),color  = 'black',fontsize=16)
+  ax.annotate(f'2 photon {operation}s',xy  = ( z_vec[30], 0.90*y[30]), xytext = (0.9*z_vec[30], 0.80*y[30]),color  = 'black',fontsize=27)
   ax.plot(z_vec,three_worst, 'b')
   ax.plot(z_vec,three_best,'b', label='3 photon {operation}')
   y=three_best
-  ax.annotate(f'3 photon {operation}s',xy  = ( z_vec[80], 0.9*y[80]), xytext = (1.02*z_vec[80], 1.02*y[80]),color  = 'black',fontsize=16)
+  ax.annotate(f'3 photon {operation}s',xy  = ( z_vec[80], 0.9*y[80]), xytext = (1.02*z_vec[80], 1.02*y[80]),color  = 'black',fontsize=27)
   ax.fill_between(z_vec,two_worst,two_best, color='c',alpha=0.3)
   ax.fill_between(z_vec,three_worst,three_best, color='c', alpha=0.3)
   #plt.legend(['Gaussian',f'1 photon {operation}',f'2 photon {operation}s (worst)',f'2 photon {operation}s (best)',f'3 photon {operation}s (worst)',f'3 photon {operation}s (best)'], fontsize=12)
   ax.set_xlabel('Squeezing factor z')
   ax.set_ylabel('SNR extractable') 
   #plt.title('Evolution of SNR and extractable SNR with squeezing factor' )
-  plt.savefig(f'bounds {operation}')
+  plt.savefig(f'bounds {operation}.pdf')
   plt.show()
 
 def critical_temp():
@@ -626,41 +627,40 @@ def critical_temp():
 
 def density_plot_temp(): 
   nu_vec=np.linspace(1.1,5,200)
-  z_vec=np.linspace(0.0001,1,100)
+  z_vec=np.linspace(0.001,1,100)
   X=z_vec
-  Y=nu_vec
-  sigma0=[V_thermal(nu,[1],[0],[0,0],params=None) for nu in nu_vec]
+  Y=1/np.log((2/(nu_vec-1) +1))
+  sigma0=[V_thermal(nu,[1,1],[0],[0,0],params=None) for nu in nu_vec]
   sigma=[[V_thermal(nu,[z,1/z],[0],[0,0],params=None) for z in z_vec] for nu in nu_vec]
-
   X_grid, Y_grid =np.meshgrid(X,Y)
   grid= np.vstack([X_grid.ravel(),Y_grid.ravel()]).T 
   W= [[np.real(SNR_ng_extr(sigma[j][i],[+1],sigma0[j])) for i in range(len(X))] for j in range(len(Y))]
   print(np.shape(W))
-  #W= [[qutip.expect(plaquette_operator(X[j],1,1),result_vectors[i][j])for j in range(len(X))]for i in range(len(Y))]
-
-
   fig,ax=plt.subplots(figsize=(10,6))
-  # for i in range(len(Y)):
-  #   for j in range(len(X)):
-  #     ax.text(X_grid[i,j],Y_grid[i,j], f'{X_grid[i,j]:.1},{Y_grid[i,j]}', ha='center', va='center', fontsize=8, color='blue')
-  c=ax.pcolormesh(X_grid,Y_grid,W,norm=mcolors.LogNorm(vmin=np.min(W), vmax=np.max(W)), cmap='jet')
+  c=ax.pcolormesh(X_grid,Y_grid,W,norm=mcolors.LogNorm(vmin=np.min(W), vmax=np.max(W)),cmap='jet')
   cbar=fig.colorbar(c,ax=ax, label='SNR extr')
   ax.set_xlim(X.min(), X.max())
-  ax.set_yscale('log')
+  #ax.set_yscale('log')
+  print(Y.min() , Y.max())
   ax.set_ylim(Y.min() , Y.max())
   ax.grid(True, which='both', linestyle='--')
   ax.set_xlabel('Squeezing parameter z', fontsize=14)
-  ax.set_ylabel('Noise', fontsize=14)
+  ax.set_ylabel('Temperature (K)', fontsize=14)
   ax.set_xticks(ticks=[0,0.2,0.4,0.6,0.8,1], labels=['0','0.2','0.4','0.6','0.8','Fock state |1>'])
-  ax.set_yticks(ticks=[2,3,4,5], labels=['2','3','4','5'])
+  ax.set_yticks(ticks=[0.5,1,1.5,2], labels=['0.5','1','1.5','2'])
   c.set_label('SNR extr')
   cbar.ax.set_yticks(ticks=[1,2],labels=['1','2'])
+
+  contour_levels = [1]
+  contour = ax.contour(X_grid, Y_grid, W, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+  ax.clabel(contour, inline=True, fontsize=8,fmt='Gaussian max')
+  plt.savefig('density plot temp.pdf')
   plt.show()
 
-density_plot_temp()
+#density_plot_temp()
 
 #critical_temp()
 #PLOTS FOR THESIS:
-#bounds()
+bounds()
 #evolution_with_noise_gaussian()
 #SV_plots([[-1,-1]])
