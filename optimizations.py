@@ -270,7 +270,7 @@ def optimization_5(nongaussian_ops, n_max):
   plt.xticks(range(2,n_max),['2','3','4','5'])
   plt.xlabel('Number of modes N')
   plt.legend(['Gaussian','1 photon subtraction', '2 photon subtractions', '3 photon subtractions'])
-  plt.savefig('opti T=1.3.png')
+  plt.savefig('opti nu=1,3.pdf')
   plt.show()
   return
 
