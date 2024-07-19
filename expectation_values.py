@@ -21,7 +21,7 @@ from utils import *
 #GAUSSIAN STATE
 
 #Expectation value of N
-def expvalN(sigma): #input a 2N x 2N np.array of parameters for M
+def expvalN(sigma, dispvector): #input a 2N x 2N np.array of parameters for M and a displacement vector of means of length 2N
     N=len(sigma)//2
     #print('sigma',np.round(sigma,3))
 
@@ -31,46 +31,47 @@ def expvalN(sigma): #input a 2N x 2N np.array of parameters for M
     for i in range(1,N+1):
       ops=['adag','a']
       modes=[i,i]
-      sum+=expectationvalue(sigma,ops,modes)
+      sum+=expectationvalue_with_disp(sigma,dispvector,ops,modes)
     return sum 
+
 
 
 #Expectation value of N^2
 
-def N2(sigma): #dispersion of number operator on gaussian state (rho0)
+def N2(sigma,dispvector): #dispersion of number operator on gaussian state (rho0)
     #We now compute exp(N^2):
     N=len(sigma)//2
     sum=0
     for i in range(1,N+1):
       ops= ['adag','a','adag','a']
       modes=[i,i,i,i]
-      sum+=expectationvalue(sigma,ops,modes)
+      sum+=expectationvalue_with_disp(sigma,dispvector,ops,modes)
     for i in range(1,N+1):
       for j in range(i+1,N+1):
         ops= ['adag','a','adag','a']
         modes=[i,i,j,j]
-        sum+=2*expectationvalue(sigma,ops,modes)
+        sum+=2*expectationvalue_with_disp(sigma,dispvector,ops,modes)
     return sum
 
 
 
-def varianceN(sigma):
-    return  np.sqrt(N2(sigma) - (expvalN(sigma))**2) 
+def varianceN(sigma,dispvector):
+    return  np.sqrt(N2(sigma,dispvector) - (expvalN(sigma,dispvector))**2) 
 
-def SNR_gaussian(sigma):
+def SNR_gaussian(sigma,dispvector):
   N=len(sigma)//2
-  return (expvalN(sigma)+N/2)/varianceN(sigma) 
+  return (expvalN(sigma,dispvector))/varianceN(sigma,dispvector) 
 
-def SNR_gaussian_extr(sigma,sigma0):
-  return (expvalN(sigma)-expvalN(sigma0))/varianceN(sigma) 
+def SNR_gaussian_extr(sigma,sigma0,dispvector):
+  N=len(sigma)//2
+  return (expvalN(sigma,dispvector)-expvalN(sigma0,[0]*(2*N)))/varianceN(sigma,dispvector) 
 
 
 #NON-GAUSSIAN STATE
 
 #fist calculate the normalization value (will need to divide by it in every expectation value)
 
-
-def K_ng(sigma, nongaussian_ops):
+def K_ng(sigma, dispvector, nongaussian_ops):
     N= len(sigma)//2
     if nongaussian_ops==[]:
       return 1
@@ -87,10 +88,10 @@ def K_ng(sigma, nongaussian_ops):
     modes= modes[cut+1:]+modes[:cut]
     #print(ops)
     #print(modes)
-    return expectationvalue(sigma,ops,modes)
+    return expectationvalue_with_disp(sigma,dispvector,ops,modes)
 
 #expectation value of N for the non-gaussian state
-def expvalN_ng(sigma,nongaussian_ops):
+def expvalN_ng(sigma,dispvector,nongaussian_ops):
     N= len(sigma)//2
     #construct the trace we want to calculate ((adag, a) per mode + non-gaussian cov matrix)
     sum=0
@@ -110,12 +111,12 @@ def expvalN_ng(sigma,nongaussian_ops):
       modes= modes[cut+1:]+modes[:cut]
       #print(ops)
       #print(modes)
-      sum+=expectationvalue(sigma,ops,modes)
-    return (1/K_ng(sigma,nongaussian_ops))*sum
+      sum+=expectationvalue_with_disp(sigma,dispvector,ops,modes)
+    return (1/K_ng(sigma,dispvector,nongaussian_ops))*sum
 
 
 #expectation value of N^2 for the non-gaussian state
-def N2_ng(sigma,nongaussian_ops):
+def N2_ng(sigma,dispvector,nongaussian_ops):
     N= len(sigma)//2
     sum=0
     for i in range(1,N+1):
@@ -135,19 +136,19 @@ def N2_ng(sigma,nongaussian_ops):
         modes= modes[cut+1:]+modes[:cut]
         #print(ops)
         #print(modes)
-        sum+=expectationvalue(sigma,ops,modes)
-    return (1/K_ng(sigma,nongaussian_ops))*sum
+        sum+=expectationvalue_with_disp(sigma,dispvector,ops,modes)
+    return (1/K_ng(sigma,dispvector,nongaussian_ops))*sum
 
-def varianceN_ng(sigma,nongaussian_ops):
-  return  np.sqrt(N2_ng(sigma,nongaussian_ops) - (expvalN_ng(sigma,nongaussian_ops))**2)
+def varianceN_ng(sigma,dispvector,nongaussian_ops):
+  return  np.sqrt(N2_ng(sigma,dispvector,nongaussian_ops) - (expvalN_ng(sigma,dispvector, nongaussian_ops))**2)
 
-def SNR_ng(sigma,nongaussian_ops):
+def SNR_ng(sigma,dispvector,nongaussian_ops):
   N=len(sigma)//2
-  return (expvalN_ng(sigma,nongaussian_ops)+N/2)/varianceN_ng(sigma,nongaussian_ops)
+  return (expvalN_ng(sigma,dispvector,nongaussian_ops))/varianceN_ng(sigma,dispvector,nongaussian_ops)
 
-def SNR_ng_extr(sigma,nongaussian_ops,sigma0):
+def SNR_ng_extr(sigma,dispvector,nongaussian_ops,sigma0):
   N=len(sigma)//2
-  return (expvalN_ng(sigma,nongaussian_ops)-expvalN(sigma0))/varianceN_ng(sigma,nongaussian_ops)
+  return (expvalN_ng(sigma,dispvector,nongaussian_ops)-expvalN(sigma0,[0]*(2*N)))/varianceN_ng(sigma,dispvector,nongaussian_ops)
 
 def antibunching(sigma,nongaussian_ops): #N=2 only
   N= len(sigma)//2

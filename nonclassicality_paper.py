@@ -5,7 +5,7 @@ from sympy import symbols, diff, exp, simplify
 import cmath
 from cmath import sqrt
 import math
-from math import factorial, sinh, cosh, tanh
+from math import factorial, sinh, cosh, tanh, log
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib import cm
@@ -18,6 +18,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.ticker as ticker
 from numpy import where
 import matplotlib.colors as mcolors
+from utils import *
+from expectation_values import *
+
 
 def sqfactor(z): #find the lambda squeezing factor as a function of z of the covariance matrix
     return -np.log(z)/2
@@ -116,11 +119,11 @@ def energy(m,n,alpha1,alpha2,z):
     return arbitrary_expval(m,n,alpha1,alpha2,z,1,1,0,0) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,1,1)
 
 def delta_n(m,n,alpha1,alpha2,z):
-    return sqrt(arbitrary_expval(m,n,alpha1,alpha2,z,2,2,0,0) + arbitrary_expval(m,n,alpha1,alpha2,z,1,1,0,0) + 2*arbitrary_expval(m,n,alpha1,alpha2,z,1,1,1,1) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,2,2) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,1,1) - (arbitrary_expval(m,n,alpha1,alpha2,z,1,1,0,0) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,1,1))**2)
+    return cmath.sqrt(arbitrary_expval(m,n,alpha1,alpha2,z,2,2,0,0) + arbitrary_expval(m,n,alpha1,alpha2,z,1,1,0,0) + 2*arbitrary_expval(m,n,alpha1,alpha2,z,1,1,1,1) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,2,2) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,1,1) - (arbitrary_expval(m,n,alpha1,alpha2,z,1,1,0,0) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,1,1))**2)
 
 def signal_to_noise(m,n,alpha1,alpha2,z):
     numerator= arbitrary_expval(m,n,alpha1,alpha2,z,1,1,0,0) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,1,1) 
-    denominator= sqrt(arbitrary_expval(m,n,alpha1,alpha2,z,2,2,0,0) + arbitrary_expval(m,n,alpha1,alpha2,z,1,1,0,0) + 2*arbitrary_expval(m,n,alpha1,alpha2,z,1,1,1,1) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,2,2) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,1,1) - numerator**2)
+    denominator= cmath.sqrt(arbitrary_expval(m,n,alpha1,alpha2,z,2,2,0,0) + arbitrary_expval(m,n,alpha1,alpha2,z,1,1,0,0) + 2*arbitrary_expval(m,n,alpha1,alpha2,z,1,1,1,1) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,2,2) + arbitrary_expval(m,n,alpha1,alpha2,z,0,0,1,1) - numerator**2)
     return numerator/denominator
 
 def sv_criterion(m,n,alpha1,alpha2,z):
@@ -134,6 +137,7 @@ def g2(m,n,alpha1,alpha2,z):
 def check(m,n,alpha1,alpha2,z):
     return signal_to_noise(m,n,alpha1,alpha2,z)/delta_n(m,n,alpha1,alpha2,z)
 
+
 def gaussian_displacement(function):
     z_vec=np.linspace(0.01,0.95,50)
     displacement=np.linspace(0,2,25)
@@ -142,7 +146,7 @@ def gaussian_displacement(function):
     cmap=cm.rainbow
     norm = mcolors.Normalize(vmin=z_vec.min(),vmax=z_vec.max())
     for i in range(len(z_vec)):
-        yvec= [function(0,0,alpha,alpha,z_vec[i]) for alpha in displacement]
+        yvec= [function(0,0,alpha,0,z_vec[i]) for alpha in displacement]
         ax.plot(displacement,yvec, color=cmap(norm(z_vec[i])))
     ax.plot(displacement, [1]*len(displacement), linestyle='dashed')
     cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, location='right') 
@@ -153,7 +157,88 @@ def gaussian_displacement(function):
     plt.show()
     return
 
-gaussian_displacement(check)
+#gaussian_displacement(check)
 
 
+
+def check2(sigma,sigma0,displacement):
+    return SNR_gaussian_extr(sigma,sigma0,displacement)/varianceN(sigma,displacement)
+
+def ergotropy(sigma,sigma0,displacement):
+    N=len(sigma)//2
+    return expvalN(sigma,displacement)-expvalN(sigma0,[0]*(2*N))
+                                                                  
+                                                                
+
+def gaussian_displacement_ergotropy(temp):  #same function as above but using loop haffnian
+    displacement=np.linspace(0,2,25)
+    z_vec=np.linspace(0.1,0.95,25)
+    sigma0=V_thermal(temp,[1],[0],[0],params=None)
+    plt.rc('font', family='serif')
+    fig, (ax1,ax2) = plt.subplots(1, 2, figsize=(30, 15))
+    cmap=cm.rainbow
+    norm = mcolors.Normalize(vmin=z_vec.min(),vmax=z_vec.max())
+    for i in range(len(z_vec)):
+        sigma=V_thermal(temp,[z_vec[i]],[0],[0],params=None)
+        yvec= [ergotropy(sigma,sigma0,[d,0]) for d in displacement]
+        yvec2= [0.5*(temp*(cosh(-log(z_vec[i]))-1)+d**2) for d in displacement]
+        ax1.plot(displacement,yvec, color=cmap(norm(z_vec[i])))
+        ax2.plot(displacement,yvec2, color=cmap(norm(z_vec[i])))
+    ax1.plot(displacement, [1]*len(displacement), linestyle='dashed')
+    cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=(ax1,ax2), location='right') 
+    cbar.set_label('Squeezing parameter')
+    ax1.set_xlabel(r'Displacement $\alpha$')
+    ax1.set_ylabel('ergotropy')
+    ax2.set_xlabel(r'Displacement $\alpha$')
+    ax2.set_ylabel('analytical ergotropy')
+    plt.show()
+    return
+
+def gaussian_displacement_variance(temp):  #same function as above but using loop haffnian  #1 MODE ONLY
+    displacement=np.linspace(0,2,25)
+    z_vec=np.linspace(0.1,0.95,25)
+    sigma0=V_thermal(temp,[1],[0],[0],params=None)
+    plt.rc('font', family='serif')
+    fig, (ax1,ax2) = plt.subplots(1, 2, figsize=(30, 15))
+    cmap=cm.rainbow
+    norm = mcolors.Normalize(vmin=z_vec.min(),vmax=z_vec.max())
+    for i in range(len(z_vec)):
+        sigma=V_thermal(temp,[z_vec[i]],[0],[0],params=None)
+        yvec= [(varianceN(sigma,[d,0]))**2 for d in displacement]
+        yvec2= [0.25*(temp**2*cosh(-2*log(z_vec[i]))-1+2*temp*(z_vec[i]*d**2)) for d in displacement]
+        ax1.plot(displacement,yvec, color=cmap(norm(z_vec[i])))
+        ax2.plot(displacement,yvec2, color=cmap(norm(z_vec[i])))
+    ax1.plot(displacement, [1]*len(displacement), linestyle='dashed')
+    cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=(ax1,ax2), location='right') 
+    cbar.set_label('Squeezing parameter')
+    ax1.set_xlabel(r'Displacement $\alpha$')
+    ax1.set_ylabel('variance')
+    ax2.set_xlabel(r'Displacement $\alpha$')
+    ax2.set_ylabel('analytical variance')
+    plt.show()
+    return
+
+def snr_with_displacement(temp):  #same function as above but using loop haffnian  #1 MODE ONLY
+    displacement=np.linspace(0,3000,25)
+    z_vec=np.linspace(0.01,0.95,25)
+    sigma0=V_thermal(temp,[1],[0],[0],params=None)
+    plt.rc('font', family='serif')
+    fig, ax = plt.subplots(1, 1, figsize=(30, 15))
+    cmap=cm.rainbow
+    norm = mcolors.Normalize(vmin=z_vec.min(),vmax=z_vec.max())
+    for i in range(len(z_vec)):
+        sigma=V_thermal(temp,[z_vec[i]],[0],[0],params=None)
+        yvec= [check2(sigma,sigma0,[d,0]) for d in displacement]
+        ax.plot(displacement,yvec, color=cmap(norm(z_vec[i])))
+    ax.plot(displacement, [1]*len(displacement), linestyle='dashed')
+    cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, location='right') 
+    cbar.set_label('Squeezing parameter')
+    ax.set_xlabel(r'Displacement $\alpha$')
+    ax.set_ylabel('snr_ext')
+    plt.show()
+    return
+
+snr_with_displacement(1)
+# gaussian_displacement_ergotropy(1)
+# gaussian_displacement_variance(1)
 

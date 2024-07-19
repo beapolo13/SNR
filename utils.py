@@ -19,7 +19,8 @@ from mpl_toolkits.mplot3d import Axes3D
 
 def beep(): #definition of sounds 
   #os.system("afplay /System/Library/Sounds/Ping.aiff")
-  winsound.Beep(2000, 1000)
+  #winsound.Beep(2000, 1000)
+  return
 
 '''Auxiliary functions for perfect matchings'''
 
@@ -62,6 +63,51 @@ def p_matchings(elements):  #input is an array/list of numbers #output is a resh
     x=len(elements)
     y=len(perfect_matchings(x))
     return np.reshape(perfect_matchings(x),(1,y,int(x/2),2)).tolist()[0]
+
+
+def perfect_matchings_and_loops(num_ladder_operators):
+    '''
+    Finds all existing perfect matchings in a list of an even number of nodes
+    referred to the even number of ladder operators indices applied to a Gaussian state.
+    Additionally, considers matchings where some nodes are left as self-loops.
+
+    :param num_ladder_operators: EVEN number of ladder operators
+    :return: List of lists containing all possible perfect matchings of the operators
+    '''
+    perf_matchings = []
+    find_perf_match_and_loops([i for i in range(num_ladder_operators)], [], perf_matchings)
+    return perf_matchings
+
+def find_perf_match_and_loops(index_list, current_combination, perf_matchings):
+    '''
+    AUXILIARY RECURSIVE FUNCTION OF perfect_matchings(num_ladder_operators) that creates
+    all existing perfect matchings given an index list and stores them in
+    perf_matchings parameter
+
+    :param index_list: Number of existing indices (or nodes in a complete graph)
+    :param current_combination: The perfect matching combination being filled at the moment
+    :param perf_matchings: List of lists that will store all perfect matchings at the end of the recursive calls
+    '''
+    if len(index_list) > 0:
+        v1 = index_list.pop(0)
+        
+        # Option 1: v1 is paired with another node
+        for i in range(len(index_list)):
+            new_combination = current_combination.copy()
+            new_idx_list = index_list.copy()
+            v2 = new_idx_list.pop(i)
+            new_combination.append([v1, v2])
+            find_perf_match_and_loops(new_idx_list, new_combination, perf_matchings)
+        
+        # Option 2: v1 is left as a self-loop
+        new_combination = current_combination.copy()
+        new_combination.append([v1])
+        find_perf_match_and_loops(index_list.copy(), new_combination, perf_matchings)
+
+        # Also consider the case without pairing v1 at this level
+        index_list.insert(0, v1)
+    else:
+        perf_matchings.append(current_combination)
 
 
 #BUILDING OF THE COVARIANCE MATRIX OF A GAUSSIAN SQUEEZED STATE
@@ -353,7 +399,7 @@ def trace_func(sigma,l,k,case):
 def expectationvalue(covmat,operatorlist,modeslist):
     indices=[i for i in range(len(operatorlist))]
     trace=0
-    #print('Perfect matchings',perfect_matchings(indices))
+    print('Perfect matchings',perfect_matchings(indices))
     for matching in p_matchings(indices):
         #print('matching:',matching)
         factor=1
@@ -371,6 +417,38 @@ def expectationvalue(covmat,operatorlist,modeslist):
                 case=4
             #print('case',case)
             factor*=trace_func(covmat,l,k,case)
+        trace+=factor
+    return trace
+
+def expectationvalue_with_disp(covmat,dispvector, operatorlist,modeslist):
+    indices=[i for i in range(len(operatorlist))]
+    trace=0
+    #print('Perfect matchings',perfect_matchings_and_loops(len(indices)))
+    for matching in perfect_matchings_and_loops(len(indices)):
+        #print('matching:',matching)
+        factor=1
+        for pair in matching:
+            if len(pair)==1:
+              l= modeslist[pair[0]]
+              if operatorlist[pair[0]]=='a':
+                factor*= dispvector[l-1]+1j*dispvector[l-1+len(covmat)//2]   #alpha_j es (<x>+i<p>)_j
+              if operatorlist[pair[0]]=='adag':
+                factor*= np.conjugate(dispvector[l-1]+1j*dispvector[l-1+len(covmat)//2])
+              #print(factor)
+            else:   
+              #print(pair)
+              l,k= modeslist[pair[0]],modeslist[pair[1]]
+              #print('l,k:',l,k)
+              if operatorlist[pair[0]]=='adag' and operatorlist[pair[1]]=='adag':
+                  case=1
+              elif operatorlist[pair[0]]=='a' and operatorlist[pair[1]]=='a':
+                  case=2
+              elif operatorlist[pair[0]]=='adag' and operatorlist[pair[1]]=='a':
+                  case=3
+              elif operatorlist[pair[0]]=='a' and operatorlist[pair[1]]=='adag':
+                  case=4
+              #print('case',case)
+              factor*=trace_func(covmat,l,k,case)
         trace+=factor
     return trace
 
