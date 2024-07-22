@@ -661,6 +661,6 @@ def density_plot_temp():
 
 #critical_temp()
 #PLOTS FOR THESIS:
-bounds()
+#bounds()
 #evolution_with_noise_gaussian()
 #SV_plots([[-1,-1]])

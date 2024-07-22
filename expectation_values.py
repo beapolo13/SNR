@@ -64,7 +64,7 @@ def SNR_gaussian(sigma,dispvector):
 
 def SNR_gaussian_extr(sigma,sigma0,dispvector):
   N=len(sigma)//2
-  return (expvalN(sigma,dispvector)-expvalN(sigma0,[0]*(2*N)))/varianceN(sigma,dispvector) 
+  return (expvalN(sigma,dispvector)-expvalN(sigma0,[0]*(2*N)))/varianceN(sigma,dispvector)**2
 
 
 #NON-GAUSSIAN STATE
@@ -148,9 +148,9 @@ def SNR_ng(sigma,dispvector,nongaussian_ops):
 
 def SNR_ng_extr(sigma,dispvector,nongaussian_ops,sigma0):
   N=len(sigma)//2
-  return (expvalN_ng(sigma,dispvector,nongaussian_ops)-expvalN(sigma0,[0]*(2*N)))/varianceN_ng(sigma,dispvector,nongaussian_ops)
+  return (expvalN_ng(sigma,dispvector,nongaussian_ops)-expvalN(sigma0,[0]*(2*N)))/varianceN_ng(sigma,dispvector,nongaussian_ops)**2
 
-def antibunching(sigma,nongaussian_ops): #N=2 only
+def antibunching_one_mode(sigma,dispvector,nongaussian_ops): #N=1 only
   N= len(sigma)//2
   sum1=0
   ops=['rho']
@@ -168,7 +168,48 @@ def antibunching(sigma,nongaussian_ops): #N=2 only
   modes= modes[cut+1:]+modes[:cut]
   #print(ops)
   #print(modes)
-  sum1+=expectationvalue(sigma,ops,modes)
+  sum1+=expectationvalue_with_disp(sigma,dispvector,ops,modes)
+
+  sum2=0
+  ops=['rho']
+  modes=['rho']
+  for item in nongaussian_ops:
+    if item<0: #subtraction
+      ops=['a']+ops+['adag']
+    if item>0: #addition
+      ops=['adag']+ops+['a']
+    modes=[np.abs(item)]+ modes+[np.abs(item)]
+  ops=['adag','a']+ops
+  modes=[1,1]+modes
+  cut = ops.index('rho')
+  ops= ops[cut+1:]+ops[:cut]
+  modes= modes[cut+1:]+modes[:cut]
+  #print(ops)
+  #print(modes)
+  sum2+=expectationvalue_with_disp(sigma,dispvector,ops,modes)
+
+  return sum1/(sum2**2)
+
+
+def antibunching_two_mode(sigma,dispvector,nongaussian_ops): #N=2 only
+  N= len(sigma)//2
+  sum1=0
+  ops=['rho']
+  modes=['rho']
+  for item in nongaussian_ops:
+    if item<0: #subtraction
+      ops=['a']+ops+['adag']
+    if item>0: #addition
+      ops=['adag']+ops+['a']
+    modes=[np.abs(item)]+ modes+[np.abs(item)]
+  ops=['adag','adag','a','a']+ops
+  modes=[1,1,1,1]+modes
+  cut = ops.index('rho')
+  ops= ops[cut+1:]+ops[:cut]
+  modes= modes[cut+1:]+modes[:cut]
+  #print(ops)
+  #print(modes)
+  sum1+=expectationvalue_with_disp(sigma,dispvector,ops,modes)
     
   sum2=0
   ops=['rho']
@@ -186,7 +227,7 @@ def antibunching(sigma,nongaussian_ops): #N=2 only
   modes= modes[cut+1:]+modes[:cut]
   #print(ops)
   #print(modes)
-  sum2+=expectationvalue(sigma,ops,modes)
+  sum2+=expectationvalue_with_disp(sigma,dispvector,ops,modes)
 
   sum3=0
   ops=['rho']
@@ -197,16 +238,16 @@ def antibunching(sigma,nongaussian_ops): #N=2 only
     if item>0: #addition
       ops=['adag']+ops+['a']
     modes=[np.abs(item)]+ modes+[np.abs(item)]
-  ops=['adag','a','adag','a']+ops
+  ops=['adag','adag','a','a']+ops
   modes=[1,2,1,2]+modes
   cut = ops.index('rho')
   ops= ops[cut+1:]+ops[:cut]
   modes= modes[cut+1:]+modes[:cut]
   #print(ops)
   #print(modes)
-  sum3+=expectationvalue(sigma,ops,modes)
+  sum3+=expectationvalue_with_disp(sigma,dispvector,ops,modes)
 
-  return (sum1+sum2)/2*sum3 -1
+  return ((sum1+sum2)+2*sum3)/(expvalN_ng(sigma,dispvector,nongaussian_ops))**2
 
 
 def SV(sigma,nongaussian_ops): #N=2 only

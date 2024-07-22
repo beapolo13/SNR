@@ -136,12 +136,44 @@ def expectationvalue_sym(covmat,operatorlist,modeslist):
         trace+=factor
     return trace
 
+def expectationvalue_with_disp_sym(covmat,dispvector, operatorlist,modeslist):
+    indices=[i for i in range(len(operatorlist))]
+    trace=0
+    #print('Perfect matchings',perfect_matchings_and_loops(len(indices)))
+    for matching in perfect_matchings_and_loops(len(indices)):
+        #print('matching:',matching)
+        factor=1
+        for pair in matching:
+            if len(pair)==1:
+              l= modeslist[pair[0]]
+              if operatorlist[pair[0]]=='a':
+                factor*= dispvector[l-1]+1j*dispvector[l-1+len(dispvector)//2]   #alpha_j es (<x>+i<p>)_j
+              if operatorlist[pair[0]]=='adag':
+                factor*= np.conjugate(dispvector[l-1]+1j*dispvector[l-1+len(dispvector)//2])
+              #print(factor)
+            else:   
+              #print(pair)
+              l,k= modeslist[pair[0]],modeslist[pair[1]]
+              #print('l,k:',l,k)
+              if operatorlist[pair[0]]=='adag' and operatorlist[pair[1]]=='adag':
+                  case=1
+              elif operatorlist[pair[0]]=='a' and operatorlist[pair[1]]=='a':
+                  case=2
+              elif operatorlist[pair[0]]=='adag' and operatorlist[pair[1]]=='a':
+                  case=3
+              elif operatorlist[pair[0]]=='a' and operatorlist[pair[1]]=='adag':
+                  case=4
+              #print('case',case)
+              factor*=trace_func_sym(covmat,l,k,case)
+        trace+=factor
+    return trace
+
 
 #GAUSSIAN STATE (symbolic/analytical expression)
 
 
 #Expectation value of N
-def expvalN_sym(sigma): #input a 2N x 2N np.array of parameters for M
+def expvalN_sym(sigma,dispvector): #input a 2N x 2N np.array of parameters for M
     N = int(np.sqrt(len(sigma))//2)
     #print(N)
     #print('sigma',sigma)
@@ -151,42 +183,42 @@ def expvalN_sym(sigma): #input a 2N x 2N np.array of parameters for M
     for i in range(1,N+1):
       ops=['adag','a']
       modes=[i,i]
-      sum+=expectationvalue_sym(sigma,ops,modes)
+      sum+=expectationvalue_with_disp_sym(sigma,dispvector,ops,modes)
     return simplify(sum) 
 
 #Expectation value of N^2
 
-def N2_sym(sigma): #dispersion of number operator on gaussian state (rho0)
+def N2_sym(sigma,dispvector): #dispersion of number operator on gaussian state (rho0)
     N = int(np.sqrt(len(sigma))//2)
     #We now compute exp(N^2):
     sum=0
     for i in range(1,N+1):
       ops= ['adag','a','adag','a']
       modes=[i,i,i,i]
-      sum+=expectationvalue_sym(sigma,ops,modes)
+      sum+=expectationvalue_with_disp_sym(sigma,dispvector,ops,modes)
     for i in range(1,N+1):
       for j in range(i+1,N+1):
         ops= ['adag','a','adag','a']
         modes=[i,i,j,j]
-        sum+=2*expectationvalue_sym(sigma,ops,modes)
+        sum+=2*expectationvalue_with_disp_sym(sigma,dispvector,ops,modes)
     return simplify(sum)
 
 
-def varianceN_sym(sigma):
-    return  simplify(sym.sqrt(N2_sym(sigma) - (expvalN_sym(sigma))**2))
+def varianceN_sym(sigma,dispvector):
+    return  simplify(sym.sqrt(N2_sym(sigma,dispvector) - (expvalN_sym(sigma,dispvector))**2))
 
-def SNR_gaussian_sym(sigma):
-  return simplify((expvalN_sym(sigma))/varianceN_sym(sigma))
+def SNR_gaussian_sym(sigma,dispvector):
+  return simplify((expvalN_sym(sigma,dispvector))/varianceN_sym(sigma,dispvector))
 
-def SNR_gaussian_extr_sym(sigma,sigma0):
+def SNR_gaussian_extr_sym(sigma,sigma0,dispvector):
   a=sym.symbols('a')
-  return simplify((expvalN_sym(sigma)-expvalN_sym(sigma0))/varianceN_sym(sigma))
+  return simplify((expvalN_sym(sigma,dispvector)-expvalN_sym(sigma0,[0]*(2*N)))/varianceN_sym(sigma,dispvector))
 
 
 
 
 #Non gaussian state SYMBOLIC expectation values
-def K_ng_sym(sigma, nongaussian_ops):
+def K_ng_sym(sigma,dispvector, nongaussian_ops):
     ops=['rho']
     modes=['rho']
     if nongaussian_ops==[]:
@@ -202,10 +234,10 @@ def K_ng_sym(sigma, nongaussian_ops):
     modes= modes[cut+1:]+modes[:cut]
     #print(ops)
     #print(modes)
-    return expectationvalue_sym(sigma,ops,modes)
+    return expectationvalue_with_disp_sym(sigma,dispvector,ops,modes)
 
 #expectation value of N for the non-gaussian state
-def expvalN_ng_sym(sigma,nongaussian_ops):
+def expvalN_ng_sym(sigma,dispvector,nongaussian_ops):
     N = int(np.sqrt(len(sigma))//2)
     #construct the trace we want to calculate ((adag, a) per mode + non-gaussian cov matrix)
     sum=0
@@ -225,12 +257,12 @@ def expvalN_ng_sym(sigma,nongaussian_ops):
       modes= modes[cut+1:]+modes[:cut]
       #print(ops)
       #print(modes)
-      sum+=expectationvalue_sym(sigma,ops,modes)
-    return (1/K_ng_sym(sigma,nongaussian_ops))*sum
+      sum+=expectationvalue_with_disp_sym(sigma,dispvector,ops,modes)
+    return (1/K_ng_sym(sigma,dispvector,nongaussian_ops))*sum
 
 
 #expectation value of N^2 for the non-gaussian state
-def N2_ng_sym(sigma,nongaussian_ops):
+def N2_ng_sym(sigma,dispvector, nongaussian_ops):
     N = int(np.sqrt(len(sigma))//2)
     sum=0
     for i in range(1,N+1):
@@ -250,22 +282,62 @@ def N2_ng_sym(sigma,nongaussian_ops):
         modes= modes[cut+1:]+modes[:cut]
         #print(ops)
         #print(modes)
-        sum+=expectationvalue_sym(sigma,ops,modes)
-    return (1/K_ng_sym(sigma,nongaussian_ops))*sum
+        sum+=expectationvalue_with_disp_sym(sigma,dispvector,ops,modes)
+    return (1/K_ng_sym(sigma,dispvector,nongaussian_ops))*sum
 
-def varianceN_ng_sym(sigma,nongaussian_ops):
-    return  sym.sqrt(N2_ng_sym(sigma,nongaussian_ops) - (expvalN_ng_sym(sigma,nongaussian_ops))**2)
+def varianceN_ng_sym(sigma,dispvector,nongaussian_ops):
+    return  sym.sqrt(N2_ng_sym(sigma,dispvector,nongaussian_ops) - (expvalN_ng_sym(sigma,dispvector,nongaussian_ops))**2)
 
-def SNR_ng_sym(sigma,nongaussian_ops):
-  return (expvalN_ng_sym(sigma,nongaussian_ops)+1)/varianceN_ng_sym(sigma,nongaussian_ops)
+def SNR_ng_sym(sigma,dispvector,nongaussian_ops):
+  return (expvalN_ng_sym(sigma,dispvector,nongaussian_ops)+1)/varianceN_ng_sym(sigma,dispvector,nongaussian_ops)
 
-def SNR_ng_extr_sym(sigma,nongaussian_ops,sigma0):
-  return (expvalN_ng_sym(sigma,nongaussian_ops)-expvalN_sym(sigma0))/varianceN_ng_sym(sigma,nongaussian_ops)
+def SNR_ng_extr_sym(sigma,dispvector,nongaussian_ops,sigma0):
+  return (expvalN_ng_sym(sigma,dispvector,nongaussian_ops)-expvalN_sym(sigma0))/varianceN_ng_sym(sigma,dispvector,nongaussian_ops)
+
+def antibunching_one_mode(sigma,dispvector,nongaussian_ops): #N=1 only
+  int(np.sqrt(len(sigma))//2)
+  sum1=0
+  ops=['rho']
+  modes=['rho']
+  for item in nongaussian_ops:
+    if item<0: #subtraction
+      ops=['a']+ops+['adag']
+    if item>0: #addition
+      ops=['adag']+ops+['a']
+    modes=[np.abs(item)]+ modes+[np.abs(item)]
+  ops=['adag','adag','a','a']+ops
+  modes=[1,1,1,1]+modes
+  cut = ops.index('rho')
+  ops= ops[cut+1:]+ops[:cut]
+  modes= modes[cut+1:]+modes[:cut]
+  #print(ops)
+  #print(modes)
+  sum1+=expectationvalue_with_disp_sym(sigma,dispvector,ops,modes)
+
+  sum2=0
+  ops=['rho']
+  modes=['rho']
+  for item in nongaussian_ops:
+    if item<0: #subtraction
+      ops=['a']+ops+['adag']
+    if item>0: #addition
+      ops=['adag']+ops+['a']
+    modes=[np.abs(item)]+ modes+[np.abs(item)]
+  ops=['adag','a']+ops
+  modes=[1,1]+modes
+  cut = ops.index('rho')
+  ops= ops[cut+1:]+ops[:cut]
+  modes= modes[cut+1:]+modes[:cut]
+  #print(ops)
+  #print(modes)
+  sum2+=expectationvalue_with_disp_sym(sigma,dispvector,ops,modes)
+
+  return sum1/(sum2**2)
+
 
 #Print results of analytical calculations:
 
 #DON'T FORGET TO indicate symbolic variables are real (real=True)
-
 
 
 def analytical_results_gaussian(z1,z2,x1,phi1,phi2): #so far only for N =2
@@ -335,20 +407,6 @@ def analytical_results_gaussian(z1,z2,x1,phi1,phi2): #so far only for N =2
   print('diff phi2=',diff_phi2)
   return 
 
-   # Solve the expression for one variable in terms of the other 
-  #solutions = sym.solve(diff_z1, z1)
-
-# Plot one variable as a function of the other
-# Let's say we plot x1 as a function of z1
-  #x1_values = np.arange(0, 2*np.pi)  # Adjust the range as needed
-  #for s in solutions:
-    #z1_values = [s.evalf(subs={x1: x}) for x in x1_values]
-    #plt.plot(x1_values, z1_values)
-  #plt.xlabel('x1')
-  #plt.ylabel('z1')
-  #plt.title('Plot of z1 as a function of x1')
-  #plt.grid(True)
-  #plt.show()
 
 
 def analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops): #so far only for N =2
@@ -384,83 +442,7 @@ def analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops): #so far 
   print('')
   diff_phi2_ng = ratio_ng.diff(phi2)
   print('diff phi2=',diff_phi2_ng)
-
-  # Solve the expression for one variable in terms of the other
-  #solutions = sym.solve(diff_z1_ng, z1)
-
-# Plot one variable as a function of the other
-# Let's say we plot x1 as a function of z1
-  #x1_values = np.arange(0, 2*np.pi)  # Adjust the range as needed
-  #for s in solutions:
-    #z1_values = [s.evalf(subs={x1: x}) for x in x1_values]
-    #plt.plot(x1_values, z1_values)
-  #plt.xlabel('x1')
-  #plt.ylabel('z1')
-  #plt.title('Plot of z1 as a function of x1')
-  #plt.grid(True)
-  #plt.show()
   return
-
-z=symbols('z',real=True, RealNumber=True, zero=False)
-print(simplify(expvalN_ng_sym(V_thermal_sym(1.0000,[z,1/z],[0],[0,0], params=None),[])))
-
-N=2
-nu,z,x =symbols('nu,z,x',real=True, RealNumber=True, zero=False)
-phi1,phi2 = symbols('phi1,phi2',real=True)
-z_values = [z,1/z]  #1:N+1
-theta_values = [x] #N*(N-1)//2 +1
-phi_values = [phi1,phi2]  #1:N+1
-covmat=V_tms_sym(z_values,theta_values,phi_values, params=None)
-sigma0=V_tms_sym([1,1],[0],[0,0], params=None)
-thermal_sigma0=V_thermal_sym(nu,[1,1],[0],[0,0],params=None)
-thermal_covmat=V_thermal_sym(nu,z_values,theta_values,phi_values,params=None)
-#print(simplify(thermal_covmat),thermal_sigma0)
-
-# print('gaussian','N', expvalN_sym(covmat), 'variance', varianceN_sym(covmat),'snr',SNR_gaussian_sym(covmat), 'snr ext', SNR_gaussian_extr_sym(covmat,sigma0) )
-# print('gaussian thermal','N', expvalN_sym(thermal_covmat), 'variance', varianceN_sym(thermal_covmat),'snr',SNR_gaussian_sym(thermal_covmat),'snr ext', SNR_gaussian_extr_sym(thermal_covmat,thermal_sigma0) )
-# print('1 subtraction','N',simplify(expvalN_ng_sym(covmat,[-1])), 'delta', simplify(varianceN_ng_sym(covmat,[-1])), 'snr_ext', simplify(SNR_ng_extr_sym(covmat,[-1],sigma0)))
-# print('1 subtraction thermal','N',simplify(expvalN_ng_sym(thermal_covmat,[-1])), 'delta', simplify(varianceN_ng_sym(thermal_covmat,[-1])),'snr_ext', simplify(SNR_ng_extr_sym(thermal_covmat,[-1],thermal_sigma0)))
-# print('1 addition','N', simplify(expvalN_ng_sym(covmat,[+1])), 'delta', simplify(varianceN_ng_sym(covmat,[+1])), 'snr_ext', simplify(SNR_ng_extr_sym(covmat,[+1],sigma0)))
-# print('1 addition thermal',simplify(expvalN_ng_sym(thermal_covmat,[+1])), 'delta', simplify(varianceN_ng_sym(thermal_covmat,[+1])),'snr_ext', simplify(SNR_ng_extr_sym(thermal_covmat,[+1],thermal_sigma0)))
-print('2 subtraction','N',expvalN_ng_sym(covmat,[-1,-1]), 'delta',varianceN_ng_sym(covmat,[-1,-1]), 'snr_ext', SNR_ng_extr_sym(covmat,[-1,-1],sigma0))
-print('2 subtraction thermal','N',expvalN_ng_sym(thermal_covmat,[-1,-1]), 'delta', varianceN_ng_sym(thermal_covmat,[-1,-1]),'snr_ext', SNR_ng_extr_sym(thermal_covmat,[-1,-1],thermal_sigma0))
-print('2 addition','N', expvalN_ng_sym(covmat,[+1,+1]), 'delta', varianceN_ng_sym(covmat,[+1,+1]), 'snr_ext', SNR_ng_extr_sym(covmat,[+1,+1],sigma0))
-print('2 addition thermal',expvalN_ng_sym(thermal_covmat,[+1,+1]), 'delta', varianceN_ng_sym(thermal_covmat,[+1,+1]),'snr_ext', SNR_ng_extr_sym(thermal_covmat,[+1,+1],thermal_sigma0))
-
-#print(analytical_results_gaussian(z1,z2,x1,phi1,phi2))
-#print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,[-1]))
-
-#nongaussian_ops=[+1]
-#for i in range(3):
-  #print(nongaussian_ops)
-  #print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops))
-  #beep()
-  #nongaussian_ops+=[-1]
-
-beep()
-
-
-def separability_check():  #separability check using serafini's criterion for N=2
-  sigmatest= create_test_matrix(2,'xxpp')
-  print('test covariance matrix')
-  print(sigmatest)
-  print('reordering xpxp to apply serafinis criterion')
-  print(convention_switch(sigmatest,'xxpp','string'))
-  sigma=V_tms_sym(z_values,theta_values, phi_values, params=None, ordering='xxpp')
-  print('initial matrix ordered xxpp')
-  print(sigma)
-  corr_mat= Matrix(np.array([[sigma[0,1],sigma[0,3]],[sigma[2,1],sigma[2,3]]]))
-  print('correlations matrix:', corr_mat)
-  print('')
-  print('determinant of correlations', simplify(sym.det(corr_mat)))
-  return 
-
-
-
-
-#print(analytical_results_gaussian(z1,z2,x1,phi1,phi2))
-
-#print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops))
 
 def surfaces_symbolic():
   N=2
@@ -503,6 +485,64 @@ def surfaces_symbolic():
   beep()
   return 
 
-#surfaces_symbolic()
+def separability_check():  #separability check using serafini's criterion for N=2
+  sigmatest= create_test_matrix(2,'xxpp')
+  print('test covariance matrix')
+  print(sigmatest)
+  print('reordering xpxp to apply serafinis criterion')
+  print(convention_switch(sigmatest,'xxpp','string'))
+  sigma=V_tms_sym(z_values,theta_values, phi_values, params=None, ordering='xxpp')
+  print('initial matrix ordered xxpp')
+  print(sigma)
+  corr_mat= Matrix(np.array([[sigma[0,1],sigma[0,3]],[sigma[2,1],sigma[2,3]]]))
+  print('correlations matrix:', corr_mat)
+  print('')
+  print('determinant of correlations', simplify(sym.det(corr_mat)))
+  return 
+
+N=1
+nu,z,x,alpha1,alpha2 =symbols('nu,z,x,alpha1,alpha2',real=True, RealNumber=True, zero=False)
+phi1,phi2 = symbols('phi1,phi2',real=True)
+z_values = [z]  #1:N+1
+theta_values = [x] #N*(N-1)//2 +1
+phi_values = [phi1]  #1:N+1
+dispvector=[alpha1,alpha2]
+covmat=V_tms_sym(z_values,theta_values,phi_values, params=None)
+sigma0=V_tms_sym([1],[0],[0,0], params=None)
+thermal_sigma0=V_thermal_sym(nu,[1],[0],[0,0],params=None)
+thermal_covmat=V_thermal_sym(nu,z_values,theta_values,phi_values,params=None)
+
+
+print(simplify(antibunching_one_mode(covmat,dispvector,[])))
+
+
+#print(simplify(thermal_covmat),thermal_sigma0)
+# print('gaussian','N', expvalN_sym(covmat), 'variance', varianceN_sym(covmat),'snr',SNR_gaussian_sym(covmat), 'snr ext', SNR_gaussian_extr_sym(covmat,sigma0) )
+# print('gaussian thermal','N', expvalN_sym(thermal_covmat), 'variance', varianceN_sym(thermal_covmat),'snr',SNR_gaussian_sym(thermal_covmat),'snr ext', SNR_gaussian_extr_sym(thermal_covmat,thermal_sigma0) )
+# print('1 subtraction','N',simplify(expvalN_ng_sym(covmat,[-1])), 'delta', simplify(varianceN_ng_sym(covmat,[-1])), 'snr_ext', simplify(SNR_ng_extr_sym(covmat,[-1],sigma0)))
+# print('1 subtraction thermal','N',simplify(expvalN_ng_sym(thermal_covmat,[-1])), 'delta', simplify(varianceN_ng_sym(thermal_covmat,[-1])),'snr_ext', simplify(SNR_ng_extr_sym(thermal_covmat,[-1],thermal_sigma0)))
+# print('1 addition','N', simplify(expvalN_ng_sym(covmat,[+1])), 'delta', simplify(varianceN_ng_sym(covmat,[+1])), 'snr_ext', simplify(SNR_ng_extr_sym(covmat,[+1],sigma0)))
+# print('1 addition thermal',simplify(expvalN_ng_sym(thermal_covmat,[+1])), 'delta', simplify(varianceN_ng_sym(thermal_covmat,[+1])),'snr_ext', simplify(SNR_ng_extr_sym(thermal_covmat,[+1],thermal_sigma0)))
+# print('2 subtraction','N',expvalN_ng_sym(covmat,[-1,-1]), 'delta',varianceN_ng_sym(covmat,[-1,-1]), 'snr_ext', SNR_ng_extr_sym(covmat,[-1,-1],sigma0))
+# print('2 subtraction thermal','N',expvalN_ng_sym(thermal_covmat,[-1,-1]), 'delta', varianceN_ng_sym(thermal_covmat,[-1,-1]),'snr_ext', SNR_ng_extr_sym(thermal_covmat,[-1,-1],thermal_sigma0))
+# print('2 addition','N', expvalN_ng_sym(covmat,[+1,+1]), 'delta', varianceN_ng_sym(covmat,[+1,+1]), 'snr_ext', SNR_ng_extr_sym(covmat,[+1,+1],sigma0))
+# print('2 addition thermal',expvalN_ng_sym(thermal_covmat,[+1,+1]), 'delta', varianceN_ng_sym(thermal_covmat,[+1,+1]),'snr_ext', SNR_ng_extr_sym(thermal_covmat,[+1,+1],thermal_sigma0))
+
+#print(analytical_results_gaussian(z1,z2,x1,phi1,phi2))
+#print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,[-1]))
+
+#nongaussian_ops=[+1]
+#for i in range(3):
+  #print(nongaussian_ops)
+  #print(analytical_results_nongaussian(z1,z2,x1,phi1,phi2,nongaussian_ops))
+  #beep()
+  #nongaussian_ops+=[-1]
+
+
+
+
+
+
+
 
 
