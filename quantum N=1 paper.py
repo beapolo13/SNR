@@ -48,16 +48,21 @@ def z(r):
 def r(z):
     return -np.ln(z)/2
 
+def energy_gaussian(sigma,displacement):  
+    N=len(sigma)//2
+    return expvalN(sigma,displacement)
+
+
 def ergotropy_gaussian(sigma,sigma0,displacement):  
     N=len(sigma)//2
     return expvalN(sigma,displacement)-expvalN(sigma0,[0]*(2*N))
                                                                   
 def std_dev_gaussian(sigma,sigma0,displacement):
     N=len(sigma)//2
-    return varianceN(sigma,displacement)- varianceN(sigma0,[0,0]) 
+    return varianceN(sigma,displacement)-varianceN(sigma0,[0,0]) 
 
 def figure_of_merit_gaussian(sigma,sigma0,displacement):
-    return ergotropy_gaussian(sigma,sigma0,displacement)/std_dev_gaussian(sigma,sigma0,displacement)**2
+    return ergotropy_gaussian(sigma,sigma0,displacement)/(std_dev_gaussian(sigma,sigma0,displacement)**2)
 
 def analytical_ergotropy_gaussian(nu,r,displacement): #only for N=1
     return 0.5*(nu*(np.cosh(2*r)-1)+2*(displacement[0]**2+displacement[1]**2))
@@ -69,7 +74,7 @@ def analytical_std_dev_gaussian(nu,r,displacement): #only for N=1
     return np.sqrt(analytical_variance_gaussian(nu,r,displacement))-np.sqrt(analytical_variance_gaussian(nu,0,[0,0]))
 
 def figure5():
-    nu=1
+    nu=1.5
 
     #squeezing only
     r_vec=np.linspace(0,1.5,100)
@@ -84,7 +89,7 @@ def figure5():
     plt.plot(x1_num,y1_num)
 
     #displacement only
-    disp_vec=np.linspace(0,40,100)
+    disp_vec=np.linspace(1,400,100)
     r=0
     x2=[analytical_ergotropy_gaussian(nu,r,[d,0]) for d in disp_vec]
     y2=[analytical_std_dev_gaussian(nu,r,[d,0]) for d in disp_vec]
@@ -101,19 +106,25 @@ def figure5():
     y3_num=[]
     x3_num=[]
     snr=[]
+    g=[]
     for d in disp_vec:
         array=[analytical_std_dev_gaussian(nu,r,[d,0]) for r in r_vec]
         sigma=[V_thermal(nu,[z(r)],[0],[0],params=None) for r in r_vec]
         array_num=[std_dev_gaussian(sigma[i],sigma0,[d,0]) for i in range(len(sigma))]
+        g_array=[antibunching_one_mode(sigma[i],[d,0],[]) for i in range(len(sigma))]
         lowest_std_dev=min(array)
         lowest_std_dev_num=min(array_num)
+        lowest_g=min(g_array)
         index=array.index(lowest_std_dev)
         index_num=array_num.index(lowest_std_dev_num)
+        index_g=g_array.index(lowest_g)
+        print(index,index_num,index_g)
         y3+=[lowest_std_dev]
         x3+=[analytical_ergotropy_gaussian(nu,r_vec[index],[d,0])]
         y3_num+=[lowest_std_dev_num]
-        x3_num+=[ergotropy_gaussian(sigma[index_num],sigma0,[d,0])]
+        x3_num+=[ergotropy_gaussian(sigma[index_g],sigma0,[d,0])]
         snr+=[figure_of_merit_gaussian(sigma[index_num],sigma0,[d,0])]
+        g+=[lowest_g]
 
     plt.plot(x3,y3, linestyle='dashed')
     plt.plot(x3_num,y3_num, linestyle='dashed')
@@ -121,6 +132,28 @@ def figure5():
     plt.show()
 
     plt.plot(disp_vec,snr)
+    #plt.plot(disp_vec,g)
+    #plt.plot(disp_vec,np.tanh(disp_vec)-1,linestyle='dashed')
+
+
+    def test():
+        output=[]
+        for i in range(len(g)):
+            output+=[1/((g[i]-1)*x3_num[i]+1)]
+        return output
+    for i in range(len(x3_num)):
+        print(test()[i],x3_num[i])
+    
+    
+    def test_for_g():
+        output=[]
+        for i in range(len(disp_vec)):
+            output+=[1/(snr[i]*x3_num[i])-(1/x3_num[i])+1]
+        return output
+    
+    #plt.plot(disp_vec**2,test(),linestyle='dashed')
+    #plt.plot(disp_vec**2,[1/((np.tanh(d)-1)*(d**2)+1) for d in disp_vec])
+    plt.legend(['snr','g','test'])
     plt.show()
     #from this last graph we have observed that if we plot snr (the one we have defined now, which is which the variance squared) against the displacement for a VERY large range (eg from 0 to 400), we obtain the curve flattens>>
     #snr is bounded for gaussian states, and so we cannot go any further
