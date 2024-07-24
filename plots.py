@@ -634,7 +634,7 @@ def density_plot_temp():
   sigma=[[V_thermal(nu,[z,1/z],[0],[0,0],params=None) for z in z_vec] for nu in nu_vec]
   X_grid, Y_grid =np.meshgrid(X,Y)
   grid= np.vstack([X_grid.ravel(),Y_grid.ravel()]).T 
-  W= [[np.real(SNR_ng_extr(sigma[j][i],[+1],sigma0[j])) for i in range(len(X))] for j in range(len(Y))]
+  W= [[np.real(SNR_ng_extr(sigma[j][i],[0,0]*2,[+1],sigma0[j])) for i in range(len(X))] for j in range(len(Y))]
   print(np.shape(W))
   fig,ax=plt.subplots(figsize=(10,6))
   c=ax.pcolormesh(X_grid,Y_grid,W,norm=mcolors.LogNorm(vmin=np.min(W), vmax=np.max(W)),cmap='jet')
@@ -657,7 +657,7 @@ def density_plot_temp():
   plt.savefig('density plot temp.pdf')
   plt.show()
 
-#density_plot_temp()
+density_plot_temp()
 
 #critical_temp()
 #PLOTS FOR THESIS:

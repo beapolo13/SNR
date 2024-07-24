@@ -34,7 +34,9 @@ def expvalN(sigma, dispvector): #input a 2N x 2N np.array of parameters for M an
       sum+=expectationvalue_with_disp(sigma,dispvector,ops,modes)
     return sum 
 
-
+def ergotropy(sigma,sigma0,dispvector):  
+    N=len(sigma)//2
+    return expvalN(sigma,dispvector)-expvalN(sigma0,[0]*(2*N))
 
 #Expectation value of N^2
 
@@ -53,22 +55,23 @@ def N2(sigma,dispvector): #dispersion of number operator on gaussian state (rho0
         sum+=2*expectationvalue_with_disp(sigma,dispvector,ops,modes)
     return sum
 
-
-
 def varianceN(sigma,dispvector):
     return  np.sqrt(N2(sigma,dispvector) - (expvalN(sigma,dispvector))**2) 
 
+def std_dev(sigma,sigma0,displacement):
+    N=len(sigma)//2
+    return varianceN(sigma,displacement)-varianceN(sigma0,[0]*(2*N))
+
 def SNR_gaussian(sigma,dispvector):
   N=len(sigma)//2
-  return (expvalN(sigma,dispvector))/varianceN(sigma,dispvector) 
+  return (expvalN(sigma,dispvector))/varianceN(sigma,dispvector)**2
 
 def SNR_gaussian_extr(sigma,sigma0,dispvector):
   N=len(sigma)//2
-  return (expvalN(sigma,dispvector)-expvalN(sigma0,[0]*(2*N)))/varianceN(sigma,dispvector)**2
+  return ergotropy(sigma,sigma0,dispvector)/varianceN(sigma,dispvector)**2
 
 
 #NON-GAUSSIAN STATE
-
 #fist calculate the normalization value (will need to divide by it in every expectation value)
 
 def K_ng(sigma, dispvector, nongaussian_ops):
@@ -114,6 +117,10 @@ def expvalN_ng(sigma,dispvector,nongaussian_ops):
       sum+=expectationvalue_with_disp(sigma,dispvector,ops,modes)
     return (1/K_ng(sigma,dispvector,nongaussian_ops))*sum
 
+def ergotropy_ng(sigma,sigma0,dispvector,nongaussian_ops):  
+    N=len(sigma)//2
+    return expvalN_ng(sigma,dispvector,nongaussian_ops)-expvalN(sigma0,[0]*(2*N))
+
 
 #expectation value of N^2 for the non-gaussian state
 def N2_ng(sigma,dispvector,nongaussian_ops):
@@ -142,13 +149,17 @@ def N2_ng(sigma,dispvector,nongaussian_ops):
 def varianceN_ng(sigma,dispvector,nongaussian_ops):
   return  np.sqrt(N2_ng(sigma,dispvector,nongaussian_ops) - (expvalN_ng(sigma,dispvector, nongaussian_ops))**2)
 
+def std_dev_ng(sigma,sigma0,displacement,nongaussian_ops):
+    N=len(sigma)//2
+    return varianceN_ng(sigma,displacement,nongaussian_ops)-varianceN(sigma0,[0]*(2*N))
+
 def SNR_ng(sigma,dispvector,nongaussian_ops):
   N=len(sigma)//2
-  return (expvalN_ng(sigma,dispvector,nongaussian_ops))/varianceN_ng(sigma,dispvector,nongaussian_ops)
+  return (expvalN_ng(sigma,dispvector,nongaussian_ops))/varianceN_ng(sigma,dispvector,nongaussian_ops)**2
 
 def SNR_ng_extr(sigma,dispvector,nongaussian_ops,sigma0):
   N=len(sigma)//2
-  return (expvalN_ng(sigma,dispvector,nongaussian_ops)-expvalN(sigma0,[0]*(2*N)))/varianceN_ng(sigma,dispvector,nongaussian_ops)**2
+  return ergotropy_ng(sigma,sigma0,dispvector,nongaussian_ops)/varianceN_ng(sigma,dispvector,nongaussian_ops)**2
 
 def antibunching_one_mode(sigma,dispvector,nongaussian_ops): #N=1 only
   N= len(sigma)//2
