@@ -137,9 +137,9 @@ def figure5(nu):
 #we'll also compare it with some other nongaussian cases
 def snr_vs_energy_comparison(nu):
     N=1
-    r_vec=np.linspace(0.01,4,100)
-    disp_vec=np.linspace(0,15,100)
-    nongaussian_ops_vec=[[1],[1,1]]
+    r_vec=np.linspace(0.0,4,100)
+    disp_vec=np.linspace(0,4,100)
+    nongaussian_ops_vec=[]
     sigma0=V_thermal(nu,[z(0)],[0],[0],params=None)
     #find the r that yields the minimum variance for each displacement, and then with that r calculate all quantities
     e_gauss=[]
@@ -198,7 +198,7 @@ def snr_vs_energy_comparison(nu):
         plt.plot(disp_vec,snr_ng)
 
     plt.legend(['SNR Gauss']+[f'Optimal SNR for {len(item)} photonadd' for item in nongaussian_ops_vec])
-    plt.savefig('max SNR attainable (nu=1.5).pdf')
+    #plt.savefig('max SNR attainable (nu=1.5).pdf')
     plt.show()
 
 
@@ -243,6 +243,50 @@ def density_plot_gaussian():
 
 # paper_sanity_check(1)
 # figure5(1)
-snr_vs_energy_comparison(1.5)
+#snr_vs_energy_comparison(1)
 #density_plot_gaussian()
 
+def test_snr(sigma,sigma0,displacement,nongaussian_ops):
+    return 1/((antibunching_one_mode(sigma,displacement,nongaussian_ops)-1)*ergotropy(sigma,sigma0,displacement)+1)
+
+def equation_fit(nu):
+    N=1
+    r_vec=np.linspace(0.0,4,100)
+    disp_vec=np.linspace(1.2,10,100)
+    sigma0=V_thermal(nu,[z(0)],[0],[0],params=None)
+    #find the r that yields the minimum g for each displacement
+    g=[]
+    e=[]
+    snr_gauss=[]
+    snr_test=[]
+    #gaussian
+    for d in disp_vec:
+        sigma=[V_thermal(nu,[z(r)],[0],[0],params=None) for r in r_vec]
+        g_array_gauss=[antibunching_one_mode(sigma[i],[d,0],[]) for i in range(len(sigma))]
+
+        #find optimal values of r for each displacement
+        lowest_g=min(g_array_gauss)
+
+        #find the indices of those optimal values
+        index_g=g_array_gauss.index(lowest_g)
+        #print(z(r_vec[index_g]))
+        e+=[ergotropy(sigma[index_g],sigma0,[d,0])]
+        snr_gauss+=[SNR_gaussian_extr(sigma[index_g],sigma0,[d,0])]
+        snr_test+=[test_snr(sigma[index_g],sigma0,[d,0],[])]
+        g+=[lowest_g]
+
+    print(np.real(g))    
+    
+    plt.plot(disp_vec,g,linestyle='dashed')
+    plt.plot(disp_vec,1/(1 + np.exp(-0.79 * (disp_vec +0.74))))
+    plt.show()
+    plt.plot(disp_vec,e,linestyle='dashed')
+    plt.plot(disp_vec,disp_vec**2)
+    plt.show()
+    plt.plot(disp_vec,snr_gauss,'b',linestyle= 'dashed')
+    plt.plot(disp_vec,snr_test,'y',linestyle='dashed')
+    plt.plot(disp_vec,1/((np.exp(-0.79 * (disp_vec +0.74))/(1 + np.exp(-0.79 * (disp_vec +0.74))))*disp_vec**2+1),'b') 
+    plt.show()
+
+    
+equation_fit(1)
