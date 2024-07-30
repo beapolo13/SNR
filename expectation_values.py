@@ -367,8 +367,3 @@ def snr_cat_odd(displacement):
    #snr for cat state at zero temperature
 
 
-disp_vec=np.linspace(0.2,4,100)
-
-plt.plot(disp_vec,[g_cat_odd([d,0]) for d in disp_vec])
-plt.plot(disp_vec,[snr_cat_odd([d,0]) for d in disp_vec])
-plt.show()

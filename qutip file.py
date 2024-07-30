@@ -68,7 +68,7 @@ def cat_odd_dm(alpha):
     return ket2dm(cat_odd(alpha))
 
 def thermal_cat_even(alpha,avg_n):#create cat states thermalised at some temperature T (that gives rise/ is equivalent to specifying their avg_n)
-    kappa = 0.01 # Coupling to the thermal bath
+    kappa = 0.01  # Coupling to the thermal bath
     tlist = np.linspace(0, 10, 100)  # Time over which to evolve the system
     # Define collapse operators for interaction with a thermal bath
     c_ops = [np.sqrt(kappa * (1 + avg_n)) * a, np.sqrt(kappa * avg_n) * adag]
@@ -88,21 +88,31 @@ def thermal_cat_odd(alpha,avg_n):#create cat states thermalised at some temperat
     return result.states[-1]
 
 z_vec=np.linspace(0.1,1,50)
-alpha_vec=np.linspace(0.01,4,50)
+alpha_vec=np.linspace(0.01,3.5,50)
 avg_n=0.25
 ref_state=cv_state(0,1)
 ref_state_dm=cv_state_thermal_dm(0,1,avg_n)
 snr_vec=[]
 snr_vec_1pha=[]
+snr_vec_2pha=[]
+#snr_vec_1phsub=[]
 snr_vec_cat_odd=[]
-snr_vec_cat_even=[]
+#snr_vec_cat_even=[]
 for alpha in alpha_vec:
     snr_vec+=[max([np.real(snr_for_mixed_state(cv_state_thermal_dm(alpha,z,avg_n),ref_state_dm)) for z in z_vec])]
     snr_vec_1pha+=[max([np.real(snr_for_mixed_state(adag*cv_state_thermal_dm(alpha,z,avg_n)*a,ref_state_dm)) for z in z_vec])]
+    snr_vec_2pha+=[max([np.real(snr_for_mixed_state(adag*adag*cv_state_thermal_dm(alpha,z,avg_n)*a*a,ref_state_dm)) for z in z_vec])]
+    #snr_vec_1phsub+=[max([np.real(snr_for_mixed_state(a*cv_state_thermal_dm(alpha,z,avg_n)*adag,ref_state_dm)) for z in z_vec])]
     snr_vec_cat_odd+=[snr_for_mixed_state(thermal_cat_odd(alpha,avg_n),ref_state_dm)]
-    snr_vec_cat_even+=[snr_for_mixed_state(thermal_cat_even(alpha,avg_n),ref_state_dm)]
+    #snr_vec_cat_even+=[snr_for_mixed_state(thermal_cat_even(alpha,avg_n),ref_state_dm)]
 plt.plot(alpha_vec,snr_vec,'b')
 plt.plot(alpha_vec,snr_vec_1pha,'r')
+plt.plot(alpha_vec, snr_vec_2pha, 'k')
+#plt.plot(alpha_vec,snr_vec_1phsub,'r', linestyle='dashed')
 plt.plot(alpha_vec,snr_vec_cat_odd,'g')
-plt.plot(alpha_vec,snr_vec_cat_even,'y')
+#plt.plot(alpha_vec,snr_vec_cat_even,'y')
+plt.xlabel(r'Displacement $|\alpha|$')
+plt.ylabel('SNR extracted')
+plt.legend(['Gaussian','1photon addition', '2 photon additions','odd cat'])
+plt.savefig('SNR avg_n=0,25 wrt displacement, truncation L=30.pdf')
 plt.show()

@@ -657,7 +657,7 @@ def density_plot_temp():
   plt.savefig('density plot temp.pdf')
   plt.show()
 
-density_plot_temp()
+#density_plot_temp()
 
 #critical_temp()
 #PLOTS FOR THESIS:

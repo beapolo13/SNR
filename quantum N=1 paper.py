@@ -138,7 +138,7 @@ def figure5(nu):
 def snr_vs_energy_comparison(nu):
     N=1
     r_vec=np.linspace(0.0,4,100)
-    disp_vec=np.linspace(0,4,100)
+    disp_vec=np.linspace(0,350000,1000)
     nongaussian_ops_vec=[]
     sigma0=V_thermal(nu,[z(0)],[0],[0],params=None)
     #find the r that yields the minimum variance for each displacement, and then with that r calculate all quantities
@@ -198,8 +198,11 @@ def snr_vs_energy_comparison(nu):
         plt.plot(disp_vec,snr_ng)
 
     plt.legend(['SNR Gauss']+[f'Optimal SNR for {len(item)} photonadd' for item in nongaussian_ops_vec])
+    plt.xlabel(r'displacement $|\alpha|$')
+    plt.ylabel('SNR ext')
     #plt.savefig('max SNR attainable (nu=1.5).pdf')
     plt.show()
+
 
 
 def density_plot_gaussian(): 
@@ -241,10 +244,7 @@ def density_plot_gaussian():
   plt.show()
 
 
-# paper_sanity_check(1)
-# figure5(1)
-#snr_vs_energy_comparison(1)
-#density_plot_gaussian()
+
 
 def test_snr(sigma,sigma0,displacement,nongaussian_ops):
     return 1/((antibunching_one_mode(sigma,displacement,nongaussian_ops)-1)*ergotropy(sigma,sigma0,displacement)+1)
@@ -289,4 +289,9 @@ def equation_fit(nu):
     plt.show()
 
     
-equation_fit(1)
+
+# paper_sanity_check(1)
+# figure5(1)
+snr_vs_energy_comparison(1.5)
+#density_plot_gaussian()
+#equation_fit(1)
