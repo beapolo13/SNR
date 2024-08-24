@@ -138,8 +138,8 @@ def figure5(nu):
 def snr_vs_energy_comparison(nu):
     N=1
     r_vec=np.linspace(0.0,4,100)
-    disp_vec=np.linspace(0,350000,1000)
-    nongaussian_ops_vec=[]
+    disp_vec=np.linspace(0,1.7,100)
+    nongaussian_ops_vec=[[1],[1,1]]
     sigma0=V_thermal(nu,[z(0)],[0],[0],params=None)
     #find the r that yields the minimum variance for each displacement, and then with that r calculate all quantities
     e_gauss=[]
@@ -209,7 +209,7 @@ def density_plot_gaussian():
   N=1
   r_vec=np.linspace(0.01,4,100)
   nu_vec=np.linspace(1.1,5,100)
-  disp_vec=np.linspace(0,100,200)
+  disp_vec=np.linspace(0,30,200)
   X=disp_vec
   Y=nu_vec
   X_grid, Y_grid =np.meshgrid(X,Y)
@@ -240,7 +240,7 @@ def density_plot_gaussian():
   contour_levels = [1]
   contour = ax.contour(X_grid, Y_grid, W, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
   ax.clabel(contour, inline=True, fontsize=10,fmt='Classical limit')
-  plt.savefig('density plot noise-displacement.pdf')
+  plt.savefig('density plot noise-displacement 2.pdf')
   plt.show()
 
 
