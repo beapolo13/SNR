@@ -18,6 +18,7 @@ import matplotlib.ticker as ticker
 from numpy import where
 import matplotlib.colors as mcolors
 
+
 from utils import *
 from expectation_values import *
 params = {'axes.linewidth': 1.4,
@@ -29,8 +30,8 @@ params = {'axes.linewidth': 1.4,
          'xtick.labelsize': 28,
          'ytick.labelsize': 28,
          "text.usetex": True,
-         "font.family": "serif",
          "font.serif": ["Palatino"]
+         "font.family": "serif"
          }
 plt.rcParams.update(params)
 
@@ -549,7 +550,7 @@ def evolution_with_noise_gaussian():
   norm = mcolors.Normalize(vmin=T.min(),vmax=T.max())
   for i in range(len(noise)):
     sigma0=V_thermal(noise[i],[1,1],[0],[0]*2,params=None)
-    yvec= [SNR_ng_extr(V_thermal(noise[i],[z,1/z],[0],[0,0],params=None),[],sigma0) for z in z_vec]
+    yvec= [SNR_ng_extr(V_thermal(noise[i],[z,1/z],[0],[0,0],params=None),[0,0,0,0],[],sigma0) for z in z_vec]
     ax.plot(z_vec,yvec, color=cmap(norm(T[i])))
   cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, location='right') 
   cbar.set_label(r'Noise $\gamma$')
