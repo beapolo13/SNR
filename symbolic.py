@@ -483,6 +483,8 @@ def surfaces_symbolic():
   fig.colorbar(surf, shrink=0.5, aspect=5)
   plt.show()
   beep()
+ 
+    
   return 
 
 def separability_check():  #separability check using serafini's criterion for N=2
