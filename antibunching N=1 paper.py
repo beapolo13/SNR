@@ -1,6 +1,6 @@
 from utils import *
 from plots import * 
-from expectation_values import *
+from expectation_values_cat import *
 from numpy import tanh
 
 #first we reproduce the results from the paper 

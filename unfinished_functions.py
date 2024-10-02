@@ -16,7 +16,7 @@ import os
 from mpl_toolkits.mplot3d import Axes3D
 
 from utils import *
-from expectation_values import *
+from expectation_values_cat import *
 
 #Check for separability of the gaussian covariance matrix
 

@@ -20,7 +20,7 @@ import matplotlib.colors as mcolors
 
 
 from utils import *
-from expectation_values import *
+from expectation_values_cat import *
 params = {'axes.linewidth': 1.4,
          'axes.labelsize': 42,
          'axes.titlesize': 42,

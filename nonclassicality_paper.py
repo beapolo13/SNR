@@ -19,7 +19,7 @@ import matplotlib.ticker as ticker
 from numpy import where
 import matplotlib.colors as mcolors
 from utils import *
-from expectation_values import *
+from expectation_values_cat import *
 
 
 def sqfactor(z): #find the lambda squeezing factor as a function of z of the covariance matrix

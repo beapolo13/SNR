@@ -20,7 +20,7 @@ from numpy import where
 import matplotlib.colors as mcolors
 
 from utils import *
-from expectation_values import *
+from expectation_values_cat import *
 
 def z(r):
     return np.exp(-2*r)

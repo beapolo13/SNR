@@ -15,7 +15,7 @@ from scipy.linalg import block_diag
 import os
 
 from utils import *
-from expectation_values import *
+from expectation_values_cat import *
 
 def global_optimization():  #global optimizer: too slow even for fixed squeezing
   for N in range(2,6):
