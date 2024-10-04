@@ -1,7 +1,11 @@
 import numpy as np
-from numpy import transpose, real, sqrt, sin, cos, linalg, cosh, sinh
+from numpy import transpose, real, sqrt, sin, cos, linalg, cosh, sinh, diag
+import sympy as sp
+from sympy import symbols, Matrix, simplify, exp, sqrt, tanh, diag, cos, sin
 import scipy
 import matplotlib.pyplot as plt
+import random
+import itertools
 from itertools import combinations
 from scipy import optimize
 from scipy.optimize import minimize
@@ -40,7 +44,7 @@ def perfect_matchings_and_loops(num_ladder_operators):
 
 def find_perf_match_and_loops(index_list, current_combination, perf_matchings):
     '''
-    AUXILIARY RECURSIVE FUNCTION OF perfect_matchings(num_ladder_operators) that creates
+    AUX1jL1jARY RECURS1jVE FUNCT1jON OF perfect_matchings(num_ladder_operators) that creates
     all existing perfect matchings given an index list and stores them in
     perf_matchings parameter
 
@@ -141,28 +145,46 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
   def __init__(self,N,squeezing,bs,pshift,disp=None,temp=None,nongaussian_ops=None, required_ordering='xxpp', format='number'):
     self.N=N
     if temp is not None:  #T is a vector of length N, with the temperature of each mode
-      self.temp = temp #temp should indicate T in the thermodynamics formulas, i.e the degrees in kelvin
-    self.temp= [0]*self.N 
-    if disp is not None:
-        self.disp= disp  #disp should be a vector of length 2N: first the N mean positions, then the N mean momenta
-    self.disp= [0]*(2*self.N)
-    self.squeezing = squeezing  #vector of length N with the squeezing parameter z (not r!!) for each mode 
-    self.bs= bs         #vector of length N(N-1)//2 with the beamsplitter angles between each of the modes  
-    self.pshift = pshift   #vector of length N with the dephasing angle (rads) of each mode 
+      self.temp = self._convert_to_symbolic(temp) #temp should indicate T in the thermodynamics formulas, i.e the degrees in kelvin
+    if temp is None:
+      self.temp= self._convert_to_symbolic([0]*self.N )
+    if disp is not None:  
+        self.disp= self._convert_to_symbolic(disp)  #disp should be a vector of length 2N: first the N mean positions, then the N mean momenta
+    if disp is None:
+      self.disp= self._convert_to_symbolic([0]*(2*self.N))
+    self.squeezing = self._convert_to_symbolic(squeezing)  #vector of length N with the squeezing parameter z (not r!!) for each mode 
+    self.bs= self._convert_to_symbolic(bs)         #vector of length N(N-1)//2 with the beamsplitter angles between each of the modes  
+    self.pshift = self._convert_to_symbolic(pshift)   #vector of length N with the dephasing angle (rads) of each mode 
     self.nongaussian_ops = nongaussian_ops
     self.required_ordering = required_ordering
     self.format = format
+
+  
+  def _convert_to_symbolic(self, input_value): 
+    if isinstance(input_value, str):  # Single string input
+      return sp.symbols(input_value)
+    elif all(isinstance(item, str) for item in input_value):  # List of strings
+      return [sp.symbols(item) for item in input_value]
+    else:  # Assume it's a numeric list
+      return input_value
 
 
   @property
   def nu(self):    #we assume kB =1, unit frequency omega =1 for all modes. We construct the nu vector of length 2N to multiply by the resulting covariance matrix
     if self.temp == [0]*self.N:
-       return [1]*(2*self.N)
-    return [1+ 2/(np.exp(1/(self.temp[i]))-1)  for i in range(len(self.temp))]+ [1+ 2/(np.exp(1/(self.temp[i]))-1)  for i in range(len(self.temp))] 
+      return [1]*(2*self.N)
+    else:
+      if self.format == 'string':
+        return [1+ 2/(sp.exp(1/(self.temp[i]))-1)  for i in range(len(self.temp))]+ [1+ 2/(sp.exp(1/(self.temp[i]))-1)  for i in range(len(self.temp))] 
+      else:  
+        return [1+ 2/(np.exp(1/(self.temp[i]))-1)  for i in range(len(self.temp))]+ [1+ 2/(np.exp(1/(self.temp[i]))-1)  for i in range(len(self.temp))] 
     
   @property
   def r_factor(self):
-    return [-np.log(z)/2 for z in self.squeezing]  #vector of r or lambda squeezing factor
+    if self.format == 'string':
+      return [-sp.log(z)/2 for z in self.squeezing]
+    else:
+      return [-np.log(z)/2 for z in self.squeezing]  #vector of r or lambda squeezing factor
 
       
   @property
@@ -171,33 +193,60 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
       d_vector=[item for item in self.squeezing]
       for item in self.squeezing:
         d_vector+=[1/item]
-      return d_vector*np.eye(2*self.N)
+      if self.format == 'string':
+        return sp.diag(*d_vector)
+      else:
+        return d_vector*np.eye(2*self.N)
   
     def P(self):
-      P = np.zeros((2*self.N, 2*self.N))
-      for i in range(self.N):
-        P[i,i]=P[i+self.N,i+self.N]= cos(self.pshift[i])
-        P[i,i+self.N]=sin(self.pshift[i])
-        P[i+self.N,i]=-sin(self.pshift[i])
-      return P
+      if self.format == 'number':
+        P = np.zeros((2*self.N, 2*self.N))
+        for i in range(self.N):
+          P[i,i]=P[i+self.N,i+self.N]= cos(self.pshift[i])
+          P[i,i+self.N]=sin(self.pshift[i])
+          P[i+self.N,i]=-sin(self.pshift[i])
+        return P
+      elif self.format == 'string':
+        P = Matrix.eye(2*self.N, 2*self.N)
+        for i in range(self.N):
+          P[i, i] = P[i + self.N, i + self.N] = sp.cos(self.pshift[i])  
+          P[i, i + self.N] = sp.sin(self.pshift[i]) 
+          P[i + self.N, i] = -sp.sin(self.pshift[i])
+        return P
     
     def B(self):
-      B_total=np.eye(2*self.N)
-      index=0
-      for i in range(self.N):
-          for j in range(i+1,self.N):
+      if self.format == 'number':
+        B_total=np.eye(2*self.N)
+        index=0
+        for i in range(self.N):
+            for j in range(i+1,self.N):
               B=np.eye(2*self.N)
               B[i,i]=B[j,j]=B[self.N+i,self.N+i]=B[self.N+j,self.N+j]= cos(self.bs[index])
               B[i,j]=B[self.N+i,self.N+j]= sin(self.bs[index])
               B[j,i]=B[self.N+j,self.N+i]= -sin(self.bs[index])
               index+=1
               B_total=B_total@B
-      return B_total
-    
-    matrix= B(self) @ P(self) @ (self.nu*S(self))  @ transpose(P(self)) @ transpose(B(self))
+        return B_total
+      elif self.format == 'string': 
+        B_total=Matrix.eye(2*self.N)
+        index=0
+        for i in range(self.N):
+          for j in range(i+1,self.N):
+            B=sp.eye(2*self.N)
+            B[i,i]=B[j,j]=B[self.N+i,self.N+i]=B[self.N+j,self.N+j]= sp.cos(self.bs[index])
+            B[i,j]=B[self.N+i,self.N+j]= sp.sin(self.bs[index])
+            B[j,i]=B[self.N+j,self.N+i]= -sp.sin(self.bs[index])
+            index+=1
+            B_total=B_total@B
+        return B_total
+         
+    if self.format =='string':
+      matrix= B(self) @ P(self) @ (diag(*self.nu)@S(self))  @ transpose(P(self)) @ transpose(B(self))
+    elif self.format =='number':
+      matrix= B(self) @ P(self) @ (self.nu*S(self))  @ transpose(P(self)) @ transpose(B(self))
 
     if self.required_ordering == 'xpxp':
-      return convention_switch(self.N,matrix,'xxpp',format='number')
+      return convention_switch(self.N,matrix,'xxpp',format=self.format)
     return matrix
   
   @property
@@ -220,9 +269,10 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
     return modes
      
     
-  #METHODS ON CLASS INSTANCES  (i.e on the state's covariance matrix)
+  #METHODS ON CLASS 1jNSTANCES  (i.e on the state's covariance matrix)
 
   def gauss_check(self): #checks that the covariance matrix corresponds to a gaussian state using the Robertson-Schrodinger uncertainty relation
+    #only makes sense for numerically-valued matrices
     sigma=self.matrix
     if self.required_ordering=='xxpp':
       sigma=convention_switch(self.N,sigma,'xxpp','number')
@@ -277,7 +327,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
 
       #definition of the paper's identities 
     def id1(l,k): #function to compute Tr(a^dag_l a^dag_k rho)
-      return (1/4)*(sigma[l-1][k-1]-sigma[l+self.N-1][k+self.N-1]-1j*(sigma[l-1][k+self.N-1]+sigma[l+self.N-1][k-1]))
+      return (1/4)*(sigma[l-1,k-1]-sigma[l+self.N-1,k+self.N-1]-1j*(sigma[l-1,k+self.N-1]+sigma[l+self.N-1,k-1]))
 
     def id2(l,k): #function to compute Tr(a_l a_k rho)
       return np.conjugate(id1(l,k))
@@ -286,7 +336,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         delta=0
         if l==k:
             delta+=1
-        return (1/4)*(sigma[l-1][k-1]+sigma[l+self.N-1][k+self.N-1]+1j*(sigma[l-1][k+self.N-1]-sigma[l+self.N-1][k-1])-2*delta)
+        return (1/4)*(sigma[l-1,k-1]+sigma[l+self.N-1,k+self.N-1]+1j*(sigma[l-1,k+self.N-1]-sigma[l+self.N-1,k-1])-2*delta)
 
     def id4(l,k):  #function to compute Tr(a^_l a^dag_k rho)
         delta2=0
@@ -330,7 +380,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
 
   def expvalN(self): 
     sum=0
-    for i in range(1,state.N+1):
+    for i in range(1,self.N+1):
       ops=['adag','a']
       modes=[i,i]
       sum+=self.expectationvalue(ops,modes)
@@ -346,13 +396,19 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
     return sum/self.K()
   
   def passive(self):  #returns the passive vacuum state associated to our state
-    return State(self.N,[1]*self.N, [0]*((self.N*self.N-1)//2), [0]*self.N, temp=self.temp)
+    return State(self.N,[1]*self.N, [0]*((self.N*self.N-1)//2), [0]*self.N, temp=self.temp, format=self.format)
+  
+  def fock(self, exc):
+    return State(self.N,[1]*self.N, [0]*((self.N*self.N-1)//2), [0]*self.N, temp=self.temp, nongaussian_ops=[1]*exc)
   
   def ergotropy(self):
     return self.expvalN()-self.passive().expvalN()
   
   def varianceN(self):
-    return  np.sqrt(self.expvalN2() - (self.expvalN())**2) 
+    if self.format == 'string':
+      return  sp.sqrt(self.expvalN2() - (self.expvalN())**2)  
+    else:
+      return  np.sqrt(self.expvalN2() - (self.expvalN())**2) 
 
   def std_dev(self):
     return self.varianceN()-self.passive().varianceN()
@@ -387,21 +443,83 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
     else:
       print('This function only works for N=1 or N=2! (yet)')
       return
+    
+  def optimize_ratio(self, max_energy):
+        # Objective function (we minimize -ratio to maximize ratio)
+        def objective(attrs):
+            self.disp[0], self.disp[1], self.squeezing[0] = attrs  # Update class attributes
+            return -self.SNR_extr()  # Negative for maximization
+
+        # Constraint: energy should not exceed max_energy
+        def energy_constraint(attrs):
+            self.disp[0], self.disp[1], self.squeezing[0]  = attrs
+            return max_energy - self.expvalN()  # Must be non-negative
+
+        #Define bounds for parameters
+        bounds = [(0, None), (0, None),(0, None)] 
+        # Define constraints dictionary
+        constraints = ({'type': 'ineq', 'fun': energy_constraint})
+
+        # Initial guess for the attributes
+        initial_guess = self.disp[0], self.disp[1], self.squeezing[0] 
+
+        # Perform optimization
+        result = minimize(objective, initial_guess, constraints=constraints, bounds=bounds)
+
+        # Update the attributes with the optimized values
+        self.disp[0], self.disp[1], self.squeezing[0]  = result.x
+
+        return result
   
 
   
-  
+#Symbolic representation
+z1,z2,x,T,phi1,phi2,alpha1,alpha2,beta1,beta2 = symbols('z1,z2,x,T,phi1,phi2,alpha1,alpha2,beta1,beta2',real=True, RealNumber=True)
+z2=1/z1
+state_sym=State(1,[z1],[],[phi1],disp=[alpha1,alpha2],temp=[T],nongaussian_ops=[], format='string')
+print(state_sym.nu)
+
+print(simplify(state_sym.matrix))
+print('N',simplify(state_sym.expvalN()))
+print('SNR',simplify(state_sym.SNR_extr()))
+
+#Numerical representation
+state_num = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.4],nongaussian_ops=[], format='number')
+print(state_num.matrix)
+state_num1 = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.4],nongaussian_ops=[1], format='number')
+#state_num2 = State(2,[random.random(),random.random()],[2*np.pi*random.random()],[random.random(),random.random()],disp=random.sample(range(0, 5), 4),temp=[0.5]*2,nongaussian_ops=[-1,-1], format='number')
+print(state_num.__dict__)
+print(state_num.fock(2).expvalN())
+print(state_num.passive().expvalN())
+
+optimal_vec=[]
+optimal_vec1=[]
+#optimal_vec2=[]
+x_axis=[]
+i=1.5
+while i < 2000:
+  result = state_num.optimize_ratio(i)
+  result1 = state_num1.optimize_ratio(i)
+  #result2 = state_num2.optimize_ratio(i)
+  if result.success == True and result1.success == True:
+    optimal_vec +=[-result.fun]
+    optimal_vec1 +=[-result1.fun]
+    #optimal_vec2 +=[-result2.fun]
+    x_axis+=[i]
+    i+=1
+  #print(result)
+plt.plot(x_axis,optimal_vec)
+plt.plot(x_axis,optimal_vec1)
+#plt.plot(x_axis,optimal_vec2)
+plt.legend(['gauss','1'])
+plt.show()
+print(result.success)
+print("Optimized disp:", state_num.disp)
+print("Optimized squeezing:", state_num.squeezing)
+print("Optimized bs:", state_num.bs)
+
+print("Maximized ratio:", state_num.SNR_extr())
+print("Energy after optimization:", state_num.expvalN())
 
 
-state = State(2,[0.5,2],[np.pi/4],[0,0],nongaussian_ops=[-1,-1,-1])
-#print(state.__dict__)
-n = state.expvalN()
-print(state.ergotropy())
-print(state.SNR())
-print(state.SNR())
-
-
-# n2= Operator (...)
-# delta_n= Operator(...)
-# snr = state.expectationvalue(snr.operatorlist,snr.modeslist) / state.expectationvalue(snr.other_ops_list,snr.other_modes_list)
 

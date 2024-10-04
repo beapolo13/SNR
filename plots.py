@@ -36,46 +36,7 @@ params = {'axes.linewidth': 1.4,
 plt.rcParams.update(params)
 
 
-def ratio_results(nongaussian_ops,z,theta,phi,params):
-  N=len(z)
-  print('Initialization parameters:',nongaussian_ops,z,theta,phi,params)
-  rho_gaussian_sep= V_tms(z,[0]*((N*(N-1))//2),[0]*N,params)
-  print('rho sep',np.round(rho_gaussian_sep,2))
-  rho_gaussian_ent=V_tms(z,theta,phi,params)
-  print('rho ent',np.round(rho_gaussian_ent,2))
 
-  #GAUSSIAN QUANTITIES
-  print('expvalN',expvalN(rho_gaussian_sep))
-  print('N2', N2(rho_gaussian_sep))
-  print('variance N',varianceN(rho_gaussian_sep))
-  print('ratio N/delta(N) gaussian',SNR_gaussian(rho_gaussian_sep))
-
-
-  print(' ')
-  print('With beam splitter + phase shifter: (entanglement)')
-  print('N',expvalN(V_tms(z,theta,phi,params)))
-  print('N2', N2(V_tms(z,theta,phi,params)))
-  print('delta N',varianceN(V_tms(z,theta,phi,params)))
-  print('ratio N/delta(N) gaussian',SNR_gaussian(V_tms(z,theta,phi,params)))
-  print(' ')
-
-  #NON GAUSSIAN
-
-  print('Non gaussian')
-  print('expvalN_ng',expvalN_ng(rho_gaussian_sep,nongaussian_ops))
-  print('N2_ng', N2_ng(rho_gaussian_sep,nongaussian_ops))
-  print('variance N_ng',varianceN_ng(rho_gaussian_sep,nongaussian_ops))
-  print('ratio N/delta(N) non gaussian',SNR_ng(rho_gaussian_sep,nongaussian_ops))
-  print(' ')
-  print('With beam splitter + phase shifter: (entanglement)')
-
-  print('expvalN_ng',expvalN_ng(V_tms(z,theta,phi,params),nongaussian_ops))
-  print('N2_ng', N2_ng(V_tms(z,theta,phi,params),nongaussian_ops))
-  print('variance N_ng',varianceN_ng(V_tms(z,theta,phi,params),nongaussian_ops))
-  print('ratio N/delta(N) non gaussian',SNR_ng(V_tms(z,theta,phi,params),nongaussian_ops))
-  print(' ')
-
-  return
 
 def ratio_plots_reduced(N,params=None):  #only makes sense for N=2
   # variable intervals
@@ -350,74 +311,6 @@ def ratio_plots_superreduced(N,params=None):  #only makes sense for N=2
   
   return
 
-def ratio_plots_superreduced_thermal(N,params=None):  #only makes sense for N=2
-  # variable intervals
-  t = np.arange(0, 2*np.pi, 0.05) #for angles
-  s = np.arange(0.05,3.95, 0.05)  #for squeezing
-  fig, ((ax1),(ax2),(ax3),(ax4)) = plt.subplots(4, 1, figsize=(10, 25))
-  phi=2*np.pi*np.random.rand(N)
-  z_vec=np.linspace(0.05,0.95,15)
-  my_array=np.linspace(0, 1, len(z_vec))
-  colors = plt.cm.YlOrRd(my_array)
-  idx=np.abs(my_array - 0.5).argmin()
-  print(idx)
-
-
-  #gaussian case
-  print('gaussian case')
-
-  
-  
-  i=0
-  for q in z_vec:
-    ax1.plot(t, [np.real(SNR_gaussian(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None))) for w in t], color=colors[i])
-    i+=1
-  ax1.set_xlabel('Beamsplitter angle')
-  ax1.set_ylabel('SNR')
-
-  
-  #nongaussian case
-  nongaussian_ops=[-1]
-  print(f"{nongaussian_ops}")
-  ax2.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[idx])
-  i=0
-  for q in z_vec:
-    ax2.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[i])
-    i+=1
-  ax2.set_xlabel('Beamsplitter angle')
-  ax2.set_ylabel('SNR')
-  
-
-  nongaussian_ops=[-1,-1]
-  print(f"{nongaussian_ops}")
-  ax3.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[idx])
-  i=0
-  for q in z_vec:
-    ax3.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[i])
-    i+=1
-  ax3.set_xlabel('Beamsplitter angle')
-  ax3.set_ylabel('SNR')
-
-  nongaussian_ops=[-1,-1,-1]
-  print(f"{nongaussian_ops}")
-  ax4.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[idx])
-  i=0
-  for q in z_vec:
-    ax4.plot(t, [np.real(SNR_ng(V_thermal([0.5]*2,[q,1/q],[w],[0],phi,params=None),nongaussian_ops)) for w in t], color=colors[i])
-    i+=1
-  ax4.set_xlabel('Beamsplitter angle')
-  ax4.set_ylabel('SNR')
-
-  cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='YlOrRd'), ax=[ax1, ax2,ax3,ax4], location='right')
-  cbar.set_label('Squeezing factor z')
-
-# Adjust layout
-  plt.tight_layout(rect=[0.05, 0.05, 0.75, 0.95])  # Adjust the layout to make space for the colorbar
-  plt.show()
-  
-  return
-
-#ratio_plots_superreduced_thermal(2,params=None)
 
 
 def scaling_with_nongaussianity(N):
