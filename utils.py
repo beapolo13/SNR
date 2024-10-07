@@ -477,7 +477,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
 z1,z2,x,T,phi1,phi2,alpha1,alpha2,beta1,beta2 = symbols('z1,z2,x,T,phi1,phi2,alpha1,alpha2,beta1,beta2',real=True, RealNumber=True)
 z2=1/z1
 state_sym=State(1,[z1],[],[phi1],disp=[alpha1,alpha2],temp=[T],nongaussian_ops=[], format='string')
-print(state_sym.nu)
+print(state_sym.__dict__)
 
 print(simplify(state_sym.matrix))
 print('N',simplify(state_sym.expvalN()))
