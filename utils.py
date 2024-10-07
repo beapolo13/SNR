@@ -453,10 +453,10 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         # Constraint: energy should not exceed max_energy
         def energy_constraint(attrs):
             self.disp[0], self.disp[1], self.squeezing[0]  = attrs
-            return max_energy - self.expvalN()  # Must be non-negative
+            return max_energy - self.ergotropy()  # Must be non-negative
 
         #Define bounds for parameters
-        bounds = [(0, None), (0, None),(0, None)] 
+        bounds = [(0, None), (0, None),(0, 1)] 
         # Define constraints dictionary
         constraints = ({'type': 'ineq', 'fun': energy_constraint})
 
@@ -474,52 +474,54 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
 
   
 #Symbolic representation
-z1,z2,x,T,phi1,phi2,alpha1,alpha2,beta1,beta2 = symbols('z1,z2,x,T,phi1,phi2,alpha1,alpha2,beta1,beta2',real=True, RealNumber=True)
-z2=1/z1
-state_sym=State(1,[z1],[],[phi1],disp=[alpha1,alpha2],temp=[T],nongaussian_ops=[], format='string')
+z,z2,x,T,phi,phi2,alpha1,alpha2,beta1,beta2 = symbols('z,z2,x,T,phi,phi2,alpha1,alpha2,beta1,beta2',real=True, RealNumber=True)
+alpha = symbols('alpha')
+z2=1/z
+state_sym=State(1,[z],[],[phi],disp=[alpha1,alpha2],temp=[T],nongaussian_ops=[], format='string')
 print(state_sym.__dict__)
 
 print(simplify(state_sym.matrix))
 print('N',simplify(state_sym.expvalN()))
-print('SNR',simplify(state_sym.SNR_extr()))
+print('N0',simplify((state_sym.passive()).expvalN()))
+print('SNR',state_sym.SNR_extr().factor().expand().subs({alpha1**2+alpha2**2 : alpha**2}).factor().simplify())
 
 #Numerical representation
-state_num = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.4],nongaussian_ops=[], format='number')
+state_num = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.7],nongaussian_ops=[], format='number')
 print(state_num.matrix)
-state_num1 = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.4],nongaussian_ops=[1], format='number')
+#state_num1 = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.4],nongaussian_ops=[1], format='number')
 #state_num2 = State(2,[random.random(),random.random()],[2*np.pi*random.random()],[random.random(),random.random()],disp=random.sample(range(0, 5), 4),temp=[0.5]*2,nongaussian_ops=[-1,-1], format='number')
 print(state_num.__dict__)
 print(state_num.fock(2).expvalN())
 print(state_num.passive().expvalN())
 
 optimal_vec=[]
-optimal_vec1=[]
-#optimal_vec2=[]
+# optimal_vec1=[]
+# #optimal_vec2=[]
 x_axis=[]
-i=1.5
-while i < 2000:
+i=0
+while i < 20:
   result = state_num.optimize_ratio(i)
-  result1 = state_num1.optimize_ratio(i)
-  #result2 = state_num2.optimize_ratio(i)
-  if result.success == True and result1.success == True:
+#   result1 = state_num1.optimize_ratio(i)
+#   #result2 = state_num2.optimize_ratio(i)
+  if result.success == True:
     optimal_vec +=[-result.fun]
-    optimal_vec1 +=[-result1.fun]
-    #optimal_vec2 +=[-result2.fun]
+#     optimal_vec1 +=[-result1.fun]
+#     #optimal_vec2 +=[-result2.fun]
     x_axis+=[i]
     i+=1
-  #print(result)
+#   #print(result)
 plt.plot(x_axis,optimal_vec)
-plt.plot(x_axis,optimal_vec1)
-#plt.plot(x_axis,optimal_vec2)
-plt.legend(['gauss','1'])
+# plt.plot(x_axis,optimal_vec1)
+# #plt.plot(x_axis,optimal_vec2)
+# plt.legend(['gauss','1'])
 plt.show()
-print(result.success)
-print("Optimized disp:", state_num.disp)
-print("Optimized squeezing:", state_num.squeezing)
-print("Optimized bs:", state_num.bs)
+# print(result.success)
+# print("Optimized disp:", state_num.disp)
+# print("Optimized squeezing:", state_num.squeezing)
+# print("Optimized bs:", state_num.bs)
 
-print("Maximized ratio:", state_num.SNR_extr())
-print("Energy after optimization:", state_num.expvalN())
+# print("Maximized ratio:", state_num.SNR_extr())
+# print("Energy after optimization:", state_num.expvalN())
 
 
 

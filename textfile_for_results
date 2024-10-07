@@ -1,0 +1,17 @@
+num: z1*(1.0*alpha1**2*z1*exp(2/T) - 2.0*alpha1**2*z1*exp(1/T) + 1.0*alpha1**2*z1 
++ 1.0*alpha2**2*z1*exp(2/T) - 2.0*alpha2**2*z1*exp(1/T) + 1.0*alpha2**2*z1 
++ 0.25*z1**2*exp(2/T) - 0.25*z1**2 - 0.5*z1*exp(2/T) + 0.5*z1 + 0.25*exp(2/T) - 0.25)
+
+
+
+den: /(0.5*alpha1**2*z1**3*exp(2/T)*cos(2*phi1) + 0.5*alpha1**2*z1**3*exp(2/T) - 0.5*alpha1**2*z1**3*cos(2*phi1) - 0.5*alpha1**2*z1**3 
+- 0.5*alpha1**2*z1*exp(2/T)*cos(2*phi1) + 0.5*alpha1**2*z1*exp(2/T) + 0.5*alpha1**2*z1*cos(2*phi1) - 0.5*alpha1**2*z1 - 1.0*alpha1*alpha2*z1**3*exp(2/T)*sin(2*phi1)
+ + 1.0*alpha1*alpha2*z1**3*sin(2*phi1) + 1.0*alpha1*alpha2*z1*exp(2/T)*sin(2*phi1) - 1.0*alpha1*alpha2*z1*sin(2*phi1) 
+
+ - 0.5*alpha2**2*z1**3*exp(2/T)*cos(2*phi1) + 0.5*alpha2**2*z1**3*exp(2/T) + 0.5*alpha2**2*z1**3*cos(2*phi1) - 0.5*alpha2**2*z1**3 
+ + 0.5*alpha2**2*z1*exp(2/T)*cos(2*phi1) + 0.5*alpha2**2*z1*exp(2/T) 
+ - 0.5*alpha2**2*z1*cos(2*phi1) - 0.5*alpha2**2*z1
+ 
+ 
+  + 0.125*z1**4*exp(2/T)
+  + 0.25*z1**4*exp(1/T) + 0.125*z1**4 - 0.25*z1**2*exp(2/T) + 0.5*z1**2*exp(1/T) - 0.25*z1**2 + 0.125*exp(2/T) + 0.25*exp(1/T) + 0.125)
