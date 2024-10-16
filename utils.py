@@ -105,13 +105,14 @@ def convention_switch(N,sigma,ordering,format):
       #ordering is the initial ordering of input matrix
       array=sigma
       if format=='string':
-        newarray= np.empty((2*N,2*N),dtype=object)
+        newarray= np.zeros((2*N,2*N), dtype=object)
       else:
         newarray= np.zeros((2*N,2*N))
       if ordering=='xxpp':
         for k in range(N):
-          newarray[:, 2*k] = array[:, k]
-          newarray[:,2*k+1]= array[:, N+k]
+          for i in range(2*N):
+            newarray[i, 2*k] = array[i, k]
+            newarray[i,2*k+1]= array[i, N+k]
         if format=='string':
           newarray2= np.empty((2*N,2*N),dtype=object)
         else:
@@ -477,10 +478,12 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
 z,z2,x,T,phi,phi2,alpha1,alpha2,beta1,beta2 = symbols('z,z2,x,T,phi,phi2,alpha1,alpha2,beta1,beta2',real=True, RealNumber=True)
 alpha = symbols('alpha')
 z2=1/z
-state_sym=State(1,[z],[],[phi],disp=[alpha1,alpha2],temp=[T],nongaussian_ops=[], format='string')
+state_sym=State(2,[z,z2],[np.pi/4],[0,0],disp=[0,0,0,0],temp=[T,T],nongaussian_ops=[], required_ordering='xxpp',format='string')
+state_sym2=State(2,[z,z2],[0],[0,0],disp=[0,0,0,0],temp=[T,T],nongaussian_ops=[], required_ordering='xxpp',format='string')
 print(state_sym.__dict__)
-
-print(simplify(state_sym.matrix))
+print('passives',state_sym.passive().expvalN(),state_sym2.passive().expvalN())
+print('ergotropic gap', state_sym.ergotropy()-state_sym2.ergotropy())
+pprint(simplify(state_sym.matrix))
 print('N',simplify(state_sym.expvalN()))
 print('N0',simplify((state_sym.passive()).expvalN()))
 print('SNR',state_sym.SNR_extr().factor().expand().subs({alpha1**2+alpha2**2 : alpha**2}).factor().simplify())
