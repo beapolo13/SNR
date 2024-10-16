@@ -481,9 +481,15 @@ z2=1/z
 state_sym=State(2,[z,z2],[np.pi/4],[0,0],disp=[0,0,0,0],temp=[T,T],nongaussian_ops=[], required_ordering='xxpp',format='string')
 state_sym2=State(2,[z,z2],[0],[0,0],disp=[0,0,0,0],temp=[T,T],nongaussian_ops=[], required_ordering='xxpp',format='string')
 print(state_sym.__dict__)
+<<<<<<< HEAD
 print('passives',state_sym.passive().expvalN(),state_sym2.passive().expvalN())
 print('ergotropic gap', state_sym.ergotropy()-state_sym2.ergotropy())
 pprint(simplify(state_sym.matrix))
+=======
+
+print(simplify(state_sym.matrix))
+print(simplify(state_sym.matrix@state_sym.matrix))
+>>>>>>> a76a8b16db4d125c6712a2f66f56a6995829ca2c
 print('N',simplify(state_sym.expvalN()))
 print('N0',simplify((state_sym.passive()).expvalN()))
 print('SNR',state_sym.SNR_extr().factor().expand().subs({alpha1**2+alpha2**2 : alpha**2}).factor().simplify())
@@ -491,6 +497,9 @@ print('SNR',state_sym.SNR_extr().factor().expand().subs({alpha1**2+alpha2**2 : a
 #Numerical representation
 state_num = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.7],nongaussian_ops=[], format='number')
 print(state_num.matrix)
+
+state_num2 = State(1,[0.001],[],[0],disp=[13,0],temp=[0.1],nongaussian_ops=[], format='number')
+print('snr', state_num2.SNR_extr())
 #state_num1 = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.4],nongaussian_ops=[1], format='number')
 #state_num2 = State(2,[random.random(),random.random()],[2*np.pi*random.random()],[random.random(),random.random()],disp=random.sample(range(0, 5), 4),temp=[0.5]*2,nongaussian_ops=[-1,-1], format='number')
 print(state_num.__dict__)
