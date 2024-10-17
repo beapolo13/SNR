@@ -8,7 +8,7 @@ import random
 import itertools
 from itertools import combinations
 from scipy import optimize
-from scipy.optimize import minimize
+from scipy.optimize import minimize, fsolve
 import time
 import sys
 import matplotlib.pyplot as plt
@@ -159,6 +159,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
     self.nongaussian_ops = nongaussian_ops
     self.required_ordering = required_ordering
     self.format = format
+    self._matrix=None
 
   
   def _convert_to_symbolic(self, input_value): 
@@ -190,6 +191,9 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
       
   @property
   def matrix(self):  #covariance matrix of the gaussian state before nongaussian operations
+    if self._matrix is not None:
+      return self._matrix
+    
     def S(self): 
       d_vector=[item for item in self.squeezing]
       for item in self.squeezing:
@@ -250,6 +254,39 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
       return convention_switch(self.N,matrix,'xxpp',format=self.format)
     return matrix
   
+  
+  @matrix.setter
+  def matrix(self, new_matrix):
+    self._matrix = new_matrix
+
+  def local_operation(self,theta1,r1,psi1,theta2,r2,psi2): #only for two modes
+    if self.N != 2 and self.N !=1:
+      print('This method cannot be applied to this number of modes')
+      return
+    elif self.N==1:
+      if self.format == 'string':
+        rotation_matrix = sp.Matrix([[r1*sp.cos(theta1)*sp.cos(psi1)-sp.sin(theta1)*sp.sin(psi1)/r1,r1*sp.cos(theta1)*sp.sin(psi1)+sp.sin(theta1)*sp.cos(psi1)/r1],
+                                     [-r1*sp.sin(theta1)*sp.cos(psi1)-sp.cos(theta1)*sp.sin(psi1)/r1, -r1*sp.sin(theta1)*sp.sin(psi1)+sp.cos(theta1)*sp.cos(psi1)/r1]])
+      elif self.format == 'number':
+        rotation_matrix = [[r1*cos(theta1)*cos(psi1)-sin(theta1)*sin(psi1)/r1,r1*cos(theta1)*sin(psi1)+sin(theta1)*cos(psi1)/r1],
+                          [-r1*sin(theta1)*cos(psi1)-cos(theta1)*sin(psi1)/r1, -r1*sin(theta1)*sin(psi1)+cos(theta1)*cos(psi1)/r1]]
+    elif self.N==2:
+      if self.format == 'string':
+        rotation_matrix = sp.Matrix([[r1*sp.cos(theta1)*sp.cos(psi1)-sp.sin(theta1)*sp.sin(psi1)/r1,0,r1*sp.cos(theta1)*sp.sin(psi1)+sp.sin(theta1)*sp.cos(psi1)/r1,0],
+                                     [0, r2*sp.cos(theta2)*sp.cos(psi2)-sp.sin(theta2)*sp.sin(psi2)/r2,0,r2*sp.cos(theta2)*sp.sin(psi2)+sp.sin(theta2)*sp.cos(psi2)/r2],
+                                     [-r1*sp.sin(theta1)*sp.cos(psi1)-sp.cos(theta1)*sp.sin(psi1)/r1,0,  -r1*sp.sin(theta1)*sp.sin(psi1)+sp.cos(theta1)*sp.cos(psi1)/r1,0],
+                                     [0, -r2*sp.sin(theta2)*sp.cos(psi2)-sp.cos(theta2)*sp.sin(psi2)/r2,0, -r2*sp.sin(theta2)*sp.sin(psi2)+sp.cos(theta2)*sp.cos(psi2)/r2]])
+      elif self.format == 'number':
+        rotation_matrix = [[r1*cos(theta1)*cos(psi1)-sin(theta1)*sin(psi1)/r1,0,r1*cos(theta1)*sin(psi1)+sin(theta1)*cos(psi1)/r1,0],
+                          [0, r2*cos(theta2)*cos(psi2)-sin(theta2)*sin(psi2)/r2,0,r2*cos(theta2)*sin(psi2)+sin(theta2)*cos(psi2)/r2],
+                          [-r1*sin(theta1)*cos(psi1)-cos(theta1)*sin(psi1)/r1,0,  -r1*sin(theta1)*sin(psi1)+cos(theta1)*cos(psi1)/r1,0],
+                          [0, -r2*sin(theta2)*cos(psi2)-cos(theta2)*sin(psi2)/r2,0, -r2*sin(theta2)*sin(psi2)+cos(theta2)*cos(psi2)/r2]]
+    print(rotation_matrix)
+    self.matrix= rotation_matrix @ self.matrix @ rotation_matrix.T
+    
+  
+  #def single_mode_squeezer(self,lambda1,lambda2):
+  
   @property
   def state_operators(self):
     ops = ['rho_g']
@@ -270,7 +307,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
     return modes
      
     
-  #METHODS ON CLASS 1jNSTANCES  (i.e on the state's covariance matrix)
+  #METHODS ON CLASS INSTANCES  (i.e on the state's covariance matrix)
 
   def gauss_check(self): #checks that the covariance matrix corresponds to a gaussian state using the Robertson-Schrodinger uncertainty relation
     #only makes sense for numerically-valued matrices
@@ -378,6 +415,12 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
   def K(self):  #normalization of state vector (should be 1 for gaussian)
     return self.expectationvalue([],[])
 
+  def expvalN_gaussian(self):
+    result=0
+    for i in range(self.N):
+      result+=self.matrix[i,i]+self.matrix[i+self.N,i+self.N]-2
+
+    return 1/4*result #faltaria el displacement por sumar
 
   def expvalN(self): 
     sum=0
@@ -475,65 +518,71 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
 
   
 #Symbolic representation
-z,z2,x,T,phi,phi2,alpha1,alpha2,beta1,beta2 = symbols('z,z2,x,T,phi,phi2,alpha1,alpha2,beta1,beta2',real=True, RealNumber=True)
+nu1, z1,z2,x,T1,T2,phi,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('k, z,z2,x,T,phi,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True)
 alpha = symbols('alpha')
 z2=1/z
 state_sym=State(2,[z,z2],[np.pi/4],[0,0],disp=[0,0,0,0],temp=[T,T],nongaussian_ops=[], required_ordering='xxpp',format='string')
-state_sym2=State(2,[z,z2],[0],[0,0],disp=[0,0,0,0],temp=[T,T],nongaussian_ops=[], required_ordering='xxpp',format='string')
-print(state_sym.__dict__)
-<<<<<<< HEAD
-print('passives',state_sym.passive().expvalN(),state_sym2.passive().expvalN())
-print('ergotropic gap', state_sym.ergotropy()-state_sym2.ergotropy())
-pprint(simplify(state_sym.matrix))
-=======
+print('initial matrix', state_sym.matrix.subs({1+2/(exp(1/T) - 1) : k}))
+print('initial energy',state_sym.expvalN_gaussian().subs({1+2/(exp(1/T) - 1) : k}))
+state_sym.local_operation(0,r1,0,0,r2,0)
+pprint(state_sym.matrix.subs({1+2/(exp(1/T) - 1) : k}))
 
-print(simplify(state_sym.matrix))
-print(simplify(state_sym.matrix@state_sym.matrix))
->>>>>>> a76a8b16db4d125c6712a2f66f56a6995829ca2c
-print('N',simplify(state_sym.expvalN()))
-print('N0',simplify((state_sym.passive()).expvalN()))
-print('SNR',state_sym.SNR_extr().factor().expand().subs({alpha1**2+alpha2**2 : alpha**2}).factor().simplify())
+
+energy_expr=simplify(state_sym.expvalN_gaussian().subs({1+2/(exp(1/T) - 1) : k}))
+print('energy local passive', energy_expr)
+variables = [theta1,r1,psi1,theta2,r2,psi2]
+gradient_vector = [simplify(sp.diff(energy_expr, var)) for var in variables]
+print('derivative',gradient_vector)
+
+state_sym2=State(2,[z,z2],[0],[0,0],disp=[0,0,0,0],temp=[T,T],nongaussian_ops=[], required_ordering='xxpp',format='string')
+print('passives',state_sym.passive().matrix,state_sym.passive().expvalN_gaussian())
+print('ergotropic gap', state_sym.ergotropy()-state_sym2.ergotropy())
+# pprint(simplify(state_sym.matrix))
+# print('N',simplify(state_sym.expvalN()))
+# print('N0',simplify((state_sym.passive()).expvalN()))
+# print('SNR',state_sym.SNR_extr().factor().expand().subs({alpha1**2+alpha2**2 : alpha**2}).factor().simplify())
 
 #Numerical representation
-state_num = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.7],nongaussian_ops=[], format='number')
+state_num = State(2,[0.5,2],[0],[0,0],temp=[0,0],nongaussian_ops=[], format='number')
 print(state_num.matrix)
+print(state_num.expvalN())
+print(state_num.expvalN_gaussian())
+# state_num2 = State(1,[0.001],[],[0],disp=[13,0],temp=[0.1],nongaussian_ops=[], format='number')
+# print('snr', state_num2.SNR_extr())
+# #state_num1 = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.4],nongaussian_ops=[1], format='number')
+# #state_num2 = State(2,[random.random(),random.random()],[2*np.pi*random.random()],[random.random(),random.random()],disp=random.sample(range(0, 5), 4),temp=[0.5]*2,nongaussian_ops=[-1,-1], format='number')
+# print(state_num.__dict__)
+# print(state_num.fock(2).expvalN())
+# print(state_num.passive().expvalN())
 
-state_num2 = State(1,[0.001],[],[0],disp=[13,0],temp=[0.1],nongaussian_ops=[], format='number')
-print('snr', state_num2.SNR_extr())
-#state_num1 = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.4],nongaussian_ops=[1], format='number')
-#state_num2 = State(2,[random.random(),random.random()],[2*np.pi*random.random()],[random.random(),random.random()],disp=random.sample(range(0, 5), 4),temp=[0.5]*2,nongaussian_ops=[-1,-1], format='number')
-print(state_num.__dict__)
-print(state_num.fock(2).expvalN())
-print(state_num.passive().expvalN())
+# optimal_vec=[]
+# # optimal_vec1=[]
+# # #optimal_vec2=[]
+# x_axis=[]
+# i=0
+# while i < 20:
+#   result = state_num.optimize_ratio(i)
+# #   result1 = state_num1.optimize_ratio(i)
+# #   #result2 = state_num2.optimize_ratio(i)
+#   if result.success == True:
+#     optimal_vec +=[-result.fun]
+# #     optimal_vec1 +=[-result1.fun]
+# #     #optimal_vec2 +=[-result2.fun]
+#     x_axis+=[i]
+#     i+=1
+# #   #print(result)
+# plt.plot(x_axis,optimal_vec)
+# # plt.plot(x_axis,optimal_vec1)
+# # #plt.plot(x_axis,optimal_vec2)
+# # plt.legend(['gauss','1'])
+# plt.show()
+# # print(result.success)
+# # print("Optimized disp:", state_num.disp)
+# # print("Optimized squeezing:", state_num.squeezing)
+# # print("Optimized bs:", state_num.bs)
 
-optimal_vec=[]
-# optimal_vec1=[]
-# #optimal_vec2=[]
-x_axis=[]
-i=0
-while i < 20:
-  result = state_num.optimize_ratio(i)
-#   result1 = state_num1.optimize_ratio(i)
-#   #result2 = state_num2.optimize_ratio(i)
-  if result.success == True:
-    optimal_vec +=[-result.fun]
-#     optimal_vec1 +=[-result1.fun]
-#     #optimal_vec2 +=[-result2.fun]
-    x_axis+=[i]
-    i+=1
-#   #print(result)
-plt.plot(x_axis,optimal_vec)
-# plt.plot(x_axis,optimal_vec1)
-# #plt.plot(x_axis,optimal_vec2)
-# plt.legend(['gauss','1'])
-plt.show()
-# print(result.success)
-# print("Optimized disp:", state_num.disp)
-# print("Optimized squeezing:", state_num.squeezing)
-# print("Optimized bs:", state_num.bs)
-
-# print("Maximized ratio:", state_num.SNR_extr())
-# print("Energy after optimization:", state_num.expvalN())
+# # print("Maximized ratio:", state_num.SNR_extr())
+# # print("Energy after optimization:", state_num.expvalN())
 
 
 
