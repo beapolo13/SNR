@@ -30,7 +30,7 @@ params = {'axes.linewidth': 1.4,
          'xtick.labelsize': 28,
          'ytick.labelsize': 28,
          "text.usetex": True,
-         "font.serif": ["Palatino"]
+         "font.serif": ["Palatino"],
          "font.family": "serif"
          }
 plt.rcParams.update(params)
@@ -658,8 +658,35 @@ def density_plot_temp():
   plt.savefig('density plot temp.pdf')
   plt.show()
 
-#density_plot_temp()
+def density_plot_non_displaced(): 
+  Y=np.linspace(1.0001,1.5,200) #lambda
+  X=np.linspace(0.001,1.001,100)  #z
+  X_grid, Y_grid =np.meshgrid(X,Y)
+  grid= np.vstack([X_grid.ravel(),Y_grid.ravel()]).T 
+  W= [[(0.25*Y[j]*(X[i]+1/X[i]-2))/(0.125*Y[j]**2*(X[i]**2 + 1/X[i]**2)-0.25) for i in range(len(X))] for j in range(len(Y))]
+  print(np.max(W))
+  print(np.min(W))
+  fig,ax=plt.subplots(figsize=(10,6))
+  c=ax.pcolormesh(X_grid,Y_grid,W,cmap='jet')
+  cbar=fig.colorbar(c,ax=ax, label='SNR extr')
+  ax.set_xlim(X.min(), X.max())
+  #ax.set_yscale('log')
+  print(Y.min() , Y.max())
+  ax.set_ylim(Y.min() , Y.max())
+  ax.grid(True, which='both', linestyle='--')
+  ax.set_xlabel('Squeezing parameter z', fontsize=22)
+  ax.set_ylabel(r'Noise $\gamma$', fontsize=22)
+  c.set_label('SNR extr')
 
+
+  contour_levels = [1]
+  contour = ax.contour(X_grid, Y_grid, W, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+  ax.clabel(contour, inline=True, fontsize=10,fmt='Gaussian max')
+  #plt.savefig('nondisplaced_density_plt.pdf')
+  plt.show()
+
+#density_plot_temp()
+density_plot_non_displaced()
 #critical_temp()
 #PLOTS FOR THESIS:
 #bounds()
