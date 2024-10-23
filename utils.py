@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import transpose, real, sqrt, sin, cos, linalg, cosh, sinh, diag
 import sympy as sp
-from sympy import symbols, Matrix, simplify, exp, sqrt, tanh, diag, cos, sin
+from sympy import symbols, Matrix, simplify, exp, sqrt, tanh, diag, cos, sin, coth
 import scipy
 import matplotlib.pyplot as plt
 import random
@@ -143,8 +143,12 @@ def convention_switch(N,sigma,ordering,format):
 
 class State:    #notation as in master thesis. Assume kb= 1, hbar=1 
     
-  def __init__(self,N,squeezing,bs,pshift,disp=None,temp=None,nongaussian_ops=None, required_ordering='xxpp', format='number'):
+  def __init__(self,N,squeezing,bs,pshift,omega=None, disp=None,temp=None,nongaussian_ops=None, required_ordering='xxpp', format='number'):
     self.N=N
+    if omega is not None:  #omega is a vector of length N, with the frequencies of each mode
+      self.omega = self._convert_to_symbolic(omega) 
+    if omega is None:
+      self.omega= self._convert_to_symbolic([1]*self.N ) #if we do not have information on omega, we assume unit frequency
     if temp is not None:  #T is a vector of length N, with the temperature of each mode
       self.temp = self._convert_to_symbolic(temp) #temp should indicate T in the thermodynamics formulas, i.e the degrees in kelvin
     if temp is None:
@@ -172,14 +176,14 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
 
 
   @property
-  def nu(self):    #we assume kB =1, unit frequency omega =1 for all modes. We construct the nu vector of length 2N to multiply by the resulting covariance matrix
-    if self.temp == [0]*self.N:
+  def nu(self):    #we assume kB =1. We construct the nu vector of length 2N to multiply by the resulting covariance matrix
+    if self.temp == [0]*self.N and self.omega == [1]*self.N:
       return [1]*(2*self.N)
     else:
       if self.format == 'string':
-        return [1+ 2/(sp.exp(1/(self.temp[i]))-1)  for i in range(len(self.temp))]+ [1+ 2/(sp.exp(1/(self.temp[i]))-1)  for i in range(len(self.temp))] 
+        return [sp.coth(self.omega[i]/(2* self.temp[i]))  for i in range(self.N)]+ [sp.coth(self.omega[i]/(2* self.temp[i]))  for i in range(self.N)] 
       else:  
-        return [1+ 2/(np.exp(1/(self.temp[i]))-1)  for i in range(len(self.temp))]+ [1+ 2/(np.exp(1/(self.temp[i]))-1)  for i in range(len(self.temp))] 
+        return [np.coth(self.omega[i]/(2* self.temp[i]))  for i in range(self.N)]+ [np.coth(self.omega[i]/(2* self.temp[i]))  for i in range(self.N)] 
     
   @property
   def r_factor(self):
@@ -243,6 +247,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
             B[j,i]=B[self.N+j,self.N+i]= -sp.sin(self.bs[index])
             index+=1
             B_total=B_total@B
+            print(B_total)
         return B_total
          
     if self.format =='string':
@@ -418,7 +423,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
   def expvalN_gaussian(self):
     result=0
     for i in range(self.N):
-      result+=self.matrix[i,i]+self.matrix[i+self.N,i+self.N]-2
+      result+=self.omega[i]*(self.matrix[i,i]+self.matrix[i+self.N,i+self.N]-2)
 
     return 1/4*result #faltaria el displacement por sumar
 
@@ -516,27 +521,24 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         return result
   
 
-  
 #Symbolic representation
-nu1, z1,z2,x,T1,T2,phi,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('k, z,z2,x,T,phi,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True)
+nu1, nu2, w1, w2, z1,z2,x,T,phi1,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('nu1, nu2, w1, w2 z1,z2,x,T, phi1,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True, commutative= True)
 alpha = symbols('alpha')
-z2=1/z
-state_sym=State(2,[z,z2],[np.pi/4],[0,0],disp=[0,0,0,0],temp=[T,T],nongaussian_ops=[], required_ordering='xxpp',format='string')
-print('initial matrix', state_sym.matrix.subs({1+2/(exp(1/T) - 1) : k}))
-print('initial energy',state_sym.expvalN_gaussian().subs({1+2/(exp(1/T) - 1) : k}))
-state_sym.local_operation(0,r1,0,0,r2,0)
-pprint(state_sym.matrix.subs({1+2/(exp(1/T) - 1) : k}))
+state_sym=State(2,[z1,z2],[x],[0,0],disp=[0,0,0,0],omega=[w1,w2],temp=[T, T],nongaussian_ops=[], required_ordering='xxpp',format='string')
+print('initial matrix', state_sym.matrix.subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 }))
+print('initial energy',state_sym.expvalN_gaussian().subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 }))
+state_sym.local_operation(0,r1,psi1,0,r2,psi2)
 
 
-energy_expr=simplify(state_sym.expvalN_gaussian().subs({1+2/(exp(1/T) - 1) : k}))
+energy_expr=state_sym.expvalN_gaussian().subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 })
 print('energy local passive', energy_expr)
-variables = [theta1,r1,psi1,theta2,r2,psi2]
-gradient_vector = [simplify(sp.diff(energy_expr, var)) for var in variables]
+variables = [r1,psi1,r2,psi2]
+gradient_vector = [sp.diff(energy_expr, var) for var in variables]
 print('derivative',gradient_vector)
 
-state_sym2=State(2,[z,z2],[0],[0,0],disp=[0,0,0,0],temp=[T,T],nongaussian_ops=[], required_ordering='xxpp',format='string')
-print('passives',state_sym.passive().matrix,state_sym.passive().expvalN_gaussian())
-print('ergotropic gap', state_sym.ergotropy()-state_sym2.ergotropy())
+# state_sym2=State(2,[z,z2],[0],[0,0],disp=[0,0,0,0],temp=[T,T],nongaussian_ops=[], required_ordering='xxpp',format='string')
+# print('passives',state_sym.passive().matrix,state_sym.passive().expvalN_gaussian())
+# print('ergotropic gap', state_sym.ergotropy()-state_sym2.ergotropy())
 # pprint(simplify(state_sym.matrix))
 # print('N',simplify(state_sym.expvalN()))
 # print('N0',simplify((state_sym.passive()).expvalN()))
