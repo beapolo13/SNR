@@ -8,7 +8,7 @@ import random
 import itertools
 from itertools import combinations
 from scipy import optimize
-from scipy.optimize import minimize, fsolve
+from scipy.optimize import minimize, fsolve, NonlinearConstraint
 import time
 import sys
 import matplotlib.pyplot as plt
@@ -183,7 +183,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
       if self.format == 'string':
         return [sp.coth(self.omega[i]/(2* self.temp[i]))  for i in range(self.N)]+ [sp.coth(self.omega[i]/(2* self.temp[i]))  for i in range(self.N)] 
       else:  
-        return [np.coth(self.omega[i]/(2* self.temp[i]))  for i in range(self.N)]+ [np.coth(self.omega[i]/(2* self.temp[i]))  for i in range(self.N)] 
+        return [1/np.tanh(self.omega[i]/(2* self.temp[i]))  for i in range(self.N)]+ [1/np.tanh(self.omega[i]/(2* self.temp[i]))  for i in range(self.N)] 
     
   @property
   def r_factor(self):
@@ -420,12 +420,12 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
   def K(self):  #normalization of state vector (should be 1 for gaussian)
     return self.expectationvalue([],[])
 
-  def expvalN_gaussian(self):
+  def expvalN_gaussian_nondisplaced(self):
     result=0
     for i in range(self.N):
       result+=self.omega[i]*(self.matrix[i,i]+self.matrix[i+self.N,i+self.N]-2)
 
-    return 1/4*result #faltaria el displacement por sumar
+    return 1/4*result 
 
   def expvalN(self): 
     sum=0
@@ -505,7 +505,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
             return max_energy - self.ergotropy()  # Must be non-negative
 
         #Define bounds for parameters
-        bounds = [(0, None), (0, None),(0, 1)] 
+        bounds = [(0, max_energy), (0, max_energy),(0.01, 0.99)] 
         # Define constraints dictionary
         constraints = ({'type': 'ineq', 'fun': energy_constraint})
 
@@ -513,7 +513,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         initial_guess = self.disp[0], self.disp[1], self.squeezing[0] 
 
         # Perform optimization
-        result = minimize(objective, initial_guess, constraints=constraints, bounds=bounds)
+        result = minimize(objective, initial_guess, constraints=constraints, bounds=bounds, method='L-BFGS-B')
 
         # Update the attributes with the optimized values
         self.disp[0], self.disp[1], self.squeezing[0]  = result.x
@@ -522,69 +522,23 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
   
 
 #Symbolic representation
-nu1, nu2, w1, w2, z1,z2,x,T,phi1,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('nu1, nu2, w1, w2 z1,z2,x,T, phi1,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True, commutative= True)
-alpha = symbols('alpha')
-state_sym=State(2,[z1,z2],[x],[0,0],disp=[0,0,0,0],omega=[w1,w2],temp=[T, T],nongaussian_ops=[], required_ordering='xxpp',format='string')
-print('initial matrix', state_sym.matrix.subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 }))
-print('initial energy',state_sym.expvalN_gaussian().subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 }))
-state_sym.local_operation(0,r1,psi1,0,r2,psi2)
+# nu1, nu2, w1, w2, z1,z2,x,T,phi1,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('nu1, nu2, w1, w2 z1,z2,x,T, phi1,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True, commutative= True)
+# alpha = symbols('alpha')
+# state_sym=State(2,[z1,z2],[x],[0,0],disp=[0,0,0,0],omega=[w1,w2],temp=[T, T],nongaussian_ops=[], required_ordering='xxpp',format='string')
+# print('initial matrix', state_sym.matrix.subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 }))
+# print('initial energy',state_sym.expvalN_gaussian_nondisplaced().subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 }))
+# state_sym.local_operation(0,r1,psi1,0,r2,psi2)
 
 
-energy_expr=state_sym.expvalN_gaussian().subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 })
-print('energy local passive', energy_expr)
-variables = [r1,psi1,r2,psi2]
-gradient_vector = [sp.diff(energy_expr, var) for var in variables]
-print('derivative',gradient_vector)
+# energy_expr=state_sym.expvalN_gaussian_nondisplaced().subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 })
+# print('energy local passive', energy_expr)
+# variables = [r1,psi1,r2,psi2]
+# gradient_vector = [sp.diff(energy_expr, var) for var in variables]
+# print('derivative',gradient_vector)
 
-# state_sym2=State(2,[z,z2],[0],[0,0],disp=[0,0,0,0],temp=[T,T],nongaussian_ops=[], required_ordering='xxpp',format='string')
-# print('passives',state_sym.passive().matrix,state_sym.passive().expvalN_gaussian())
-# print('ergotropic gap', state_sym.ergotropy()-state_sym2.ergotropy())
-# pprint(simplify(state_sym.matrix))
-# print('N',simplify(state_sym.expvalN()))
-# print('N0',simplify((state_sym.passive()).expvalN()))
-# print('SNR',state_sym.SNR_extr().factor().expand().subs({alpha1**2+alpha2**2 : alpha**2}).factor().simplify())
 
-#Numerical representation
-state_num = State(2,[0.5,2],[0],[0,0],temp=[0,0],nongaussian_ops=[], format='number')
-print(state_num.matrix)
-print(state_num.expvalN())
-print(state_num.expvalN_gaussian())
-# state_num2 = State(1,[0.001],[],[0],disp=[13,0],temp=[0.1],nongaussian_ops=[], format='number')
-# print('snr', state_num2.SNR_extr())
-# #state_num1 = State(1,[random.random()],[],[random.random()],disp=random.sample(range(0, 5), 2),temp=[0.4],nongaussian_ops=[1], format='number')
-# #state_num2 = State(2,[random.random(),random.random()],[2*np.pi*random.random()],[random.random(),random.random()],disp=random.sample(range(0, 5), 4),temp=[0.5]*2,nongaussian_ops=[-1,-1], format='number')
-# print(state_num.__dict__)
-# print(state_num.fock(2).expvalN())
-# print(state_num.passive().expvalN())
 
-# optimal_vec=[]
-# # optimal_vec1=[]
-# # #optimal_vec2=[]
-# x_axis=[]
-# i=0
-# while i < 20:
-#   result = state_num.optimize_ratio(i)
-# #   result1 = state_num1.optimize_ratio(i)
-# #   #result2 = state_num2.optimize_ratio(i)
-#   if result.success == True:
-#     optimal_vec +=[-result.fun]
-# #     optimal_vec1 +=[-result1.fun]
-# #     #optimal_vec2 +=[-result2.fun]
-#     x_axis+=[i]
-#     i+=1
-# #   #print(result)
-# plt.plot(x_axis,optimal_vec)
-# # plt.plot(x_axis,optimal_vec1)
-# # #plt.plot(x_axis,optimal_vec2)
-# # plt.legend(['gauss','1'])
-# plt.show()
-# # print(result.success)
-# # print("Optimized disp:", state_num.disp)
-# # print("Optimized squeezing:", state_num.squeezing)
-# # print("Optimized bs:", state_num.bs)
 
-# # print("Maximized ratio:", state_num.SNR_extr())
-# # print("Energy after optimization:", state_num.expvalN())
 
 
 

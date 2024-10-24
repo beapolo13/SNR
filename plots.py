@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import transpose, real, sqrt, sin, cos, linalg, cosh, sinh
+from numpy import transpose, real, sqrt, sin, cos, linalg, cosh, sinh, log
 import scipy
 import matplotlib.pyplot as plt
 from itertools import combinations
@@ -21,16 +21,16 @@ import matplotlib.colors as mcolors
 
 from utils import *
 from expectation_values_cat import *
-params = {'axes.linewidth': 1.4,
-         'axes.labelsize': 42,
-         'axes.titlesize': 42,
-         'axes.linewidth': 2.5,
+params = {'axes.linewidth': 2,
+         'axes.labelsize': 22,
+         'axes.titlesize': 32,
+         'axes.linewidth': 2,
          'lines.markeredgecolor': "black",
-     	'lines.linewidth': 2.5,
-         'xtick.labelsize': 28,
-         'ytick.labelsize': 28,
+     	'lines.linewidth': 2,
+         'xtick.labelsize': 20,
+         'ytick.labelsize': 20,
          "text.usetex": True,
-         "font.serif": ["Palatino"]
+         "font.serif": ["Palatino"],
          "font.family": "serif"
          }
 plt.rcParams.update(params)
@@ -551,10 +551,81 @@ def density_plot_temp():
   plt.savefig('density plot temp.pdf')
   plt.show()
 
-#density_plot_temp()
+def snr_vs_stellar_rank(max_stellar_rank, max_temp,ergotropy_constraint):
+  
+  t_vec = np.linspace(0.1,max_temp,40)
 
-#critical_temp()
-#PLOTS FOR THESIS:
-#bounds()
-#evolution_with_noise_gaussian()
-#SV_plots([[-1,-1]])
+  def find_optimal_gaussian(t): #finds the optimal squeezing parameters for a certain temperature through the lagrange multipliers method
+    nu = 1/np.tanh(1/(2* t))
+    # Define the variable (symbol)
+    z = sp.Symbol('z', real=True)
+    k = sp.symbols('k', real=True)
+    poly_expr = 1 - k*z**2 - (4*ergotropy_constraint+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
+    roots = sp.solve(poly_expr, z)
+    #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
+    found_root=False
+    root_index= None
+    i=0
+    while found_root == False:
+        x= roots[i].subs({k:nu}) 
+        if x.is_real == True:
+            if np.float64(x) > 0 and np.float64(x) < 1:
+                found_root =True
+                root_index = i
+        else:
+            i +=1
+    
+    z_opt =roots[root_index].subs({k:nu})
+    return z_opt
+  
+  z_opt_vec =[]
+  alpha_sq_opt_vec=[]
+  gauss_snr_opt = []
+  for t in t_vec:
+    nu = 1/np.tanh(1/(2* t))
+    z_opt = find_optimal_gaussian(t)
+    gauss_alpha_sq_opt = ergotropy_constraint- (1/4)* nu* (z_opt + 1/z_opt -2) 
+    z_opt_vec +=[z_opt]
+    alpha_sq_opt_vec+=[gauss_alpha_sq_opt]
+    n_sq_opt = (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*gauss_alpha_sq_opt
+    print('z_opt, n_sq_opt, snr',z_opt,n_sq_opt, ergotropy_constraint/n_sq_opt)
+    gauss_snr_opt += [log(np.float64(ergotropy_constraint/n_sq_opt))]
+
+  plt.plot(t_vec,z_opt_vec)
+  plt.plot(t_vec,alpha_sq_opt_vec)
+  plt.legend(['Optimal squeezing (z)', r'Optimal displacement $|\alpha|^2$'])
+  plt.xlabel(r'$T [K]$')
+  plt.savefig('Optimal parameters_z,alpha_gaussian.pdf')
+  plt.show()
+
+  optimal_snr = []
+  for i in range(max_stellar_rank+1):
+    optimal_snr += [[]]
+    i+= 1
+  for t in t_vec:
+    rank = 0
+    for rank in range(max_stellar_rank+1):
+      state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1]*rank, format='number')
+      #print(state.__dict__)
+      result= state.optimize_ratio(ergotropy_constraint)
+      while result.success == False:
+        result= state.optimize_ratio(ergotropy_constraint)
+      optimal_snr[rank]+= [log(-result.fun)]
+      #if rank == 0:
+        #print('z_opt_gauss',result.x[2])
+      #print(result.x)
+      #print(optimal_snr)
+      rank +=1
+      print(rank)
+  plt.plot(t_vec,gauss_snr_opt, linestyle='dashed')
+  for rank in range(1, max_stellar_rank+1):
+    plt.plot(t_vec, optimal_snr[rank])
+  plt.legend(['Gaussian bound']+ [f'{rank} photon addition(s)' for rank in range(1,max_stellar_rank+1)])
+  plt.xlabel(r'$T [K]$')
+  plt.ylabel(r'$SNR_{ext, opt}$')
+  plt.savefig('snr_with_stellar_rank.pdf')
+  plt.show()
+  return optimal_snr
+
+snr_vs_stellar_rank(3,1.5,1)
+
