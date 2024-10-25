@@ -513,7 +513,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         initial_guess = self.disp[0], self.disp[1], self.squeezing[0] 
 
         # Perform optimization
-        result = minimize(objective, initial_guess, constraints=constraints, bounds=bounds, method='L-BFGS-B')
+        result = minimize(objective, initial_guess, constraints=constraints, bounds=bounds, method='SLSQP', tol=1e-7)
 
         # Update the attributes with the optimized values
         self.disp[0], self.disp[1], self.squeezing[0]  = result.x

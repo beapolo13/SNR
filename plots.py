@@ -560,7 +560,7 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp,ergotropy_constraint):
     # Define the variable (symbol)
     z = sp.Symbol('z', real=True)
     k = sp.symbols('k', real=True)
-    poly_expr = 1 - k*z**2 - (4*ergotropy_constraint+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
+    poly_expr = 1 - k*z**2 - (4*(nu**2++max_stellar_rank)+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
     roots = sp.solve(poly_expr, z)
     #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
     found_root=False
@@ -584,18 +584,18 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp,ergotropy_constraint):
   for t in t_vec:
     nu = 1/np.tanh(1/(2* t))
     z_opt = find_optimal_gaussian(t)
-    gauss_alpha_sq_opt = ergotropy_constraint- (1/4)* nu* (z_opt + 1/z_opt -2) 
+    gauss_alpha_sq_opt = (nu**2+max_stellar_rank)- (1/4)* nu* (z_opt + 1/z_opt -2) 
     z_opt_vec +=[z_opt]
     alpha_sq_opt_vec+=[gauss_alpha_sq_opt]
     n_sq_opt = (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*gauss_alpha_sq_opt
-    print('z_opt, n_sq_opt, snr',z_opt,n_sq_opt, ergotropy_constraint/n_sq_opt)
-    gauss_snr_opt += [log(np.float64(ergotropy_constraint/n_sq_opt))]
+    print('z_opt, alpha_sq_opt, snr',z_opt,gauss_alpha_sq_opt, (nu**2+max_stellar_rank)/n_sq_opt)
+    gauss_snr_opt += [np.log(np.float64((nu**2+max_stellar_rank)/n_sq_opt))]
 
   plt.plot(t_vec,z_opt_vec)
   plt.plot(t_vec,alpha_sq_opt_vec)
   plt.legend(['Optimal squeezing (z)', r'Optimal displacement $|\alpha|^2$'])
   plt.xlabel(r'$T [K]$')
-  plt.savefig('Optimal parameters_z,alpha_gaussian.pdf')
+  #plt.savefig('Optimal parameters_z,alpha_gaussian.pdf')
   plt.show()
 
   optimal_snr = []
@@ -603,20 +603,24 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp,ergotropy_constraint):
     optimal_snr += [[]]
     i+= 1
   for t in t_vec:
+    nu = 1/np.tanh(1/(2* t))
     rank = 0
     for rank in range(max_stellar_rank+1):
       state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1]*rank, format='number')
       #print(state.__dict__)
-      result= state.optimize_ratio(ergotropy_constraint)
+      result= state.optimize_ratio(nu**2+max_stellar_rank)
       while result.success == False:
-        result= state.optimize_ratio(ergotropy_constraint)
+        result= state.optimize_ratio(nu**2+max_stellar_rank)
       optimal_snr[rank]+= [log(-result.fun)]
+      optimal_state= State(1,[result.x[2]],[],[random.random()],disp=[result.x[0],result.x[1]], temp=[t],nongaussian_ops=[1]*rank, format='number')
+      constraint_check = optimal_state.ergotropy()
+      print(constraint_check)
       #if rank == 0:
         #print('z_opt_gauss',result.x[2])
       #print(result.x)
       #print(optimal_snr)
-      rank +=1
       print(rank)
+      rank +=1
   plt.plot(t_vec,gauss_snr_opt, linestyle='dashed')
   for rank in range(1, max_stellar_rank+1):
     plt.plot(t_vec, optimal_snr[rank])
@@ -627,5 +631,7 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp,ergotropy_constraint):
   plt.show()
   return optimal_snr
 
-snr_vs_stellar_rank(3,1.5,1)
+max_rank=3
+max_en=max_rank**2
+snr_vs_stellar_rank(max_rank,1,max_en)
 
