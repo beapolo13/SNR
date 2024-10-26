@@ -493,30 +493,40 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
       print('This function only works for N=1 or N=2! (yet)')
       return
     
-  def optimize_ratio(self, max_energy):
+  def optimize_ratio(self, max_energy, N):
+   
         # Objective function (we minimize -ratio to maximize ratio)
         def objective(attrs):
-            self.disp[0], self.disp[1], self.squeezing[0] = attrs  # Update class attributes
+            self.disp[:2*N] = attrs[:2*N]
+            self.squeezing[:N] = attrs[2*N:3*N]
+            self.bs[:(N)*(N-1)//2] = attrs[:3*N]
             return -self.SNR_extr()  # Negative for maximization
 
         # Constraint: energy should not exceed max_energy
         def energy_constraint(attrs):
-            self.disp[0], self.disp[1], self.squeezing[0]  = attrs
+            self.disp[:2*N] = attrs[:2*N]
+            self.squeezing[:N] = attrs[2*N:3*N]
+            self.bs[:(N)*(N-1)//2] = attrs[3*N:]
             return max_energy - self.ergotropy()  # Must be non-negative
 
         #Define bounds for parameters
-        bounds = [(0, max_energy), (0, max_energy),(0.01, 0.99)] 
+        disp_bounds = [(0, max_energy)] * (2 * N)
+        squeezing_bounds = [(0.01, 0.99)] * N
+        bs_bounds = [(0,2*np.pi)]*(N*(N-1)//2)
+        bounds = disp_bounds + squeezing_bounds + bs_bounds
         # Define constraints dictionary
         constraints = ({'type': 'ineq', 'fun': energy_constraint})
 
         # Initial guess for the attributes
-        initial_guess = self.disp[0], self.disp[1], self.squeezing[0] 
+        initial_guess = self.disp[:2*N] + self.squeezing[:N] + self.bs[:N*(N-1)//2]
 
         # Perform optimization
         result = minimize(objective, initial_guess, constraints=constraints, bounds=bounds, method='SLSQP', tol=1e-7)
 
         # Update the attributes with the optimized values
-        self.disp[0], self.disp[1], self.squeezing[0]  = result.x
+        self.disp[:2*N] = result.x[:2*N]
+        self.squeezing[:N] = result.x[2*N:3*N]
+        self.bs[N*(N-1)//2] =result.x[3*N:]
 
         return result
   

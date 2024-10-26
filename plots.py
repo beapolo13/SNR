@@ -551,8 +551,8 @@ def density_plot_temp():
   plt.savefig('density plot temp.pdf')
   plt.show()
 
-def snr_vs_stellar_rank(max_stellar_rank, max_temp,ergotropy_constraint):
-  
+def snr_vs_stellar_rank(max_stellar_rank, max_temp):
+   #the ergotropy constraint is given by temperature and max_stellar_rank
   t_vec = np.linspace(0.1,max_temp,40)
 
   def find_optimal_gaussian(t): #finds the optimal squeezing parameters for a certain temperature through the lagrange multipliers method
@@ -560,7 +560,7 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp,ergotropy_constraint):
     # Define the variable (symbol)
     z = sp.Symbol('z', real=True)
     k = sp.symbols('k', real=True)
-    poly_expr = 1 - k*z**2 - (4*(nu**2++max_stellar_rank)+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
+    poly_expr = 1 - k*z**2 - (4*(nu**2+max_stellar_rank)+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
     roots = sp.solve(poly_expr, z)
     #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
     found_root=False
@@ -631,7 +631,37 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp,ergotropy_constraint):
   plt.show()
   return optimal_snr
 
-max_rank=3
-max_en=max_rank**2
-snr_vs_stellar_rank(max_rank,1,max_en)
 
+def multimode_optimization(max_stellar_rank, max_temp, max_modes):
+  t_vec = np.linspace(0.1,max_temp,1)
+  colors = plt.cm.viridis(t_vec)
+  N_vec = np.arange(1,max_modes+1)
+  fig,axes = plt.subplots(2,2)
+  for rank in range(0, max_stellar_rank+1):
+    for i in range(len(t_vec)):
+      optimal_snr=[]
+      nu = 1/np.tanh(1/(2* t_vec[i]))
+      for n in N_vec:
+        state = State(n,[random.random()]*n,[2*np.pi*random.random()]*(n*(n-1)//2),[random.random()]*n,disp=[random.random(),random.random()]*n, temp=[t_vec[i]]*n,nongaussian_ops=[1]*rank, format='number')
+        if rank ==0:
+          result=state.optimize_ratio((nu**2)*n,n)
+        else:
+          result= state.optimize_ratio((nu**2+rank)*n,n)
+        while result.success == False:
+          if rank ==0:
+            result=state.optimize_ratio((nu**2)*n,n)
+          else:
+            result= state.optimize_ratio((nu**2+rank)*n,n)
+        optimal_snr+= [log(-result.fun)]
+      axes[rank//2,rank%2].plot(N_vec,optimal_snr, color=colors[i])
+      axes[rank//2,rank%2].set_xlabel('N')
+      axes[rank//2,rank%2].set_xticks(ticks=np.arange(1,max_modes+1))
+    rank+=1
+  cbar_ax = fig.add_axes([0.9, 0.15, 0.02, 0.7])
+  cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'), cax=cbar_ax, location='right')
+  cbar.set_label(r'$T[K]$')
+  plt.show()
+    
+
+#snr_vs_stellar_rank(3,1)
+multimode_optimization(3,1,4)
