@@ -633,7 +633,7 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp):
 
 
 def multimode_optimization(max_stellar_rank, max_temp, max_modes):
-  t_vec = np.linspace(0.1,max_temp,1)
+  t_vec = np.linspace(0.5,max_temp,10)
   colors = plt.cm.viridis(t_vec)
   N_vec = np.arange(1,max_modes+1)
   fig,axes = plt.subplots(2,2)
@@ -664,4 +664,4 @@ def multimode_optimization(max_stellar_rank, max_temp, max_modes):
     
 
 #snr_vs_stellar_rank(3,1)
-multimode_optimization(3,1,4)
+multimode_optimization(3,1.5,4)

@@ -521,7 +521,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         initial_guess = self.disp[:2*N] + self.squeezing[:N] + self.bs[:N*(N-1)//2]
 
         # Perform optimization
-        result = minimize(objective, initial_guess, constraints=constraints, bounds=bounds, method='SLSQP', tol=1e-7)
+        result = minimize(objective, initial_guess, constraints=constraints, bounds=bounds, method='SLSQP', tol=1e-4)
 
         # Update the attributes with the optimized values
         self.disp[:2*N] = result.x[:2*N]
