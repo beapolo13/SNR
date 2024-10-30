@@ -22,13 +22,13 @@ import matplotlib.colors as mcolors
 from utils import *
 from expectation_values_cat import *
 params = {'axes.linewidth': 2,
-         'axes.labelsize': 22,
-         'axes.titlesize': 32,
+         'axes.labelsize': 15,
+         'axes.titlesize': 22,
          'axes.linewidth': 2,
          'lines.markeredgecolor': "black",
      	'lines.linewidth': 2,
-         'xtick.labelsize': 20,
-         'ytick.labelsize': 20,
+         'xtick.labelsize': 10,
+         'ytick.labelsize': 10,
          "text.usetex": True,
          "font.serif": ["Palatino"],
          "font.family": "serif"
@@ -529,7 +529,7 @@ def density_plot_temp():
   X_grid, Y_grid =np.meshgrid(X,Y)
   grid= np.vstack([X_grid.ravel(),Y_grid.ravel()]).T 
   W= [[np.real(SNR_ng_extr(sigma[j][i],[0,0]*2,[+1],sigma0[j])) for i in range(len(X))] for j in range(len(Y))]
-  print(np.shape(W))
+  print(np.shape(W), type(W))
   fig,ax=plt.subplots(figsize=(10,6))
   c=ax.pcolormesh(X_grid,Y_grid,W,norm=mcolors.LogNorm(vmin=np.min(W), vmax=np.max(W)),cmap='jet')
   cbar=fig.colorbar(c,ax=ax, label='SNR extr')
@@ -632,6 +632,74 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp):
   return optimal_snr
 
 
+def snr_sv_comparison(stellar_rank, max_temp):  # since we are studying bipartite entanglement, it is sufficient to consider 2 modes
+   #the ergotropy constraint is given by temperature and max_stellar_rank
+
+  def is_outlier(value, left, right, threshold=0.01):
+    """
+    Determines if a value is an outlier by comparing it to the average of neighboring values.
+    """
+    avg_neighbor = (left + right) / 2
+    return abs(value - avg_neighbor) > threshold * avg_neighbor
+
+  def replace_outliers_with_interpolation(data, threshold=0.01):
+      """
+      Detects and replaces outliers in a 2D list by interpolating neighboring values.
+      """
+      rows, cols = np.shape(data)
+      for i in range(rows):
+          for j in range(1, cols - 1):  # Avoid edges for simplicity
+              value, left, right = data[i][j], data[i][j - 1], data[i][j + 1]
+              if is_outlier(value, left, right, threshold):
+                  data[i][j] = (left + right) / 2
+      return data
+
+
+  fig, (ax1,ax2) = plt.subplots(1,2, figsize=(12, 6))
+  t_vec = np.linspace(0.1,max_temp,100)
+  x_vec=np.linspace(0,2*np.pi,100)
+  X=x_vec
+  Y=t_vec
+  X_grid, Y_grid =np.meshgrid(X,Y)
+  #create array for optimal SNR and SV of the corresponding state
+  optimal_snr = []
+  SV = []
+  z=0.5
+  for t in t_vec:
+    optimal_snr += [[]]
+    SV += [[]]
+    nu = 1/np.tanh(1/(2* t))
+    print('nu=', nu)
+    print((nu**2+stellar_rank)*2)
+    for x in x_vec:
+      optimal_state= State(2,[z,1/z],[x],[0,0],disp=[0,0,0,0], temp=[t,t],nongaussian_ops=[1]*stellar_rank, format='number')
+      optimal_snr[np.where(t_vec == t)[0][0]]+= [np.float64(optimal_state.SNR_extr())]
+      SV[np.where(t_vec == t)[0][0]]+= [-np.float64(np.real(optimal_state.SV()))]
+  vmin_snr, vmax_snr = np.min(optimal_snr), np.max(optimal_snr)
+  vmin_sv, vmax_sv = np.min(SV), np.max(SV)
+  c1=ax1.pcolormesh(X_grid,Y_grid,optimal_snr, cmap='jet')
+  c2=ax2.pcolormesh(X_grid,Y_grid,SV,cmap='jet')
+  cbar1=fig.colorbar(c1,ax=ax1)
+  cbar2=fig.colorbar(c2,ax=ax2)
+  ax1.set_xlim(X.min(), X.max())
+  ax1.set_ylim(Y.min() , Y.max())
+  ax2.set_xlim(X.min(), X.max())
+  ax2.set_ylim(Y.min() , Y.max())
+  ax1.set_title('SNR extr')
+  ax2.set_title('SV')
+  cbar1.ax.set_yticks(ticks=[vmin_snr, (vmin_snr + vmax_snr) / 2, vmax_snr])
+  cbar2.ax.set_yticks(ticks=[vmin_sv, (vmin_sv + vmax_sv) / 2, vmax_sv])
+  ax1.set_xlabel(r'Beamsplitter angle $\theta$')
+  ax1.set_ylabel(r'$T[K]$')
+  ax2.set_xlabel(r'Beamsplitter angle $\theta$')
+  ax2.set_ylabel(r'$T[K]$')
+  plt.subplots_adjust(wspace=0.9)
+  plt.savefig(f'snr_entanglement {stellar_rank} phadd.pdf')
+  plt.show()
+  
+  return 
+
+
 def multimode_optimization(max_stellar_rank, max_temp, max_modes):
   t_vec = np.linspace(0.5,max_temp,10)
   colors = plt.cm.viridis(t_vec)
@@ -664,4 +732,5 @@ def multimode_optimization(max_stellar_rank, max_temp, max_modes):
     
 
 #snr_vs_stellar_rank(3,1)
-multimode_optimization(3,1.5,4)
+#multimode_optimization(3,1.5,4)
+snr_sv_comparison(0,0.5)

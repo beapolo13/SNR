@@ -143,7 +143,7 @@ def convention_switch(N,sigma,ordering,format):
 
 class State:    #notation as in master thesis. Assume kb= 1, hbar=1 
     
-  def __init__(self,N,squeezing,bs,pshift,omega=None, disp=None,temp=None,nongaussian_ops=None, required_ordering='xxpp', format='number'):
+  def __init__(self,N,squeezing,bs,pshift,omega=None,disp=None,temp=None,nongaussian_ops=None, required_ordering='xxpp', format='number'):
     self.N=N
     if omega is not None:  #omega is a vector of length N, with the frequencies of each mode
       self.omega = self._convert_to_symbolic(omega) 
@@ -247,7 +247,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
             B[j,i]=B[self.N+j,self.N+i]= -sp.sin(self.bs[index])
             index+=1
             B_total=B_total@B
-            print(B_total)
+            #print(B_total)
         return B_total
          
     if self.format =='string':
@@ -531,12 +531,31 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         return result
   
 
-#Symbolic representation
-# nu1, nu2, w1, w2, z1,z2,x,T,phi1,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('nu1, nu2, w1, w2 z1,z2,x,T, phi1,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True, commutative= True)
-# alpha = symbols('alpha')
-# state_sym=State(2,[z1,z2],[x],[0,0],disp=[0,0,0,0],omega=[w1,w2],temp=[T, T],nongaussian_ops=[], required_ordering='xxpp',format='string')
-# print('initial matrix', state_sym.matrix.subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 }))
-# print('initial energy',state_sym.expvalN_gaussian_nondisplaced().subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 }))
+# #Symbolic representation
+# nu1, nu2, w1, w2, z1,z2,x,T1,T2,phi1,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('nu1, nu2, w1, w2 z1,z2,x,T1, T2, phi1,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True, commutative= True, nonnegative= True)
+# # alpha = symbols('alpha')
+# state_sym=State(2,[z1,z2],[x],[phi1,phi2],omega=[w1,w2],disp=[0,0,0,0],temp=[T1, T1],nongaussian_ops=[], required_ordering='xxpp',format='string')
+# print('initial matrix', state_sym.matrix.subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))
+# erg_exp = state_sym.ergotropy().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 })
+# var_expr = (state_sym.varianceN().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))**2
+# snr_expr = simplify(state_sym.SNR_extr().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))
+# SV_expr = simplify(state_sym.SV().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2}))
+# print('erg',erg_exp)
+# print('')
+# print('var', var_expr)
+# print('')
+# print('snr', snr_expr)
+# print('')
+# print('SV', SV_expr)
+# print('')
+# variables = [x,phi1,phi2]
+# energy_gradient_vector = [simplify(sp.diff(erg_exp, var)) for var in variables]
+# print('')
+# print('gradient',energy_gradient_vector)
+# for var in variables:
+#   print(f'{var}', sp.trigsimp(simplify(sp.diff(var_expr, var))))
+#   print('')
+
 # state_sym.local_operation(0,r1,psi1,0,r2,psi2)
 
 
