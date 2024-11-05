@@ -532,7 +532,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
   
 
 # #Symbolic representation
-# nu1, nu2, w1, w2, z1,z2,x,T1,T2,phi1,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('nu1, nu2, w1, w2 z1,z2,x,T1, T2, phi1,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True, commutative= True, nonnegative= True)
+nu1, nu2, w1, w2, z1,z2,x,T1,T2,phi1,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('nu1, nu2, w1, w2 z1,z2,x,T1, T2, phi1,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True, commutative= True, nonnegative= True)
 # # alpha = symbols('alpha')
 # state_sym=State(2,[z1,z2],[x],[phi1,phi2],omega=[w1,w2],disp=[0,0,0,0],temp=[T1, T1],nongaussian_ops=[], required_ordering='xxpp',format='string')
 # print('initial matrix', state_sym.matrix.subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))
@@ -565,9 +565,22 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
 # gradient_vector = [sp.diff(energy_expr, var) for var in variables]
 # print('derivative',gradient_vector)
 
+state_0= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussian_ops=[], required_ordering='xxpp',format='string')
+state_1= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussian_ops=[1], required_ordering='xxpp',format='string')
+state_2= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussian_ops=[1,1], required_ordering='xxpp',format='string')
+state_3= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussian_ops=[1,1,1], required_ordering='xxpp',format='string')
 
-
-
-
+gs =symbols('gs')
+n0=state_0.expvalN()
+var0 = (state_0.varianceN()*state_0.varianceN()).subs({coth(w1/(2*T1)) : 2* gs +1})
+n1_real= state_1.expvalN().subs({coth(w1/(2*T1)): 2*gs + 1})
+n1_test = n0 + 1 + var0/(n0+1)
+n2 = state_2.expvalN().subs({coth(w1/(2*T1)) : 2*gs+1})
+n3= state_3.expvalN().subs({coth(w1/(2*T1)) : 2*gs+1})
+print(n0)
+print(simplify(n1_real))
+print(simplify(n1_test))
+print(simplify(n2))
+print(simplify(n3))
 
 
