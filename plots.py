@@ -730,7 +730,76 @@ def multimode_optimization(max_stellar_rank, max_temp, max_modes):
   cbar.set_label(r'$T[K]$')
   plt.show()
     
+def minimum_energy_state(stellar_rank, maxiter=10): 
+  #this function seeks to demonstrate that the one-mode 'thermal fock' state 
+  #(state that results from successive photon additions and subtractions to the thermal state) is, 
+  # for every stellar rank (trivially for gaussian states with stellar rank 0) the lowest energy state of that stellar rank
+  fig, ax = plt.subplots(1,1)
+  temp_vec= np.linspace(0.01,1, 100)
+  for t in temp_vec:
+    thermal_fock = State(1, [1],[], [0],disp=[0,0], temp=[t], nongaussian_ops=[1]*stellar_rank, required_ordering='xxpp', format='number')
+    y = np.real(thermal_fock.expvalN())
+    print(t,y)
+    ax.scatter(t,y,s=2, color='b')
+    for i in range(maxiter):
+      state = State(1, [np.random.random()],[], [2*np.pi*np.random.random()],disp=[0,0], temp=[t], nongaussian_ops=[1]*stellar_rank, required_ordering='xxpp', format='number')
+      y= np.real(state.expvalN())
+      if y < 10*stellar_rank:
+        ax.scatter(t,y,s=1, color='r')
+      i+=1
+  plt.show()
 
+  return
+
+def snr_with_constraints():
+  max_stellar_rank =3
+  temp_vec=np.linspace(0.1,1,100)
+  nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
+  theta_vec = np.linspace(0.5,np.real(3*(nu_vec[-1]+1)),100)
+  X=theta_vec
+  Y=temp_vec
+  X_grid, Y_grid =np.meshgrid(X,Y)
+  fig,axes = plt.subplots(2,2)
+  colors=['b','r','g']
+  optimal_snr =[]
+  for rank in range(max_stellar_rank+1):
+    if rank != 0:
+      axes[rank//2,rank%2].plot([rank*(1+n) for n in nu_vec],temp_vec, linestyle='dashed', color= 'black')
+    optimal_snr += [[]]
+    for i in range(len(temp_vec)):
+      t=temp_vec[i]
+      nu= 1/np.tanh(1/(2* t))
+      optimal_snr[rank] += [[]]
+      for theta in theta_vec:
+        if theta < rank*(1+nu):
+          optimal_snr[rank][i]+= [np.nan]
+        else:
+          state = State(1,[0.01+0.98*random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1]*rank, format='number')
+          result= state.optimize_ratio(theta,1)
+          while result.success == False:
+            result= state.optimize_ratio(theta,1)
+          optimal_snr[rank][i]+= [log(-result.fun)]
+      i+=1
+      print(i)
+    print(rank)
+  vmin, vmax = np.nanmin(optimal_snr), np.nanmax(optimal_snr)
+  print(vmin, vmax)
+  for rank in range(max_stellar_rank+1):
+    c= axes[rank//2,rank%2].pcolormesh(X_grid,Y_grid,optimal_snr[rank],vmin=vmin, vmax=vmax, cmap='jet')
+    axes[rank//2,rank%2].set_xlabel(r'Ergotropy constraint $\theta$')
+    axes[rank//2,rank%2].set_ylabel(r'$T[K]$')
+    axes[rank//2,rank%2].set_title(f'Optimal SNR extr for {rank} photon adds')
+    rank+=1
+  fig.tight_layout(rect=[0, 0, 0.85, 1])  # Leave space for colorbar on the right
+  cbar_ax = fig.add_axes([0.88, 0.15, 0.03, 0.7])  # [left, bottom, width, height]
+  fig.colorbar(mappable=c, cax=cbar_ax)  # Only one ScalarMappable is needed for colorbar
+  #hacer una sola colorbar para todooo para q se vea mas claro quien gana
+  plt.show()
+  return
+
+snr_with_constraints()
+#snr_with_constraints()
+#minimum_energy_state(3, maxiter=10)
 #snr_vs_stellar_rank(3,1)
 #multimode_optimization(3,1.5,4)
-snr_sv_comparison(0,0.5)
+#snr_sv_comparison(0,0.5)
