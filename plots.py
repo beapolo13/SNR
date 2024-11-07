@@ -23,7 +23,7 @@ from utils import *
 from expectation_values_cat import *
 params = {'axes.linewidth': 2,
          'axes.labelsize': 15,
-         'axes.titlesize': 22,
+         'axes.titlesize': 15,
          'axes.linewidth': 2,
          'lines.markeredgecolor': "black",
      	'lines.linewidth': 2,
@@ -753,18 +753,60 @@ def minimum_energy_state(stellar_rank, maxiter=10):
 
 def snr_with_constraints():
   max_stellar_rank =3
-  temp_vec=np.linspace(0.1,1,100)
+  temp_vec=np.linspace(0.1,1,50)
   nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
-  theta_vec = np.linspace(0.5,np.real(3*(nu_vec[-1]+1)),100)
+  theta_vec = np.linspace(0.5,np.real(3*(nu_vec[-1]+1)),50)
   X=theta_vec
   Y=temp_vec
   X_grid, Y_grid =np.meshgrid(X,Y)
   fig,axes = plt.subplots(2,2)
   colors=['b','r','g']
   optimal_snr =[]
-  for rank in range(max_stellar_rank+1):
-    if rank != 0:
-      axes[rank//2,rank%2].plot([rank*(1+n) for n in nu_vec],temp_vec, linestyle='dashed', color= 'black')
+
+
+  #Gaussian case
+  optimal_snr += [[]]
+  def find_optimal_gaussian(t, theta): #finds the optimal squeezing parameters for a certain temperature through the lagrange multipliers method
+    nu = 1/np.tanh(1/(2* t))
+    # Define the variable (symbol)
+    z = sp.Symbol('z', real=True)
+    k = sp.symbols('k', real=True)
+    poly_expr = 1 - k*z**2 - (4*theta+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
+    roots = sp.solve(poly_expr, z)
+    #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
+    found_root=False
+    root_index= None
+    i=0
+    while found_root == False:
+        x= roots[i].subs({k:nu}) 
+        if x.is_real == True:
+            if np.float64(x) > 0 and np.float64(x) < 1:
+                found_root =True
+                root_index = i
+        else:
+            i +=1
+    
+    z_opt =roots[root_index].subs({k:nu})
+    return z_opt
+  
+  z_opt_vec =[]
+  alpha_sq_opt_vec=[]
+  for i in range(len(temp_vec)):
+    t= temp_vec[i]
+    nu = 1/np.tanh(1/(2* t))
+    optimal_snr[0] += [[]]
+    for theta in theta_vec:
+      z_opt = find_optimal_gaussian(t,theta)
+      gauss_alpha_sq_opt =theta- (1/4)* nu* (z_opt + 1/z_opt -2) 
+      z_opt_vec +=[z_opt]
+      alpha_sq_opt_vec+=[gauss_alpha_sq_opt]
+      n_sq_opt = (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*gauss_alpha_sq_opt
+      optimal_snr[0][i] += [np.log10(np.float64(theta/n_sq_opt))]
+    print('gaussian',i)
+
+  #Non-gaussian case
+  for rank in range(1, max_stellar_rank+1):
+    axes[rank//2,rank%2].plot([rank*(1+n) for n in nu_vec],temp_vec, linestyle='dashed', color= 'black', linewidth=1)
     optimal_snr += [[]]
     for i in range(len(temp_vec)):
       t=temp_vec[i]
@@ -774,14 +816,14 @@ def snr_with_constraints():
         if theta < rank*(1+nu):
           optimal_snr[rank][i]+= [np.nan]
         else:
-          state = State(1,[0.01+0.98*random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1]*rank, format='number')
+          state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1]*rank, format='number')
           result= state.optimize_ratio(theta,1)
           while result.success == False:
             result= state.optimize_ratio(theta,1)
-          optimal_snr[rank][i]+= [log(-result.fun)]
+          print(result.x,log(-result.fun))
+          optimal_snr[rank][i]+= [np.log10(-result.fun)]
       i+=1
-      print(i)
-    print(rank)
+      print(rank, i)
   vmin, vmax = np.nanmin(optimal_snr), np.nanmax(optimal_snr)
   print(vmin, vmax)
   for rank in range(max_stellar_rank+1):
@@ -797,7 +839,27 @@ def snr_with_constraints():
   plt.show()
   return
 
-snr_with_constraints()
+def feasible_regions(constraint_theta, system_temp):
+  temp_vec=np.linspace(0.1,1,50)
+  nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
+  minimum_ergotropy=[]
+  colors=['black','r','b','g']
+  for rank in range(0,4):
+    minimum_ergotropy += [[]]
+    for i in range(len(temp_vec)):
+      minimum_ergotropy[rank] += [rank*((nu_vec[i]-1)/2+1)]
+    plt.plot(minimum_ergotropy[rank],temp_vec, color=colors[rank])
+  plt.fill([0, 0, constraint_theta, constraint_theta], [0, system_temp, system_temp, 0], color = 'yellow', alpha = 0.5)
+  plt.xlabel(r'Ergotropy constraint $\theta$')
+  plt.ylabel(r'T[K]')
+  plt.legend(['gauss', '1','2','3'])
+  plt.show()
+
+
+
+
+feasible_regions(2.5,0.5)
+#snr_with_constraints()
 #snr_with_constraints()
 #minimum_energy_state(3, maxiter=10)
 #snr_vs_stellar_rank(3,1)
