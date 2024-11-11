@@ -753,9 +753,9 @@ def minimum_energy_state(stellar_rank, maxiter=10):
 
 def snr_with_constraints():
   max_stellar_rank =3
-  temp_vec=np.linspace(0.1,1,50)
+  temp_vec=np.linspace(0.1,1,10)
   nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
-  theta_vec = np.linspace(0.5,np.real(3*(nu_vec[-1]+1)),50)
+  theta_vec = np.linspace(0.5,np.real(3*(nu_vec[-1]+1)),10)
   X=theta_vec
   Y=temp_vec
   X_grid, Y_grid =np.meshgrid(X,Y)
@@ -766,7 +766,7 @@ def snr_with_constraints():
 
   #Gaussian case
   optimal_snr += [[]]
-  def find_optimal_gaussian(t, theta): #finds the optimal squeezing parameters for a certain temperature through the lagrange multipliers method
+  def find_optimal_gaussian(t, theta): #finds the optimal squeezing, displacement parameters & optimal SNR for a certain temperature through the lagrange multipliers method
     nu = 1/np.tanh(1/(2* t))
     # Define the variable (symbol)
     z = sp.Symbol('z', real=True)
@@ -787,7 +787,11 @@ def snr_with_constraints():
             i +=1
     
     z_opt =roots[root_index].subs({k:nu})
-    return z_opt
+    alpha_sq_opt= theta- (1/4)* nu* (z_opt + 1/z_opt -2)
+    n_sq_opt=  (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*alpha_sq_opt
+    optimal_snr = np.float64(theta/n_sq_opt)
+
+    return z_opt, alpha_sq_opt, n_sq_opt, optimal_snr
   
   z_opt_vec =[]
   alpha_sq_opt_vec=[]
@@ -801,7 +805,7 @@ def snr_with_constraints():
       z_opt_vec +=[z_opt]
       alpha_sq_opt_vec+=[gauss_alpha_sq_opt]
       n_sq_opt = (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*gauss_alpha_sq_opt
-      optimal_snr[0][i] += [np.log10(np.float64(theta/n_sq_opt))]
+      optimal_snr[0][i] += [np.log(np.float64(theta/n_sq_opt))]
     print('gaussian',i)
 
   #Non-gaussian case
@@ -816,12 +820,12 @@ def snr_with_constraints():
         if theta < rank*(1+nu):
           optimal_snr[rank][i]+= [np.nan]
         else:
-          state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1]*rank, format='number')
+          state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[-1]*rank, format='number')
           result= state.optimize_ratio(theta,1)
           while result.success == False:
             result= state.optimize_ratio(theta,1)
           print(result.x,log(-result.fun))
-          optimal_snr[rank][i]+= [np.log10(-result.fun)]
+          optimal_snr[rank][i]+= [np.log(-result.fun)]
       i+=1
       print(rank, i)
   vmin, vmax = np.nanmin(optimal_snr), np.nanmax(optimal_snr)
@@ -839,6 +843,33 @@ def snr_with_constraints():
   plt.show()
   return
 
+def find_optimal_gaussian(t, theta): #finds the optimal squeezing, displacement parameters & optimal SNR for a certain temperature through the lagrange multipliers method
+    nu = 1/np.tanh(1/(2* t))
+    # Define the variable (symbol)
+    z = sp.Symbol('z', real=True)
+    k = sp.symbols('k', real=True)
+    poly_expr = 1 - k*z**2 - (4*theta+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
+    roots = sp.solve(poly_expr, z)
+    #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
+    found_root=False
+    root_index= None
+    i=0
+    while found_root == False:
+        x= roots[i].subs({k:nu}) 
+        if x.is_real == True:
+            if np.float64(x) > 0 and np.float64(x) < 1:
+                found_root =True
+                root_index = i
+        else:
+            i +=1
+    
+    z_opt =roots[root_index].subs({k:nu})
+    alpha_sq_opt= theta- (1/4)* nu* (z_opt + 1/z_opt -2)
+    n_sq_opt=  (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*alpha_sq_opt
+    optimal_snr = np.float64(theta/n_sq_opt)
+
+    return z_opt, alpha_sq_opt, n_sq_opt, optimal_snr
+
 def feasible_regions(constraint_theta, system_temp):
   temp_vec=np.linspace(0.1,1,50)
   nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
@@ -855,10 +886,52 @@ def feasible_regions(constraint_theta, system_temp):
   plt.legend(['gauss', '1','2','3'])
   plt.show()
 
+def optimal_strategy():
+  temp_vec=np.linspace(0.1,1,10)
+  nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
+  theta_vec = np.linspace(0.5,np.real(3*(nu_vec[-1]+1)+0.05),50)
+  cmap=cm.rainbow
+  norm = mcolors.Normalize(vmin=temp_vec.min(),vmax=temp_vec.max())
+  fig, ax = plt.subplots(1,1)
+  for t in temp_vec:
+    i=np.where(temp_vec==t)
+    nu= 1/np.tanh(1/(2* t))
+    gaussian_snr_bound =[]
+    optimal_strategy=[]
+    ng_index = np.where(theta_vec > nu+1)[0][0]  #identify the first value of theta where photon additions can start to be applied
+    print(ng_index)
+    for theta in theta_vec:
+      z_gauss, a_sq_gauss, n2_gauss, snr_opt_gauss = find_optimal_gaussian(t, theta)
+      gaussian_snr_bound +=[np.log(snr_opt_gauss)]
+      if nu+1 < theta < 2*(nu+1):
+        state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1], format='number')
+        result= state.optimize_ratio(theta,1)
+        while result.success == False:
+          result= state.optimize_ratio(theta,1)
+        optimal_strategy+= [np.log(-result.fun)]
+      elif 2*(nu+1) < theta < 3*(nu+1):
+        state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1,1], format='number')
+        result= state.optimize_ratio(theta,1)
+        while result.success == False:
+          result= state.optimize_ratio(theta,1)
+        optimal_strategy+= [np.log(-result.fun)]
+      elif 3*(nu+1)< theta:
+        state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1,1,1], format='number')
+        result= state.optimize_ratio(theta,1)
+        while result.success == False:
+          result= state.optimize_ratio(theta,1)
+        optimal_strategy+= [np.log(-result.fun)]
+    ax.plot(theta_vec,gaussian_snr_bound, linestyle='dashed', color= cmap(norm(temp_vec[i]))) #we plot the gaussian bound
+    ax.plot(theta_vec[ng_index:], optimal_strategy, color= cmap(norm(temp_vec[i])))
 
+  cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, location='right') 
+  cbar.set_label(r'Noise $\gamma$')  
+  plt.show()
 
+  return
 
-feasible_regions(2.5,0.5)
+optimal_strategy()
+#feasible_regions(2.5,0.5)
 #snr_with_constraints()
 #snr_with_constraints()
 #minimum_energy_state(3, maxiter=10)
