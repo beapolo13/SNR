@@ -8,7 +8,7 @@ import random
 import itertools
 from itertools import combinations
 from scipy import optimize
-from scipy.optimize import minimize, fsolve, NonlinearConstraint
+from scipy.optimize import minimize, fsolve, NonlinearConstraint, shgo
 import time
 import sys
 import matplotlib.pyplot as plt
@@ -455,18 +455,18 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
   
   def varianceN(self):
     if self.format == 'string':
-      return  sp.sqrt(self.expvalN2() - (self.expvalN())**2)  
+      return  sp.sqrt(self.expvalN2() - (self.expvalN()))  
     else:
-      return  np.sqrt(self.expvalN2() - (self.expvalN())**2) 
+      return  np.sqrt(self.expvalN2() - (self.expvalN())) 
 
   def std_dev(self):
     return self.varianceN()-self.passive().varianceN()
 
   def SNR(self):
-    return self.expvalN()/(self.varianceN()**2)
+    return self.expvalN()/(self.varianceN())
 
   def SNR_extr(self):
-    return self.ergotropy()/(self.varianceN()**2)
+    return self.ergotropy()/(self.varianceN())
   
   def SV(self):  #works for N=2 only
     if self.N != 2: 
@@ -498,53 +498,57 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         # Objective function (we minimize -ratio to maximize ratio)
         def objective(attrs):
             self.disp[:2*N] = attrs[:2*N]
-            self.squeezing[:N] = attrs[2*N:]
-            #self.bs[:(N)*(N-1)//2] = attrs[:3*N]
+            self.squeezing[:N] = attrs[2*N:3*N]
+            #self.bs[:(N)*(N-1)//2] = attrs[3*N:]
             return -np.float64(np.real(self.SNR_extr()))  # Negative for maximization
 
         # Constraint: energy should not exceed max_energy
         def energy_constraint(attrs):
             self.disp[:2*N] = attrs[:2*N]
-            self.squeezing[:N] = attrs[2*N:]
+            self.squeezing[:N] = attrs[2*N:3*N]
             #self.bs[:(N)*(N-1)//2] = attrs[3*N:]
             return max_energy - self.ergotropy()  # Must be non-negative
-
+        
+    
         #Define bounds for parameters
-        disp_bounds = [(0, max_energy)] * (2 * N)
-        squeezing_bounds = [(0.01, 0.99)] * N
+        disp_bounds = [(0, np.sqrt(max_energy))] * (2 * N)
+        squeezing_bounds = [(0.01, 1)] * N
         #bs_bounds = [(0,2*np.pi)]*(N*(N-1)//2)
         bounds = disp_bounds + squeezing_bounds 
         # Define constraints dictionary
-        constraints = ({'type': 'ineq', 'fun': energy_constraint})
+        constraint1 = {'type': 'ineq', 'fun': energy_constraint}
+  
 
         # Initial guess for the attributes
-        initial_guess = self.disp[:2*N] + self.squeezing[:N] 
+        #initial_guess = self.disp[:2*N] + self.squeezing[:N] 
 
         # Perform optimization
-        result = minimize(objective, initial_guess, constraints=constraints, bounds=bounds, method='SLSQP', tol=1e-5)
+        result = shgo(objective, constraints=[constraint1], bounds=bounds)
 
         # Update the attributes with the optimized values
         self.disp[:2*N] = result.x[:2*N]
-        self.squeezing[:N] = result.x[2*N:]
-        #self.bs[N*(N-1)//2] =result.x[3*N:]
+        self.squeezing[:N] = result.x[2*N:3*N]
+        #self.bs[:N*(N-1)//2] =result.x[3*N:]
 
         return result
-  
 
+#optimal_state= State(1,[result.x[2]],[],[0,0],disp=[result.x[0],result.x[1]], temp=[0.1], nongaussian_ops=[1])
+#print(result)
+#print(optimal_state.ergotropy(), optimal_state.SNR_extr())
 # #Symbolic representation
 nu1, nu2, w1, w2, z1,z2,x,T1,T2,phi1,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('nu1, nu2, w1, w2 z1,z2,x,T1, T2, phi1,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True, commutative= True, nonnegative= True)
 # # alpha = symbols('alpha')
-# state_sym=State(2,[z1,z2],[x],[phi1,phi2],omega=[w1,w2],disp=[0,0,0,0],temp=[T1, T1],nongaussian_ops=[], required_ordering='xxpp',format='string')
+#state_sym=State(1,[z1],[],[0],disp=[0,0],temp=[0],nongaussian_ops=[1], required_ordering='xxpp',format='string')
 # print('initial matrix', state_sym.matrix.subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))
 # erg_exp = state_sym.ergotropy().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 })
 # var_expr = (state_sym.varianceN().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))**2
-# snr_expr = simplify(state_sym.SNR_extr().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))
+#snr_expr = simplify(state_sym.SNR_extr().subs({coth(1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))
 # SV_expr = simplify(state_sym.SV().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2}))
 # print('erg',erg_exp)
 # print('')
 # print('var', var_expr)
 # print('')
-# print('snr', snr_expr)
+#print('snr', snr_expr)
 # print('')
 # print('SV', SV_expr)
 # print('')
@@ -569,18 +573,5 @@ state_0= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussia
 state_1= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussian_ops=[1], required_ordering='xxpp',format='string')
 state_2= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussian_ops=[1,1], required_ordering='xxpp',format='string')
 state_3= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussian_ops=[1,1,1], required_ordering='xxpp',format='string')
-
-gs =symbols('gs')
-n0=state_0.expvalN()
-var0 = (state_0.varianceN()*state_0.varianceN()).subs({coth(w1/(2*T1)) : 2* gs +1})
-n1_real= state_1.expvalN().subs({coth(w1/(2*T1)): 2*gs + 1})
-n1_test = n0 + 1 + var0/(n0+1)
-n2 = state_2.expvalN().subs({coth(w1/(2*T1)) : 2*gs+1})
-n3= state_3.expvalN().subs({coth(w1/(2*T1)) : 2*gs+1})
-print(n0)
-print(simplify(n1_real))
-print(simplify(n1_test))
-print(simplify(n2))
-print(simplify(n3))
 
 

@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import transpose, real, sqrt, sin, cos, linalg, cosh, sinh, log
 import scipy
+import math
 import matplotlib.pyplot as plt
 from itertools import combinations
 from scipy import optimize
@@ -866,9 +867,10 @@ def find_optimal_gaussian(t, theta): #finds the optimal squeezing, displacement 
     z_opt =roots[root_index].subs({k:nu})
     alpha_sq_opt= theta- (1/4)* nu* (z_opt + 1/z_opt -2)
     n_sq_opt=  (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*alpha_sq_opt
-    optimal_snr = np.float64(theta/n_sq_opt)
+    delta_n_opt = math.sqrt(n_sq_opt)
+    optimal_snr = np.float64(theta/delta_n_opt)
 
-    return z_opt, alpha_sq_opt, n_sq_opt, optimal_snr
+    return optimal_snr
 
 def feasible_regions(constraint_theta, system_temp):
   temp_vec=np.linspace(0.1,1,50)
@@ -887,42 +889,79 @@ def feasible_regions(constraint_theta, system_temp):
   plt.show()
 
 def optimal_strategy():
-  temp_vec=np.linspace(0.1,1,10)
+  t=0.7
+  print('n_th=',(1/np.tanh(1/(2* t))-1)/2)
+  theta_vec0=np.linspace(0.1,25,5)
+  theta_vec1=np.linspace(((1/np.tanh(1/(2* t))-1)/2)+1.0001,25,5)
+  theta_vec2=np.linspace(2*(((1/np.tanh(1/(2* t))-1)/2)+1.0001),25,5)
+  theta_vec3=np.linspace(3*(((1/np.tanh(1/(2* t))-1)/2)+1.0001),25,5)
+
+  state_g= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[t], nongaussian_ops=[])
+  state_1pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[t], nongaussian_ops=[1])
+  state_2pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[t], nongaussian_ops=[1,1])
+  state_3pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[t], nongaussian_ops=[1,1,1])
+
+  result= [np.log(find_optimal_gaussian(t,theta)) for theta in theta_vec0]
+  result1= [np.log(-state_1pha.optimize_ratio(theta, 1).fun) for theta in theta_vec1]
+  result2= [np.log(-state_2pha.optimize_ratio(theta, 1).fun) for theta in theta_vec2]
+  result3= [np.log(-state_3pha.optimize_ratio(theta, 1).fun) for theta in theta_vec3]
+  plt.plot(theta_vec0,result, linestyle= 'solid')
+  plt.plot(theta_vec1,result1, linestyle= 'dashed')
+  plt.plot(theta_vec2,result2, linestyle= 'dotted')
+  plt.plot(theta_vec3,result3, linestyle= 'dashdot')
+  plt.show()
+  
+  return
+
+
+def optimal_strategy2():
+  temp_vec=np.linspace(0.4,1,3)
   nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
-  theta_vec = np.linspace(0.5,np.real(3*(nu_vec[-1]+1)+0.05),50)
+  theta_vec = np.linspace(0.5,20,30)
   cmap=cm.rainbow
   norm = mcolors.Normalize(vmin=temp_vec.min(),vmax=temp_vec.max())
   fig, ax = plt.subplots(1,1)
   for t in temp_vec:
     i=np.where(temp_vec==t)
     nu= 1/np.tanh(1/(2* t))
+    n_th=(nu -1)/2
     gaussian_snr_bound =[]
-    optimal_strategy=[]
-    ng_index = np.where(theta_vec > nu+1)[0][0]  #identify the first value of theta where photon additions can start to be applied
-    print(ng_index)
+    gaussian_snr_bound2 =  []
+    one_phadd =[]
+    two_phadd= []
+    three_phadd = []
+    #optimal_strategy=[]
+    index_1_ph = np.where(theta_vec > n_th+1)[0][0]  #identify the first value of theta where 1 photon addition can start to be applied
+    index_2_ph = np.where(theta_vec > 2*(n_th+1))[0][0]  #identify the first value of theta where 2 photon additions can start to be applied
+    index_3_ph = np.where(theta_vec > 3*(n_th+1))[0][0]  #identify the first value of theta where 3 photon additions can start to be applied
+    print(index_1_ph,index_2_ph, index_3_ph)
     for theta in theta_vec:
       z_gauss, a_sq_gauss, n2_gauss, snr_opt_gauss = find_optimal_gaussian(t, theta)
       gaussian_snr_bound +=[np.log(snr_opt_gauss)]
-      if nu+1 < theta < 2*(nu+1):
+      if n_th+1.000001 < theta :
         state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1], format='number')
         result= state.optimize_ratio(theta,1)
         while result.success == False:
           result= state.optimize_ratio(theta,1)
-        optimal_strategy+= [np.log(-result.fun)]
-      elif 2*(nu+1) < theta < 3*(nu+1):
+        one_phadd += [np.log(-result.fun)]
+      if 2*(n_th+1.000001) < theta:
         state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1,1], format='number')
         result= state.optimize_ratio(theta,1)
         while result.success == False:
           result= state.optimize_ratio(theta,1)
-        optimal_strategy+= [np.log(-result.fun)]
-      elif 3*(nu+1)< theta:
+        two_phadd += [np.log(-result.fun)]
+      if 3*(n_th+1.000001)< theta:
         state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1,1,1], format='number')
         result= state.optimize_ratio(theta,1)
         while result.success == False:
           result= state.optimize_ratio(theta,1)
-        optimal_strategy+= [np.log(-result.fun)]
-    ax.plot(theta_vec,gaussian_snr_bound, linestyle='dashed', color= cmap(norm(temp_vec[i]))) #we plot the gaussian bound
-    ax.plot(theta_vec[ng_index:], optimal_strategy, color= cmap(norm(temp_vec[i])))
+        three_phadd += [np.log(-result.fun)]
+      print('t, theta', t, theta)
+    ax.plot(theta_vec,gaussian_snr_bound,  color= cmap(norm(temp_vec[i]))) #we plot the gaussian bound
+    ax.plot(theta_vec[index_1_ph:], one_phadd, linestyle='dashed', color= cmap(norm(temp_vec[i])))
+    ax.plot(theta_vec[index_2_ph:], two_phadd, linestyle='dashdot', color= cmap(norm(temp_vec[i])))
+    ax.plot(theta_vec[index_3_ph:], three_phadd, linestyle='dotted', color= cmap(norm(temp_vec[i])))
+
 
   cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, location='right') 
   cbar.set_label(r'Noise $\gamma$')  
