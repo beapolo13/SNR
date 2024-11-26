@@ -455,9 +455,9 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
   
   def varianceN(self):
     if self.format == 'string':
-      return  sp.sqrt(self.expvalN2() - (self.expvalN()))  
+      return  sp.sqrt(self.expvalN2() - (self.expvalN())**2)  
     else:
-      return  np.sqrt(self.expvalN2() - (self.expvalN())) 
+      return  np.sqrt(self.expvalN2() - (self.expvalN())**2) 
 
   def std_dev(self):
     return self.varianceN()-self.passive().varianceN()

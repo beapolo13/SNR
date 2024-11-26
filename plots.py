@@ -25,9 +25,9 @@ from expectation_values_cat import *
 params = {'axes.linewidth': 2,
          'axes.labelsize': 15,
          'axes.titlesize': 15,
-         'axes.linewidth': 2,
+         'axes.linewidth': 1.2,
          'lines.markeredgecolor': "black",
-     	'lines.linewidth': 2,
+     	'lines.linewidth': 1.2,
          'xtick.labelsize': 10,
          'ytick.labelsize': 10,
          "text.usetex": True,
@@ -552,16 +552,12 @@ def density_plot_temp():
   plt.savefig('density plot temp.pdf')
   plt.show()
 
-def snr_vs_stellar_rank(max_stellar_rank, max_temp):
-   #the ergotropy constraint is given by temperature and max_stellar_rank
-  t_vec = np.linspace(0.1,max_temp,40)
-
-  def find_optimal_gaussian(t): #finds the optimal squeezing parameters for a certain temperature through the lagrange multipliers method
+def find_optimal_gaussian(t, theta): #finds the optimal squeezing, displacement parameters & optimal SNR for a certain temperature through the lagrange multipliers method
     nu = 1/np.tanh(1/(2* t))
     # Define the variable (symbol)
     z = sp.Symbol('z', real=True)
     k = sp.symbols('k', real=True)
-    poly_expr = 1 - k*z**2 - (4*(nu**2+max_stellar_rank)+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
+    poly_expr = 1 - k*z**2 - (4*theta+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
     roots = sp.solve(poly_expr, z)
     #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
     found_root=False
@@ -577,27 +573,52 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp):
             i +=1
     
     z_opt =roots[root_index].subs({k:nu})
-    return z_opt
-  
-  z_opt_vec =[]
-  alpha_sq_opt_vec=[]
-  gauss_snr_opt = []
+    alpha_sq_opt= theta- (1/4)* nu* (z_opt + 1/z_opt -2)
+    n_sq_opt=  (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*alpha_sq_opt
+    delta_n_opt = math.sqrt(n_sq_opt)
+    optimal_snr = np.float64(theta/delta_n_opt)
+
+    return optimal_snr
+
+def plot_optimal_gaussian(t_vec,theta):
+  alpha_vec=[]
+  z_vec=[]
   for t in t_vec:
     nu = 1/np.tanh(1/(2* t))
-    z_opt = find_optimal_gaussian(t)
-    gauss_alpha_sq_opt = (nu**2+max_stellar_rank)- (1/4)* nu* (z_opt + 1/z_opt -2) 
-    z_opt_vec +=[z_opt]
-    alpha_sq_opt_vec+=[gauss_alpha_sq_opt]
-    n_sq_opt = (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*gauss_alpha_sq_opt
-    print('z_opt, alpha_sq_opt, snr',z_opt,gauss_alpha_sq_opt, (nu**2+max_stellar_rank)/n_sq_opt)
-    gauss_snr_opt += [np.log(np.float64((nu**2+max_stellar_rank)/n_sq_opt))]
-
-  plt.plot(t_vec,z_opt_vec)
-  plt.plot(t_vec,alpha_sq_opt_vec)
-  plt.legend(['Optimal squeezing (z)', r'Optimal displacement $|\alpha|^2$'])
-  plt.xlabel(r'$T [K]$')
-  #plt.savefig('Optimal parameters_z,alpha_gaussian.pdf')
+    # Define the variable (symbol)
+    z = sp.Symbol('z', real=True)
+    k = sp.symbols('k', real=True)
+    poly_expr = 1 - k*z**2 - (4*theta+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
+    roots = sp.solve(poly_expr, z)
+    #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
+    found_root=False
+    root_index= None
+    i=0
+    while found_root == False:
+        x= roots[i].subs({k:nu}) 
+        if x.is_real == True:
+            if np.float64(x) > 0 and np.float64(x) < 1:
+                found_root =True
+                root_index = i
+        else:
+            i +=1
+    z_opt = roots[root_index].subs({k:nu})
+    z_vec +=[z_opt]
+    alpha_vec += [theta- (1/4)* nu* (z_opt + 1/z_opt -2)]
+  plt.plot(t_vec,z_vec)
+  plt.plot(t_vec,alpha_vec)
+  plt.xlabel(r'$T[K]$')
+  plt.legend([r'Squeezing parameter $z$',r'Displacement $|\alpha|^2$'])
+  plt.title(r'Optimal Gaussian parameters for $\theta =1$')
   plt.show()
+
+
+def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
+   #the ergotropy constraint is given by temperature and max_stellar_rank
+  t_vec = np.linspace(0.1,max_temp,100)
+
+  gauss_snr_opt =[log(find_optimal_gaussian(t, theta)) for t in t_vec]
+
 
   optimal_snr = []
   for i in range(max_stellar_rank+1):
@@ -605,26 +626,19 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp):
     i+= 1
   for t in t_vec:
     nu = 1/np.tanh(1/(2* t))
-    rank = 0
-    for rank in range(max_stellar_rank+1):
+    for rank in range(1, max_stellar_rank+1):
       state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1]*rank, format='number')
       #print(state.__dict__)
-      result= state.optimize_ratio(nu**2+max_stellar_rank)
+      result= state.optimize_ratio(theta,1)
       while result.success == False:
-        result= state.optimize_ratio(nu**2+max_stellar_rank)
+        result= state.optimize_ratio(theta,1)
       optimal_snr[rank]+= [log(-result.fun)]
       optimal_state= State(1,[result.x[2]],[],[random.random()],disp=[result.x[0],result.x[1]], temp=[t],nongaussian_ops=[1]*rank, format='number')
-      constraint_check = optimal_state.ergotropy()
-      print(constraint_check)
-      #if rank == 0:
-        #print('z_opt_gauss',result.x[2])
-      #print(result.x)
-      #print(optimal_snr)
-      print(rank)
-      rank +=1
-  plt.plot(t_vec,gauss_snr_opt, linestyle='dashed')
+  
+  colors=['black','blue','orange','green']
+  plt.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
   for rank in range(1, max_stellar_rank+1):
-    plt.plot(t_vec, optimal_snr[rank])
+    plt.plot(t_vec, optimal_snr[rank], color= colors[rank])
   plt.legend(['Gaussian bound']+ [f'{rank} photon addition(s)' for rank in range(1,max_stellar_rank+1)])
   plt.xlabel(r'$T [K]$')
   plt.ylabel(r'$SNR_{ext, opt}$')
@@ -671,7 +685,6 @@ def snr_sv_comparison(stellar_rank, max_temp):  # since we are studying bipartit
     SV += [[]]
     nu = 1/np.tanh(1/(2* t))
     print('nu=', nu)
-    print((nu**2+stellar_rank)*2)
     for x in x_vec:
       optimal_state= State(2,[z,1/z],[x],[0,0],disp=[0,0,0,0], temp=[t,t],nongaussian_ops=[1]*stellar_rank, format='number')
       optimal_snr[np.where(t_vec == t)[0][0]]+= [np.float64(optimal_state.SNR_extr())]
@@ -687,7 +700,7 @@ def snr_sv_comparison(stellar_rank, max_temp):  # since we are studying bipartit
   ax2.set_xlim(X.min(), X.max())
   ax2.set_ylim(Y.min() , Y.max())
   ax1.set_title('SNR extr')
-  ax2.set_title('SV')
+  ax2.set_title('- SV')
   cbar1.ax.set_yticks(ticks=[vmin_snr, (vmin_snr + vmax_snr) / 2, vmax_snr])
   cbar2.ax.set_yticks(ticks=[vmin_sv, (vmin_sv + vmax_sv) / 2, vmax_sv])
   ax1.set_xlabel(r'Beamsplitter angle $\theta$')
@@ -767,33 +780,6 @@ def snr_with_constraints():
 
   #Gaussian case
   optimal_snr += [[]]
-  def find_optimal_gaussian(t, theta): #finds the optimal squeezing, displacement parameters & optimal SNR for a certain temperature through the lagrange multipliers method
-    nu = 1/np.tanh(1/(2* t))
-    # Define the variable (symbol)
-    z = sp.Symbol('z', real=True)
-    k = sp.symbols('k', real=True)
-    poly_expr = 1 - k*z**2 - (4*theta+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
-    roots = sp.solve(poly_expr, z)
-    #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
-    found_root=False
-    root_index= None
-    i=0
-    while found_root == False:
-        x= roots[i].subs({k:nu}) 
-        if x.is_real == True:
-            if np.float64(x) > 0 and np.float64(x) < 1:
-                found_root =True
-                root_index = i
-        else:
-            i +=1
-    
-    z_opt =roots[root_index].subs({k:nu})
-    alpha_sq_opt= theta- (1/4)* nu* (z_opt + 1/z_opt -2)
-    n_sq_opt=  (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*alpha_sq_opt
-    optimal_snr = np.float64(theta/n_sq_opt)
-
-    return z_opt, alpha_sq_opt, n_sq_opt, optimal_snr
-  
   z_opt_vec =[]
   alpha_sq_opt_vec=[]
   for i in range(len(temp_vec)):
@@ -844,33 +830,7 @@ def snr_with_constraints():
   plt.show()
   return
 
-def find_optimal_gaussian(t, theta): #finds the optimal squeezing, displacement parameters & optimal SNR for a certain temperature through the lagrange multipliers method
-    nu = 1/np.tanh(1/(2* t))
-    # Define the variable (symbol)
-    z = sp.Symbol('z', real=True)
-    k = sp.symbols('k', real=True)
-    poly_expr = 1 - k*z**2 - (4*theta+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
-    roots = sp.solve(poly_expr, z)
-    #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
-    found_root=False
-    root_index= None
-    i=0
-    while found_root == False:
-        x= roots[i].subs({k:nu}) 
-        if x.is_real == True:
-            if np.float64(x) > 0 and np.float64(x) < 1:
-                found_root =True
-                root_index = i
-        else:
-            i +=1
-    
-    z_opt =roots[root_index].subs({k:nu})
-    alpha_sq_opt= theta- (1/4)* nu* (z_opt + 1/z_opt -2)
-    n_sq_opt=  (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*alpha_sq_opt
-    delta_n_opt = math.sqrt(n_sq_opt)
-    optimal_snr = np.float64(theta/delta_n_opt)
 
-    return optimal_snr
 
 def feasible_regions(constraint_theta, system_temp):
   temp_vec=np.linspace(0.1,1,50)
@@ -889,12 +849,13 @@ def feasible_regions(constraint_theta, system_temp):
   plt.show()
 
 def optimal_strategy():
-  t=0.7
-  print('n_th=',(1/np.tanh(1/(2* t))-1)/2)
-  theta_vec0=np.linspace(0.1,25,5)
-  theta_vec1=np.linspace(((1/np.tanh(1/(2* t))-1)/2)+1.0001,25,5)
-  theta_vec2=np.linspace(2*(((1/np.tanh(1/(2* t))-1)/2)+1.0001),25,5)
-  theta_vec3=np.linspace(3*(((1/np.tanh(1/(2* t))-1)/2)+1.0001),25,5)
+  t=0.5
+  n_th=(1/np.tanh(1/(2* t))-1)/2
+  print('n_th=',n_th)
+  theta_vec0=np.linspace(0.1,25,50)
+  theta_vec1=np.linspace(n_th+1.0001,25,50)
+  theta_vec2=np.linspace(2*(n_th+1.0001),25,50)
+  theta_vec3=np.linspace(3*(n_th+1.0001),25,50)
 
   state_g= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[t], nongaussian_ops=[])
   state_1pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[t], nongaussian_ops=[1])
@@ -905,10 +866,16 @@ def optimal_strategy():
   result1= [np.log(-state_1pha.optimize_ratio(theta, 1).fun) for theta in theta_vec1]
   result2= [np.log(-state_2pha.optimize_ratio(theta, 1).fun) for theta in theta_vec2]
   result3= [np.log(-state_3pha.optimize_ratio(theta, 1).fun) for theta in theta_vec3]
-  plt.plot(theta_vec0,result, linestyle= 'solid')
-  plt.plot(theta_vec1,result1, linestyle= 'dashed')
-  plt.plot(theta_vec2,result2, linestyle= 'dotted')
-  plt.plot(theta_vec3,result3, linestyle= 'dashdot')
+  plt.plot(theta_vec0,result, color='black', linestyle='dashed')
+  plt.plot(theta_vec1,result1, color='blue')
+  plt.plot(theta_vec2,result2, color='orange')
+  plt.plot(theta_vec3,result3, color='green')
+  plt.plot([theta_vec1[0], theta_vec1[0]], [result[0], result1[0]], color='blue', linestyle='--')
+  plt.plot([theta_vec2[0], theta_vec2[0]], [result[0], result2[0]], color='orange', linestyle='--')
+  plt.plot([theta_vec3[0], theta_vec3[0]], [result[0], result3[0]], color='green', linestyle='--')
+  plt.legend(['Gaussian', '1 photon addition', '2 photon additions', '3 photon additions'])
+  plt.xlabel(r'Maximum ergotropy $\theta$')
+  plt.ylabel(r'Optimal $SNR_{extr}$')
   plt.show()
   
   return
@@ -969,11 +936,12 @@ def optimal_strategy2():
 
   return
 
-optimal_strategy()
+#optimal_strategy()
 #feasible_regions(2.5,0.5)
 #snr_with_constraints()
 #snr_with_constraints()
 #minimum_energy_state(3, maxiter=10)
-#snr_vs_stellar_rank(3,1)
+#snr_vs_stellar_rank(3,1,5)
 #multimode_optimization(3,1.5,4)
-#snr_sv_comparison(0,0.5)
+snr_sv_comparison(2,1)
+#plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
