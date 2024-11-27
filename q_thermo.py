@@ -144,7 +144,7 @@ def to_standard_form(cm):
     print(standard_form)
     return standard_form
 
-#mutual_information_TMSQ()
-#relative_ergotropic_gap_TMSQ()
+mutual_information_TMSQ()
+relative_ergotropic_gap_TMSQ()
 
 #two_mode_squeezed_state = State()
