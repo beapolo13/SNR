@@ -22,7 +22,7 @@ import matplotlib.ticker as ticker
 from numpy import where
 import matplotlib.colors as mcolors
 
-#from utils import * 
+from utils import * 
 #from plots import *
 
 params = {'axes.linewidth': 2,
@@ -59,7 +59,6 @@ def mutual_information_TMSQ(): #this plots the mutual information for the specif
     ax.set_xticks(ticks=[0,0.2,0.4,0.6,0.8,1, 1.2,1.4], labels=['0','0.2','0.4','0.6','0.8','1','1.2','1.4'])
     ax.set_yticks(ticks=[2,3,4,5,6,7,8,9], labels=['2','3','4','5','6','7','8','9'])
     c.set_label('I(A:B)')
-    #cbar.ax.set_yticks(ticks=[1,2],labels=['1','2'])
     plt.show()
 
 
@@ -75,7 +74,7 @@ def relative_ergotropic_gap_TMSQ():  #this is only defined for the two-mode-sque
     W1_arr = np.array(W1)
     W2= [[(2*k*sinh(r)**2)/(k-1) for r in r_vec] for k in k_vec]
     W2_arr = np.array(W2)
-    c1=axes[0].pcolormesh(X_grid,Y_grid,W1, norm=colors.Normalize(vmin=W1_arr.min(), vmax=W1_arr.max()),cmap=cm.get_cmap('viridis', 7) )
+    c1=axes[0].pcolormesh(X_grid,Y_grid,W1, norm=colors.LogNorm(vmin=W1_arr.min(), vmax=W1_arr.max()),cmap=cm.get_cmap('viridis', 7) )
     cbar1=fig.colorbar(c1,ax=axes[0], label='Ergotropic gap')
     c2=axes[1].pcolormesh(X_grid,Y_grid,W2, norm=colors.LogNorm(vmin=W2_arr.min(), vmax=W2_arr.max()),cmap=cm.get_cmap('viridis', 7) )
     cbar2=fig.colorbar(c2,ax=axes[1], label='Relative ergotropic gap')
@@ -90,61 +89,73 @@ def relative_ergotropic_gap_TMSQ():  #this is only defined for the two-mode-sque
     
     plt.show()
 
-#the following function transforms a generic 2-mode covariance matrix (i think in xpxp ordering, but check!!) into standard form (which is the form of the local passive state of our input state)
-#la ha hecha chat gpt y creo q está mal (revisar todo esto)
-def to_standard_form(cm):
+def pure_ergotropic_gap(state): #returns the ergotropic gap of a 2-mode gaussian pure states with parameters z1,z2 and theta
+    z1=state.squeezing[0]
+    z2=state.squeezing[1]
+    theta = state.bs[0]
+    return sqrt((z2*cos(theta)**2 + z1*sin(theta)**2)*(z1*cos(theta)**2 + z2*sin(theta)**2)/(z1*z2))-1
 
-    def symplectic_omega(): #auxiliary function
-        return np.array([[0, 1], [-1, 0]])  # 2x2 symplectic matrix
+def pure_mutual_info(state): #returns the ergotropic gap of a 2-mode gaussian pure states with parameters z1,z2 and theta
+    z1=state.squeezing[0]
+    z2=state.squeezing[1]
+    theta = state.bs[0]
+    argument=(z1**2 + 6*z1*z2 + z2**2 - (z1 - z2)**2 * cos(4*theta))
+    print(argument, type(argument))
+    return float((1/4)*(-24 +
+    (4 - sqrt(2) * sqrt(argument / (z1 * z2))) * log2(float(-4 + sqrt(2) * sqrt(argument / (z1 * z2)))) + (4 + sqrt(2) * sqrt(argument / (z1 * z2)))*log2(float(4 + sqrt(2) * sqrt(argument / (z1 * z2)))) ))
 
-    def symplectic_matrix(n_modes): #auxiliary function
-        omega = symplectic_omega()
-        return np.kron(np.eye(n_modes), omega)
+def one_dim_plot_squeezing_pure(fixed_theta):
+    z_vec = np.linspace(0.0001,0.999999,1000)
+    ergotropic_gap=[]
+    mutual_info = []
+    for z1 in z_vec:
+        r = -log(z1)/2
+        z2 = 1/z1
+        state = State(2,[z1,z2],[fixed_theta],[0,0])
+        print(state.bs[0])
+        ergotropic_gap +=[pure_ergotropic_gap(state)]
+        mutual_info += [pure_mutual_info(state)]
+    plt.plot(z_vec,ergotropic_gap)
+    #plt.show()
+    plt.plot(z_vec,mutual_info)
+    #plt.legend(['log Ergotropic gap','Mutual information'])
+    plt.show()
+
+def h(w):
+    w=float(w)
+    x=w+1
+    return (x+1)*log2((x+1)/2)-(x-1)*log2((x-1)/2)
+
+def heatmaps_pure_state(fixed_theta):
+    z1_vec = np.linspace(0.0001,0.9999,50)
+    z2_vec = np.linspace(0.0001,0.9999,49)
+    X=z1_vec
+    Y=z2_vec
+    X_grid, Y_grid =np.meshgrid(X,Y)
+    fig,axes = plt.subplots(1,2)
+    W1= [[float(h(pure_ergotropic_gap(State(2,[z1,z2],[fixed_theta],[0,0])))) for z1 in z1_vec] for z2 in z2_vec]
+    W1_arr= np.array(W1)
+    W2= [[float(pure_mutual_info(State(2,[z1,z2],[fixed_theta],[0,0]))) for z1 in z1_vec] for z2 in z2_vec]
+    W2_arr = np.array(W2)
+    c1=axes[0].pcolormesh(X_grid,Y_grid,W1, norm=colors.Normalize(vmin=W1_arr.min(), vmax=W1_arr.max()),cmap=cm.get_cmap('viridis', 10) )
+    cbar1=fig.colorbar(c1,ax=axes[0], label='Ergotropic gap')
+    c2=axes[1].pcolormesh(X_grid,Y_grid,W2, norm=colors.Normalize(vmin=W2_arr.min(), vmax=W2_arr.max()),cmap=cm.get_cmap('viridis', 10) )
+    cbar2=fig.colorbar(c2,ax=axes[1], label='Mutual info')
+    for i in range(2):
+        axes[i].set_xlim(X.min(), X.max())
+        axes[i].set_ylim(Y.min() , Y.max())
+        axes[i].grid(True, which='both', linestyle='--')
+        axes[i].set_xlabel('Squeezing parameter z1', fontsize=22)
+        axes[i].set_ylabel('Squeezing parameter z2', fontsize=22)
+        axes[i].set_xticks(ticks=[0,0.2,0.4,0.6,0.8,1], labels=['0','0.2','0.4','0.6','0.8','1'])
+        #axes[i].set_yticks(ticks=[0,0.2,0.4,0.6,0.8,1], labels=['0','0.2','0.4','0.6','0.8','1'])
     
+    plt.show()
 
-    # Ensure the covariance matrix is valid
-    n = cm.shape[0] // 2  # Number of modes
-    symplectic = symplectic_matrix(n)
-    if not np.all(np.linalg.eigvals(cm + 1j * symplectic) >= 0):
-        raise ValueError("Covariance matrix is not physical!")
+heatmaps_pure_state(np.pi/4)
 
-    # Extract blocks A, B, and C
-    A = cm[:2, :2]
-    B = cm[2:, 2:]
-    C = cm[:2, 2:]
+#one_dim_plot_squeezing_pure(np.pi/4)
+#mutual_information_TMSQ()
+#relative_ergotropic_gap_TMSQ()
 
-    # Diagonalize local blocks (A and B)
-    A_diag = sqrtm(A @ A.T)
-    B_diag = sqrtm(B @ B.T)
 
-    # Construct the symplectic transformation for diagonalization
-    S_A = np.linalg.inv(sqrtm(A))  # For mode 1
-    S_B = np.linalg.inv(sqrtm(B))  # For mode 2
-    S_local = np.block([
-        [S_A, np.zeros_like(S_A)],
-        [np.zeros_like(S_B), S_B],
-    ])
-
-    # Apply the symplectic transformation
-    cm_transformed = S_local @ cm @ S_local.T
-
-    # Recompute A, B, C after diagonalization
-    A_new = cm_transformed[:2, :2]
-    B_new = cm_transformed[2:, 2:]
-    C_new = cm_transformed[:2, 2:]
-
-    # Simplify correlations in C_new
-    c1, c2 = C_new[0, 0], C_new[1, 1]  # Extract canonical correlation values
-
-    # Construct the standard form
-    standard_form = np.block([
-        [A_new, np.diag([c1, c2])],
-        [np.diag([c1, c2]), B_new],
-    ])
-    print(standard_form)
-    return standard_form
-
-mutual_information_TMSQ()
-relative_ergotropic_gap_TMSQ()
-
-#two_mode_squeezed_state = State()
