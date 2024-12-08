@@ -99,10 +99,10 @@ def pure_mutual_info(state): #returns the ergotropic gap of a 2-mode gaussian pu
     z1=state.squeezing[0]
     z2=state.squeezing[1]
     theta = state.bs[0]
-    argument=(z1**2 + 6*z1*z2 + z2**2 - (z1 - z2)**2 * cos(4*theta))
-    print(argument, type(argument))
-    return float((1/4)*(-24 +
-    (4 - sqrt(2) * sqrt(argument / (z1 * z2))) * log2(float(-4 + sqrt(2) * sqrt(argument / (z1 * z2)))) + (4 + sqrt(2) * sqrt(argument / (z1 * z2)))*log2(float(4 + sqrt(2) * sqrt(argument / (z1 * z2)))) ))
+    argument=(z1**2 + 6*z1*z2 + z2**2 - (z1 - z2)**2*cos(4*theta))/(z1*z2)
+    #print(argument, type(argument))
+    return float((1/log(16))*(-8*log(8) +
+    (4 - sqrt(2) * sqrt(argument)) * log(float(-4 + sqrt(2) * sqrt(argument))) + (4 + sqrt(2) * sqrt(argument))*log(float(4 + sqrt(2) * sqrt(argument))) ))
 
 def one_dim_plot_squeezing_pure(fixed_theta):
     z_vec = np.linspace(0.0001,0.999999,1000)
@@ -126,27 +126,29 @@ def h(w):
     x=w+1
     return (x+1)*log2((x+1)/2)-(x-1)*log2((x-1)/2)
 
+
 def heatmaps_pure_state(fixed_theta):
-    z1_vec = np.linspace(0.0001,0.9999,50)
-    z2_vec = np.linspace(0.0001,0.9999,49)
+    z1_vec = np.linspace(0.0001,0.9999,100)
+    z2_vec = np.linspace(0.0001,0.9999,100)
     X=z1_vec
     Y=z2_vec
     X_grid, Y_grid =np.meshgrid(X,Y)
     fig,axes = plt.subplots(1,2)
-    W1= [[float(h(pure_ergotropic_gap(State(2,[z1,z2],[fixed_theta],[0,0])))) for z1 in z1_vec] for z2 in z2_vec]
+    W1= [[float(pure_ergotropic_gap(State(2,[z1,z2],[fixed_theta],[0,0]))) if z1 != z2 else 0 for z1 in z1_vec] for z2 in z2_vec]
     W1_arr= np.array(W1)
-    W2= [[float(pure_mutual_info(State(2,[z1,z2],[fixed_theta],[0,0]))) for z1 in z1_vec] for z2 in z2_vec]
+    W2= [[float(pure_mutual_info(State(2,[z1,z2],[fixed_theta],[0,0]))) if z1 != z2 else 0 for z1 in z1_vec] for z2 in z2_vec]
     W2_arr = np.array(W2)
-    c1=axes[0].pcolormesh(X_grid,Y_grid,W1, norm=colors.Normalize(vmin=W1_arr.min(), vmax=W1_arr.max()),cmap=cm.get_cmap('viridis', 10) )
+    epsilon = 1e-6
+    c1=axes[0].pcolormesh(X_grid,Y_grid,W1, norm=colors.LogNorm(vmin=min(W1_arr+epsilon), vmax=W1_arr.max()),cmap=cm.get_cmap('viridis', 10) )
     cbar1=fig.colorbar(c1,ax=axes[0], label='Ergotropic gap')
-    c2=axes[1].pcolormesh(X_grid,Y_grid,W2, norm=colors.Normalize(vmin=W2_arr.min(), vmax=W2_arr.max()),cmap=cm.get_cmap('viridis', 10) )
+    c2=axes[1].pcolormesh(X_grid,Y_grid,W2, norm=colors.LogNorm(vmin=min(W2_arr+epsilon), vmax=W2_arr.max()),cmap=cm.get_cmap('viridis', 10) )
     cbar2=fig.colorbar(c2,ax=axes[1], label='Mutual info')
     for i in range(2):
         axes[i].set_xlim(X.min(), X.max())
         axes[i].set_ylim(Y.min() , Y.max())
         axes[i].grid(True, which='both', linestyle='--')
-        axes[i].set_xlabel('Squeezing parameter z1', fontsize=22)
-        axes[i].set_ylabel('Squeezing parameter z2', fontsize=22)
+        axes[i].set_xlabel(r'Squeezing parameter $z_1$', fontsize=22)
+        axes[i].set_ylabel(r'Squeezing parameter $z_2$', fontsize=22)
         axes[i].set_xticks(ticks=[0,0.2,0.4,0.6,0.8,1], labels=['0','0.2','0.4','0.6','0.8','1'])
         #axes[i].set_yticks(ticks=[0,0.2,0.4,0.6,0.8,1], labels=['0','0.2','0.4','0.6','0.8','1'])
     
