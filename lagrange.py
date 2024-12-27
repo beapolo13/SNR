@@ -2,34 +2,33 @@ import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
 # Define the variables and parameters
-def lagrange_method():
-    z,y = sp.symbols('z y', real=True, nonnegative=True)  # Variables
-    k = sp.symbols('k', real=True, nonnegative=True)
-    lambda_ = sp.symbols('lambda')  # Lagrange multiplier
+from sympy import symbols, Eq, diff, solve, Function
 
-    # Define the objective function f(x1, x2; p1, p2)
-    f = (1/8)*k**2 *(z**2 + 1/z**2) -1/4 + k*z*y
+# Define variables and the Lagrange multiplier
+y, z, lambda_ , nu= symbols('y z lambda nu')
+# Define the function to minimize and the constraint
+f = (nu**2/8)*(z**2 + 1/z**2) + nu*y*z  # The function to minimize
+g = (nu/4)*(z+1/z-2) + y - 1  # The constraint function
 
-    # Define the constraint g(x1, x2) = 0
-    g = (1/4)*k*(z+(1/z)-2) + y -1
+# Lagrange's equations
+lagrange_eqs = [
+    diff(f, var) - lambda_ * diff(g, var) for var in (y, z)
+]
+print(lagrange_eqs)
+# Add the constraint equation
+g_constraint = Eq(g, 0)
 
-    # Define the Lagrangian L(x1, x2, lambda)
-    L = f - lambda_ * g
+# Solve the system of equations
+solutions = solve(lagrange_eqs + [g_constraint], (y, z, lambda_))
 
-    # Compute the gradients of the Lagrangian with respect to x1, x2, and lambda
-    grad_z = sp.diff(L, z)
-    grad_y = sp.diff(L, y)
-    grad_lambda = sp.diff(L, lambda_)
-
-    # Solve the system of equations (grad_x1 = 0, grad_x2 = 0, grad_lambda = 0)
-    solution = sp.solve([grad_z, grad_y, grad_lambda], [z, y, lambda_])
-    print(solution)
-    return solution
+# Print the solutions
+print("Solutions:")
+print(solutions)
 
 def find_optimal_gaussian(t_vec): 
     # Define the variable (symbol)
     z = sp.Symbol('z', real=True)
-    k = sp.symbols('k', real=True)
+    nu = sp.symbols('nu', real=True)
     poly_expr = 1-k*z**2 - (4+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
     roots = sp.solve(poly_expr, z)
     #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
@@ -50,7 +49,7 @@ def find_optimal_gaussian(t_vec):
         z_opt +=[roots[root_index].subs({k:nu})]
     return z_opt
 
-find_optimal_gaussian()
+#find_optimal_gaussian()
 # Example usage
 x = sp.Symbol('x', real=True)
 k = sp.Symbol('k', real=True)
