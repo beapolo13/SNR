@@ -557,7 +557,7 @@ def find_optimal_gaussian(t, theta): #finds the optimal squeezing, displacement 
     # Define the variable (symbol)
     z = sp.Symbol('z', real=True)
     k = sp.symbols('k', real=True)
-    poly_expr = 1 - k*z**2 - (4*theta+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
+    poly_expr = k - (4*theta+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
     roots = sp.solve(poly_expr, z)
     #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
     found_root=False
@@ -583,12 +583,13 @@ def find_optimal_gaussian(t, theta): #finds the optimal squeezing, displacement 
 def plot_optimal_gaussian(t_vec,theta):
   alpha_vec=[]
   z_vec=[]
+  snr_opt_vec=[]
   for t in t_vec:
     nu = 1/np.tanh(1/(2* t))
     # Define the variable (symbol)
     z = sp.Symbol('z', real=True)
     k = sp.symbols('k', real=True)
-    poly_expr = 1 - k*z**2 - (4*theta+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
+    poly_expr = k  - (4*theta+2*k)*z**3 + k*z**4 #the polynomial that we input here is that given by the method of larange multipliers
     roots = sp.solve(poly_expr, z)
     #find which of the roots satisfies that it is real and within (0,1) by substituting at any k (e.g k=1)
     found_root=False
@@ -603,14 +604,22 @@ def plot_optimal_gaussian(t_vec,theta):
         else:
             i +=1
     z_opt = roots[root_index].subs({k:nu})
+    alpha_opt = theta- (1/4)*nu*(z_opt + 1/z_opt -2)
+    n_sq_opt=  (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*alpha_opt
+    delta_n_opt = math.sqrt(n_sq_opt)
+    optimal_snr = np.float64(theta/delta_n_opt)
     z_vec +=[z_opt]
-    alpha_vec += [theta- (1/4)* nu* (z_opt + 1/z_opt -2)]
+    alpha_vec += [alpha_opt]
+    snr_opt_vec += [optimal_snr]
   plt.plot(t_vec,z_vec)
   plt.plot(t_vec,alpha_vec)
+  plt.plot(t_vec, snr_opt_vec, linestyle= 'dashed', color= 'black')
   plt.xlabel(r'$T[K]$')
-  plt.legend([r'Squeezing parameter $z$',r'Displacement $|\alpha|^2$'])
-  plt.title(r'Optimal Gaussian parameters for $\theta =1$')
+  plt.legend([r'Squeezing parameter $z$',r'Displacement $|\alpha|^2$', r'Optimal $SNR_{ext}$'])
+  #plt.title(r'Optimal Gaussian parameters for $\epsilon =1$')
+  #plt.savefig('Lagrange_gaussian.pdf')
   plt.show()
+
 
 
 def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
@@ -766,7 +775,7 @@ def minimum_energy_state(stellar_rank, maxiter=10):
   return
 
 def snr_with_constraints():
-  max_stellar_rank =3
+  max_stellar_rank =1
   temp_vec=np.linspace(0.1,1,10)
   nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
   theta_vec = np.linspace(0.5,np.real(3*(nu_vec[-1]+1)),10)
@@ -787,13 +796,8 @@ def snr_with_constraints():
     nu = 1/np.tanh(1/(2* t))
     optimal_snr[0] += [[]]
     for theta in theta_vec:
-      z_opt = find_optimal_gaussian(t,theta)
-      gauss_alpha_sq_opt =theta- (1/4)* nu* (z_opt + 1/z_opt -2) 
-      z_opt_vec +=[z_opt]
-      alpha_sq_opt_vec+=[gauss_alpha_sq_opt]
-      n_sq_opt = (1/8)*nu**2*(z_opt**2 + 1/z_opt**2) -1/4 + nu*z_opt*gauss_alpha_sq_opt
-      optimal_snr[0][i] += [np.log(np.float64(theta/n_sq_opt))]
-    print('gaussian',i)
+      optimal_snr[0][i] += [np.log(find_optimal_gaussian(t,theta))]
+    #print('gaussian',i)
 
   #Non-gaussian case
   for rank in range(1, max_stellar_rank+1):
@@ -842,7 +846,7 @@ def feasible_regions(constraint_theta, system_temp):
     for i in range(len(temp_vec)):
       minimum_ergotropy[rank] += [rank*((nu_vec[i]-1)/2+1)]
     plt.plot(minimum_ergotropy[rank],temp_vec, color=colors[rank])
-  plt.fill([0, 0, constraint_theta, constraint_theta], [0, system_temp, system_temp, 0], color = 'yellow', alpha = 0.5)
+  #plt.fill([0, 0, constraint_theta, constraint_theta], [0, system_temp, system_temp, 0], color = 'yellow', alpha = 0.5)
   plt.xlabel(r'Ergotropy constraint $\theta$')
   plt.ylabel(r'T[K]')
   plt.legend(['gauss', '1','2','3'])
@@ -936,12 +940,13 @@ def optimal_strategy2():
 
   return
 
-#optimal_strategy()
+#plot_optimal_gaussian(np.linspace(0,15,1000),10)
+optimal_strategy()
 #feasible_regions(2.5,0.5)
 #snr_with_constraints()
 #snr_with_constraints()
 #minimum_energy_state(3, maxiter=10)
 #snr_vs_stellar_rank(3,1,5)
 #multimode_optimization(3,1.5,4)
-snr_sv_comparison(2,1)
+#snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
