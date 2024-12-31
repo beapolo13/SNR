@@ -884,6 +884,59 @@ def optimal_strategy():
   
   return
 
+def nongaussian_advantage():
+  fig, ax = plt.subplots()
+  temp_vec=np.linspace(0.1,0.5,40)
+  nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
+  theta_vec0=np.linspace(0.1,15,40)
+  X=theta_vec0
+  Y=temp_vec
+  X_grid, Y_grid =np.meshgrid(X,Y)
+
+  differences =[]
+  for i in range(len(temp_vec)):
+    n_th=nu_vec[i]
+   
+    state_1pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[temp_vec[i]], nongaussian_ops=[1])
+    state_2pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[temp_vec[i]], nongaussian_ops=[1,1])
+    state_3pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[temp_vec[i]], nongaussian_ops=[1,1,1])
+    
+    differences += [[]]
+    for theta in theta_vec0:
+      result= find_optimal_gaussian(temp_vec[i],theta)
+
+      if theta >= n_th+1.0001:
+        result1= -state_1pha.optimize_ratio(theta, 1).fun
+      else: 
+        result1 = 0
+
+      if theta >= 2*(n_th+1.0001):
+        result2= -state_2pha.optimize_ratio(theta, 1).fun
+      else:
+        result2 = 0
+
+      if theta >= 3*(n_th+1.0001):
+        result3= -state_3pha.optimize_ratio(theta, 1).fun
+      else:
+        result3 = 0
+      
+      difference = np.max([result1,result2,result3]) - result
+      if difference <= 0 :
+        differences[i]+=[np.nan]
+      else:
+        differences[i]+=[np.log(difference)]
+    print(i)
+
+  vmin, vmax = np.min(differences), np.max(differences)
+  print(vmin,vmax)
+  c= ax.pcolormesh(X_grid,Y_grid,differences,vmin=vmin, vmax=vmax, cmap='jet')
+  fig.tight_layout(rect=[0, 0, 0.85, 1])  # Leave space for colorbar on the right
+  cbar_ax = fig.add_axes([0.88, 0.15, 0.03, 0.7])  # [left, bottom, width, height]
+  fig.colorbar(mappable=c, cax=cbar_ax)  # Only one ScalarMappable is needed for colorbar
+  ax.set_xlabel(r'Ergotropy constraint $\theta$')
+  ax.set_ylabel(r'$T[K]$')
+  plt.show()
+  return
 
 def optimal_strategy2():
   temp_vec=np.linspace(0.4,1,3)
@@ -941,7 +994,8 @@ def optimal_strategy2():
   return
 
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
-optimal_strategy()
+#optimal_strategy()
+nongaussian_advantage()
 #feasible_regions(2.5,0.5)
 #snr_with_constraints()
 #snr_with_constraints()
