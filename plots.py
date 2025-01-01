@@ -994,8 +994,8 @@ def optimal_strategy2():
   return
 
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
-#optimal_strategy()
-nongaussian_advantage()
+optimal_strategy()
+#nongaussian_advantage()
 #feasible_regions(2.5,0.5)
 #snr_with_constraints()
 #snr_with_constraints()
