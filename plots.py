@@ -886,9 +886,9 @@ def optimal_strategy():
 
 def nongaussian_advantage():
   fig, ax = plt.subplots()
-  temp_vec=np.linspace(0.1,0.5,40)
+  temp_vec=np.linspace(0.1,0.5,100)
   nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
-  theta_vec0=np.linspace(0.1,15,40)
+  theta_vec0=np.linspace(0.1,15,100)
   X=theta_vec0
   Y=temp_vec
   X_grid, Y_grid =np.meshgrid(X,Y)
@@ -920,21 +920,23 @@ def nongaussian_advantage():
       else:
         result3 = 0
       
-      difference = np.max([result1,result2,result3]) - result
-      if difference <= 0 :
-        differences[i]+=[np.nan]
-      else:
-        differences[i]+=[np.log(difference)]
+      differences[i] += [np.max([result1,result2,result3]) - result]
     print(i)
+  differences = np.array(differences)
+  new_differences = np.ma.masked_where(differences <= 0, differences)
+  new_differences = np.log(new_differences)
+    
+    
 
-  vmin, vmax = np.min(differences), np.max(differences)
+  vmin, vmax = np.min(new_differences), np.max(new_differences)
   print(vmin,vmax)
-  c= ax.pcolormesh(X_grid,Y_grid,differences,vmin=vmin, vmax=vmax, cmap='jet')
+  c= ax.pcolormesh(X_grid,Y_grid,new_differences,vmin=vmin, vmax=vmax, cmap='jet')
   fig.tight_layout(rect=[0, 0, 0.85, 1])  # Leave space for colorbar on the right
   cbar_ax = fig.add_axes([0.88, 0.15, 0.03, 0.7])  # [left, bottom, width, height]
   fig.colorbar(mappable=c, cax=cbar_ax)  # Only one ScalarMappable is needed for colorbar
   ax.set_xlabel(r'Ergotropy constraint $\theta$')
   ax.set_ylabel(r'$T[K]$')
+  plt.savefig('nongaussian_advantage.pdf')
   plt.show()
   return
 
@@ -994,8 +996,8 @@ def optimal_strategy2():
   return
 
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
-optimal_strategy()
-#nongaussian_advantage()
+#optimal_strategy()
+nongaussian_advantage()
 #feasible_regions(2.5,0.5)
 #snr_with_constraints()
 #snr_with_constraints()
