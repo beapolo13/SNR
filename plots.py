@@ -878,8 +878,9 @@ def optimal_strategy():
   plt.plot([theta_vec2[0], theta_vec2[0]], [result[0], result2[0]], color='orange', linestyle='--')
   plt.plot([theta_vec3[0], theta_vec3[0]], [result[0], result3[0]], color='green', linestyle='--')
   plt.legend(['Gaussian', '1 photon addition', '2 photon additions', '3 photon additions'])
-  plt.xlabel(r'Maximum ergotropy $\theta$')
+  plt.xlabel(r'Maximum ergotropy $\epsilon$ [$\omega$]')
   plt.ylabel(r'Optimal $SNR_{extr}$')
+  plt.savefig('Optimal strategy.pdf')
   plt.show()
   
   return
@@ -995,8 +996,8 @@ def optimal_strategy2():
   return
 
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
-#optimal_strategy()
-nongaussian_advantage()
+optimal_strategy()
+#nongaussian_advantage()
 #feasible_regions(2.5,0.5)
 #snr_with_constraints()
 #snr_with_constraints()
