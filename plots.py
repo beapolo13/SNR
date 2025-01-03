@@ -884,26 +884,25 @@ def optimal_strategy():
   
   return
 
-def nongaussian_advantage():
+def nongaussian_advantage(): #correr este código con MUCHOS más puntos (500 aprox) para que se vea el plot bien
   fig, ax = plt.subplots()
-  temp_vec=np.linspace(0.1,0.5,100)
+  temp_vec=np.linspace(0.1,0.5,50)
   nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
-  theta_vec0=np.linspace(0.1,15,100)
+  theta_vec0=np.linspace(0.1,15,50)
   X=theta_vec0
   Y=temp_vec
   X_grid, Y_grid =np.meshgrid(X,Y)
 
   differences =[]
   for i in range(len(temp_vec)):
-    n_th=nu_vec[i]
-   
-    state_1pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[temp_vec[i]], nongaussian_ops=[1])
-    state_2pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[temp_vec[i]], nongaussian_ops=[1,1])
-    state_3pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[temp_vec[i]], nongaussian_ops=[1,1,1])
-    
+    n_th=(1/2)*(nu_vec[i]-1)
     differences += [[]]
     for theta in theta_vec0:
       result= find_optimal_gaussian(temp_vec[i],theta)
+      
+      state_1pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[temp_vec[i]], nongaussian_ops=[1])
+      state_2pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[temp_vec[i]], nongaussian_ops=[1,1])
+      state_3pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[temp_vec[i]], nongaussian_ops=[1,1,1])
 
       if theta >= n_th+1.0001:
         result1= -state_1pha.optimize_ratio(theta, 1).fun
@@ -919,7 +918,7 @@ def nongaussian_advantage():
         result3= -state_3pha.optimize_ratio(theta, 1).fun
       else:
         result3 = 0
-      
+
       differences[i] += [np.max([result1,result2,result3]) - result]
     print(i)
   differences = np.array(differences)
