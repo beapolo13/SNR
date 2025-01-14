@@ -887,9 +887,9 @@ def optimal_strategy():
 
 def nongaussian_advantage(): #correr este código con MUCHOS más puntos (500 aprox) para que se vea el plot bien
   fig, ax = plt.subplots()
-  temp_vec=np.linspace(0.1,0.5,50)
+  temp_vec=np.linspace(0.1,0.5,100)
   nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
-  theta_vec0=np.linspace(0.1,15,50)
+  theta_vec0=np.linspace(0.1,15,100)
   X=theta_vec0
   Y=temp_vec
   X_grid, Y_grid =np.meshgrid(X,Y)
@@ -931,6 +931,7 @@ def nongaussian_advantage(): #correr este código con MUCHOS más puntos (500 ap
   vmin, vmax = np.min(new_differences), np.max(new_differences)
   print(vmin,vmax)
   c= ax.pcolormesh(X_grid,Y_grid,new_differences,vmin=vmin, vmax=vmax, cmap='jet')
+  plt.text(1.5, 0.25, "Unfeasible\nphoton\nadditions", fontsize=6, color="black", ha='center', va='center',bbox=dict(facecolor='white', alpha=0))
   fig.tight_layout(rect=[0, 0, 0.85, 1])  # Leave space for colorbar on the right
   cbar_ax = fig.add_axes([0.88, 0.15, 0.03, 0.7])  # [left, bottom, width, height]
   fig.colorbar(mappable=c, cax=cbar_ax)  # Only one ScalarMappable is needed for colorbar
@@ -996,8 +997,8 @@ def optimal_strategy2():
   return
 
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
-optimal_strategy()
-#nongaussian_advantage()
+#optimal_strategy()
+nongaussian_advantage()
 #feasible_regions(2.5,0.5)
 #snr_with_constraints()
 #snr_with_constraints()
