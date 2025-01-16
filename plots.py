@@ -620,6 +620,83 @@ def plot_optimal_gaussian(t_vec,theta):
   #plt.savefig('Lagrange_gaussian.pdf')
   plt.show()
 
+def heatmap_optimal_gaussian(t_vec, theta_vec):
+    # Create meshgrid for t and theta
+    T, Theta = np.meshgrid(t_vec, theta_vec)
+
+    # Initialize arrays to store results
+    Z_opt = np.zeros_like(T, dtype=float)
+    Alpha_opt = np.zeros_like(T, dtype=float)
+    SNR_opt = np.zeros_like(T, dtype=float)
+
+    # Define the symbolic variables
+    z = sp.Symbol('z', real=True)
+    k = sp.symbols('k', real=True)
+
+    # Iterate over the grid
+    for i, t in enumerate(t_vec):
+        for j, theta in enumerate(theta_vec):
+            # Calculate nu
+            nu = 1 / np.tanh(1 / (2 * t))
+
+            # Define the polynomial expression
+            poly_expr = k - (4 * theta + 2 * k) * z**3 + k * z**4
+            
+            # Solve for roots
+            roots = sp.solve(poly_expr, z)
+
+            # Find the valid root
+            found_root = False
+            root_index = None
+            for idx, root in enumerate(roots):
+                x = root.subs({k: nu})
+                if x.is_real and 0 < float(x) < 1:
+                    found_root = True
+                    root_index = idx
+                    break
+
+            if not found_root:
+                continue
+
+            # Compute optimal parameters
+            z_opt = roots[root_index].subs({k: nu})
+            alpha_opt = theta - (1 / 4) * nu * (z_opt + 1 / z_opt - 2)
+            n_sq_opt = (1 / 8) * nu**2 * (z_opt**2 + 1 / z_opt**2) - 1 / 4 + nu * z_opt * alpha_opt
+            delta_n_opt = math.sqrt(n_sq_opt)
+            optimal_snr = float(theta / delta_n_opt)
+
+            # Store results
+            Z_opt[j, i] = float(z_opt)
+            Alpha_opt[j, i] = float(alpha_opt)
+            SNR_opt[j, i] = optimal_snr
+
+    # Plot heatmaps
+    plt.figure(figsize=(15, 5))
+
+    plt.subplot(1, 3, 1)
+    plt.contourf(T, Theta, Z_opt, levels=100, cmap='viridis')
+    plt.colorbar(label=r'Squeezing parameter $z$')
+    plt.xlabel(r'$T [K]$')
+    plt.ylabel(r'$\theta$')
+    plt.title(r'Squeezing Parameter $z$')
+
+    plt.subplot(1, 3, 2)
+    plt.contourf(T, Theta, Alpha_opt, levels=100, cmap='viridis')
+    plt.colorbar(label=r'Displacement $|\alpha|^2$')
+    plt.xlabel(r'$T [K]$')
+    plt.ylabel(r'$\theta$')
+    plt.title(r'Displacement $|\alpha|^2$')
+
+    plt.subplot(1, 3, 3)
+    plt.contourf(T, Theta, SNR_opt, levels=100, cmap='viridis')
+    plt.colorbar(label=r'Optimal $SNR_{ext}$')
+    plt.xlabel(r'$T [K]$')
+    plt.ylabel(r'$\theta$')
+    plt.title(r'Optimal $SNR_{ext}$')
+
+    plt.tight_layout()
+    plt.show()
+
 
 
 def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
@@ -998,7 +1075,7 @@ def optimal_strategy2():
 
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
-nongaussian_advantage()
+#nongaussian_advantage()
 #feasible_regions(2.5,0.5)
 #snr_with_constraints()
 #snr_with_constraints()
@@ -1007,3 +1084,4 @@ nongaussian_advantage()
 #multimode_optimization(3,1.5,4)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
+heatmap_optimal_gaussian(np.linspace(0.01,1.5,20), np.linspace(0,10,20))
