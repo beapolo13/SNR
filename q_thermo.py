@@ -154,7 +154,42 @@ def heatmaps_pure_state(fixed_theta):
     
     plt.show()
 
-heatmaps_pure_state(np.pi/4)
+#heatmaps_pure_state(np.pi/4)
+
+
+def gaussian_mixed_bound(n_shots):
+    k_vec=np.linspace(1,10,300)
+    bound_vec=[]
+    for k in k_vec:
+        bound_vec+=[-k+k**2/2+1/2]
+    plt.plot(k_vec, bound_vec, linestyle='dashed', color='black')
+
+    entangled_state_count=0
+    for i in range(n_shots):
+        k1= 1+9*np.random.random()
+        k2= 1+9*np.random.random()
+        #k=float(max([k1,k2]))
+        k=(k1+k2)/2
+        x= 2 * np.pi* np.random.random()
+        z1= np.random.random()
+        z2= np.random.random()
+        sep= z1*z2*(1+k1**2*k2**2-k1**2-k2**2)-4*cos(x)**2*sin(x)**2*(k1*k2*(z1**2+z2**2)-(k1**2+k2**2)*(z1*z2))
+        erg_gap = -(k1+k2)/2 + (1/2)*(sqrt(k2**2*cos(x)**4+k1**2*sin(x)**4+k1*k2*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))+sqrt(k1**2*cos(x)**4+k2**2*sin(x)**4+k1*k2*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2))))
+        if sep < 0:
+            entangled_state_count +=1 
+            print(f'not separable state {entangled_state_count}')
+            if erg_gap < 100: 
+                plt.scatter(k,erg_gap, c='b', s=1)
+        else:
+            plt.scatter(k,erg_gap, c='r', s=1)
+        i+=1
+    plt.show()
+    return
+
+gaussian_mixed_bound(10000)
+
+        
+        
 
 #one_dim_plot_squeezing_pure(np.pi/4)
 #mutual_information_TMSQ()
