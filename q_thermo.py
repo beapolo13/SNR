@@ -161,7 +161,7 @@ def gaussian_mixed_bound(n_shots):
     k_vec=np.linspace(1,10,300)
     bound_vec=[]
     for k in k_vec:
-        bound_vec+=[-k+k**2/2+1/2]
+        bound_vec+=[(-k+k**2/2+1/2)/(k-1)]
     plt.plot(k_vec, bound_vec, linestyle='dashed', color='black')
 
     entangled_state_count=0
@@ -174,7 +174,7 @@ def gaussian_mixed_bound(n_shots):
         z1= np.random.random()
         z2= np.random.random()
         sep= z1*z2*(1+k1**2*k2**2-k1**2-k2**2)-4*cos(x)**2*sin(x)**2*(k1*k2*(z1**2+z2**2)-(k1**2+k2**2)*(z1*z2))
-        erg_gap = -(k1+k2)/2 + (1/2)*(sqrt(k2**2*cos(x)**4+k1**2*sin(x)**4+k1*k2*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))+sqrt(k1**2*cos(x)**4+k2**2*sin(x)**4+k1*k2*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2))))
+        erg_gap = (-(k1+k2)/2 + (1/2)*(sqrt(k2**2*cos(x)**4+k1**2*sin(x)**4+k1*k2*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))+sqrt(k1**2*cos(x)**4+k2**2*sin(x)**4+k1*k2*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))))/((k1+k2-2)/2)
         if sep < 0:
             entangled_state_count +=1 
             print(f'not separable state {entangled_state_count}')
