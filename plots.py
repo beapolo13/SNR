@@ -620,7 +620,7 @@ def plot_optimal_gaussian(t_vec,theta):
   #plt.savefig('Lagrange_gaussian.pdf')
   plt.show()
 
-def heatmap_optimal_gaussian(t_vec, theta_vec):
+def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
     # Create meshgrid for t and theta
     T, Theta = np.meshgrid(t_vec, theta_vec)
 
@@ -671,28 +671,29 @@ def heatmap_optimal_gaussian(t_vec, theta_vec):
             SNR_opt[j, i] = optimal_snr
 
     # Plot heatmaps
-    plt.figure(figsize=(15, 5))
+    if what_to_plot == 'squeezing':
+      plt.contourf(T, Theta, Z_opt, levels=100, cmap='jet')
+      plt.colorbar(label=r'Squeezing parameter $z$')
+      plt.xlabel(r'$T [K]$')
+      plt.ylabel(r'$\epsilon [\omega]$')
+      plt.title(r'Squeezing Parameter $z$')
+      plt.savefig('optimal_sq.pdf')
 
-    plt.subplot(1, 3, 1)
-    plt.contourf(T, Theta, Z_opt, levels=100, cmap='viridis')
-    plt.colorbar(label=r'Squeezing parameter $z$')
-    plt.xlabel(r'$T [K]$')
-    plt.ylabel(r'$\theta$')
-    plt.title(r'Squeezing Parameter $z$')
+    elif what_to_plot == 'displacement':
+      plt.contourf(T, Theta, Alpha_opt, levels=100, cmap='jet')
+      plt.colorbar(label=r'Displacement $|\alpha|^2$')
+      plt.xlabel(r'$T [K]$')
+      plt.ylabel(r'$\epsilon [\omega]$')
+      plt.title(r'Displacement $|\alpha|^2$')
+      plt.savefig('optimal_disp.pdf')
 
-    plt.subplot(1, 3, 2)
-    plt.contourf(T, Theta, Alpha_opt, levels=100, cmap='viridis')
-    plt.colorbar(label=r'Displacement $|\alpha|^2$')
-    plt.xlabel(r'$T [K]$')
-    plt.ylabel(r'$\theta$')
-    plt.title(r'Displacement $|\alpha|^2$')
-
-    plt.subplot(1, 3, 3)
-    plt.contourf(T, Theta, SNR_opt, levels=100, cmap='viridis')
-    plt.colorbar(label=r'Optimal $SNR_{ext}$')
-    plt.xlabel(r'$T [K]$')
-    plt.ylabel(r'$\theta$')
-    plt.title(r'Optimal $SNR_{ext}$')
+    elif what_to_plot == 'snr':
+      plt.contourf(T, Theta, SNR_opt, levels=100, cmap='jet')
+      plt.colorbar(label=r'Optimal $SNR_{ext}$')
+      plt.xlabel(r'$T [K]$')
+      plt.ylabel(r'$\epsilon [\omega]$')
+      plt.title(r'Optimal $SNR_{ext}$')
+      plt.savefig('optimal_snr.pdf')
 
     plt.tight_layout()
     plt.show()
@@ -1084,4 +1085,4 @@ def optimal_strategy2():
 #multimode_optimization(3,1.5,4)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-heatmap_optimal_gaussian(np.linspace(0.01,1.5,20), np.linspace(0,10,20))
+heatmap_optimal_gaussian(np.linspace(0.01,1.5,20), np.linspace(0,10,20), 'displacement')

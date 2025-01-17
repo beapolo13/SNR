@@ -186,7 +186,35 @@ def gaussian_mixed_bound(n_shots):
     plt.show()
     return
 
-gaussian_mixed_bound(10000)
+def gaussian_mixed_new_bound(n_shots):
+
+
+    entangled_state_count=0
+    for i in range(n_shots):
+        k1= 1+9*np.random.random()
+        k2= 1+9*np.random.random()
+        #k=float(max([k1,k2]))
+        k=(k1+k2)/2
+        eps=k2-k
+        x= 2 * np.pi* np.random.random()
+        z1= np.random.random()
+        z2= np.random.random()
+        sep= z1*z2*(1+k1**2*k2**2-k1**2-k2**2)-4*cos(x)**2*sin(x)**2*(k1*k2*(z1**2+z2**2)-(k1**2+k2**2)*(z1*z2))
+        erg_gap = (-(k1+k2)/2 + (1/2)*(sqrt(k2**2*cos(x)**4+k1**2*sin(x)**4+k1*k2*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))+sqrt(k1**2*cos(x)**4+k2**2*sin(x)**4+k1*k2*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))))/((k1+k2-2)/2)
+        bound= (1/(k-1))*(-k+(1/2)*sqrt(1+k**4-2*k**2*eps**2+eps**4+2*(k**2+eps**2)))
+        if sep < 0:
+            entangled_state_count +=1 
+            print(f'not separable state {entangled_state_count}')
+            if erg_gap < 100: 
+                plt.scatter(i,bound-erg_gap, c='b', s=1)
+        else:
+            plt.scatter(i,bound-erg_gap, c='r', s=1)
+        i+=1
+    plt.axhline(y=0, color='black', linestyle='-')
+    plt.show()
+    return
+
+gaussian_mixed_new_bound(10000)
 
         
         
