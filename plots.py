@@ -671,21 +671,20 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
             SNR_opt[j, i] = optimal_snr
 
     # Plot heatmaps
-    if what_to_plot == 'squeezing':
-      plt.contourf(T, Theta, Z_opt, levels=100, cmap='jet')
-      plt.colorbar(label=r'Squeezing parameter $z$')
-      plt.xlabel(r'$T [K]$')
-      plt.ylabel(r'$\epsilon [\omega]$')
-      plt.title(r'Squeezing Parameter $z$')
-      plt.savefig('optimal_sq.pdf')
-
-    elif what_to_plot == 'displacement':
-      plt.contourf(T, Theta, Alpha_opt, levels=100, cmap='jet')
-      plt.colorbar(label=r'Displacement $|\alpha|^2$')
-      plt.xlabel(r'$T [K]$')
-      plt.ylabel(r'$\epsilon [\omega]$')
-      plt.title(r'Displacement $|\alpha|^2$')
-      plt.savefig('optimal_disp.pdf')
+    if what_to_plot == 'parameters':
+      fig, (ax1,ax2)=plt.subplots(1,2)
+      ax1.contourf(T, Theta, Z_opt, levels=100, cmap='jet')
+      plt.colorbar(label=r'Squeezing parameter $z$',cax=ax1)
+      ax1.xlabel(r'$T [K]$')
+      ax1.ylabel(r'$\epsilon [\omega]$')
+      ax1.title(r'Squeezing Parameter $z$')
+      ax2.contourf(T, Theta, Alpha_opt, levels=100, cmap='jet')
+      plt.colorbar(label=r'Displacement $|\alpha|^2$',cax=ax2)
+      ax2.xlabel(r'$T [K]$')
+      ax2.ylabel(r'$\epsilon [\omega]$')
+      ax2.title(r'Displacement $|\alpha|^2$')
+      plt.savefig('optimal_parameters_gaussian.pdf')
+    
 
     elif what_to_plot == 'snr':
       plt.contourf(T, Theta, SNR_opt, levels=100, cmap='jet')
@@ -1085,4 +1084,4 @@ def optimal_strategy2():
 #multimode_optimization(3,1.5,4)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-heatmap_optimal_gaussian(np.linspace(0.01,1.5,20), np.linspace(0,10,20), 'displacement')
+heatmap_optimal_gaussian(np.linspace(0.01,1.5,20), np.linspace(0,10,20), 'parameters')

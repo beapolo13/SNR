@@ -445,7 +445,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
     return sum/self.K()
   
   def passive(self):  #returns the passive vacuum state associated to our state
-    return State(self.N,[1]*self.N, [0]*((self.N*self.N-1)//2), [0]*self.N, temp=self.temp, format=self.format)
+    return State(self.N,[1]*self.N, [0]*((self.N*self.N-1)//2), [0]*self.N, omega= self.omega, temp=self.temp, format=self.format)
   
   def fock(self, exc):
     return State(self.N,[1]*self.N, [0]*((self.N*self.N-1)//2), [0]*self.N, temp=self.temp, nongaussian_ops=[1]*exc)
@@ -538,10 +538,11 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
 # #Symbolic representation
 nu1, nu2, w1, w2, z1,z2,x,T1,T2,phi1,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('nu1, nu2, w1, w2 z1,z2,x,T1, T2, phi1,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True, commutative= True, nonnegative= True)
 # # alpha = symbols('alpha')
-#state_sym=State(1,[z1],[],[0],disp=[0,0],temp=[0],nongaussian_ops=[1], required_ordering='xxpp',format='string')
-# print('initial matrix', state_sym.matrix.subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))
-# erg_exp = state_sym.ergotropy().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 })
-# var_expr = (state_sym.varianceN().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))**2
+# state_sym=State(2,[z2,z1],[x],[0,0],disp=[0,0,0,0],temp=[T1,T2],omega=[w1,w2],nongaussian_ops=[], required_ordering='xxpp',format='string')
+# print('initial matrix', state_sym.matrix.subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T2)): nu2 }))
+# erg_exp = state_sym.ergotropy().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T2)): nu2 })
+# print(erg_exp)
+#  var_expr = (state_sym.varianceN().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))**2
 #snr_expr = simplify(state_sym.SNR_extr().subs({coth(1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))
 # SV_expr = simplify(state_sym.SV().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2}))
 # print('erg',erg_exp)
