@@ -214,7 +214,7 @@ def gaussian_mixed_new_bound(n_shots):
     plt.show()
     return
 
-gaussian_mixed_new_bound(10000)
+gaussian_mixed_new_bound(100000)
 
         
         
