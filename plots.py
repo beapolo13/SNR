@@ -628,6 +628,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
     Z_opt = np.zeros_like(T, dtype=float)
     Alpha_opt = np.zeros_like(T, dtype=float)
     SNR_opt = np.zeros_like(T, dtype=float)
+    g= np.zeros_like(T, dtype=float)
 
     # Define the symbolic variables
     z = sp.Symbol('z', real=True)
@@ -664,11 +665,13 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
             n_sq_opt = (1 / 8) * nu**2 * (z_opt**2 + 1 / z_opt**2) - 1 / 4 + nu * z_opt * alpha_opt
             delta_n_opt = math.sqrt(n_sq_opt)
             optimal_snr = float(theta / delta_n_opt)
+            g_on_opt= float(n_sq_opt/theta**2-1/theta+1)
 
             # Store results
             Z_opt[j, i] = float(z_opt)
             Alpha_opt[j, i] = float(alpha_opt)
             SNR_opt[j, i] = optimal_snr
+            g[j,i] = g_on_opt
 
     # Plot heatmaps
     if what_to_plot == 'parameters':
@@ -687,12 +690,23 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
     
 
     elif what_to_plot == 'snr':
-      plt.contourf(T, Theta, SNR_opt, levels=100, cmap='jet')
-      plt.colorbar(label=r'Optimal $SNR_{ext}$')
+      plt.contourf(T, Theta, SNR_opt, levels=20, cmap='jet')
+      plt.colorbar(label=r'Optimal $\Gamma$')
       plt.xlabel(r'$T [K]$')
       plt.ylabel(r'$\epsilon [\omega]$')
-      plt.title(r'Optimal $SNR_{ext}$')
+      #plt.title(r'Optimal $SNR_{ext}$')
       plt.savefig('optimal_snr.pdf')
+
+    elif what_to_plot == 'g':
+      contour_levels = [1]
+      fig,ax=plt.subplots()
+      plt.contourf(T, Theta, g, levels=20, cmap='jet')
+      contour = ax.contour(T, Theta, g, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+      plt.colorbar(label=r'$g^{(2)}(0)$')
+      plt.xlabel(r'$T [K]$')
+      plt.ylabel(r'$\epsilon [\omega]$')
+      #plt.title(r'Optimal $SNR_{ext}$')
+      plt.savefig('g_on_optimal_gaussian.pdf')
 
     plt.tight_layout()
     plt.show()
@@ -1084,4 +1098,4 @@ def optimal_strategy2():
 #multimode_optimization(3,1.5,4)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-heatmap_optimal_gaussian(np.linspace(0.01,1.5,20), np.linspace(0,10,20), 'parameters')
+heatmap_optimal_gaussian(np.linspace(0.01,1.5,25), np.linspace(0,10,25), 'snr')
