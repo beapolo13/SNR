@@ -675,22 +675,30 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
 
     # Plot heatmaps
     if what_to_plot == 'parameters':
-      fig, (ax1,ax2)=plt.subplots(1,2)
-      ax1.contourf(T, Theta, Z_opt, levels=100, cmap='jet')
-      plt.colorbar(label=r'Squeezing parameter $z$',cax=ax1)
-      ax1.xlabel(r'$T [K]$')
-      ax1.ylabel(r'$\epsilon [\omega]$')
-      ax1.title(r'Squeezing Parameter $z$')
-      ax2.contourf(T, Theta, Alpha_opt, levels=100, cmap='jet')
-      plt.colorbar(label=r'Displacement $|\alpha|^2$',cax=ax2)
-      ax2.xlabel(r'$T [K]$')
-      ax2.ylabel(r'$\epsilon [\omega]$')
-      ax2.title(r'Displacement $|\alpha|^2$')
+      fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+
+      cf1 = ax1.contourf(T, Theta, Z_opt, levels=20, cmap='plasma')
+      fig.colorbar(cf1, ax=ax1, label=r'Squeezing parameter $z$')
+
+      ax1.set_xlabel(r'$T [K]$')
+      ax1.set_ylabel(r'$\epsilon [\omega]$')
+      ax1.set_title(r'Squeezing Parameter $z$')
+
+      cf2 = ax2.contourf(T, Theta, Alpha_opt, levels=20, cmap='plasma')
+      fig.colorbar(cf2, ax=ax2, label=r'Displacement $|\alpha|^2$')
+
+      ax2.set_xlabel(r'$T [K]$')
+      ax2.set_ylabel(r'$\epsilon [\omega]$')
+      ax2.set_title(r'Displacement $|\alpha|^2$')
+
       plt.savefig('optimal_parameters_gaussian.pdf')
     
 
     elif what_to_plot == 'snr':
-      plt.contourf(T, Theta, SNR_opt, levels=20, cmap='jet')
+      fig,ax=plt.subplots()
+      contour_levels = [1]
+      plt.contourf(T, Theta, SNR_opt, levels=30, cmap='plasma')
+      contour = ax.contour(T, Theta, g, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
       plt.colorbar(label=r'Optimal $\Gamma$')
       plt.xlabel(r'$T [K]$')
       plt.ylabel(r'$\epsilon [\omega]$')
@@ -700,7 +708,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
     elif what_to_plot == 'g':
       contour_levels = [1]
       fig,ax=plt.subplots()
-      plt.contourf(T, Theta, g, levels=20, cmap='jet')
+      plt.contourf(T, Theta, g, levels=20, cmap='plasma')
       contour = ax.contour(T, Theta, g, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
       plt.colorbar(label=r'$g^{(2)}(0)$')
       plt.xlabel(r'$T [K]$')
@@ -1098,4 +1106,4 @@ def optimal_strategy2():
 #multimode_optimization(3,1.5,4)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-heatmap_optimal_gaussian(np.linspace(0.01,1.5,25), np.linspace(0,10,25), 'snr')
+heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'parameters')
