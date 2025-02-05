@@ -677,14 +677,14 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
     if what_to_plot == 'parameters':
       fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
-      cf1 = ax1.contourf(T, Theta, Z_opt, levels=20, cmap='plasma')
+      cf1 = ax1.contourf(T, Theta, Z_opt, levels=20, cmap='plasma', c=0.5)
       fig.colorbar(cf1, ax=ax1, label=r'Squeezing parameter $z$')
 
       ax1.set_xlabel(r'$T [K]$')
       ax1.set_ylabel(r'$\epsilon [\omega]$')
       ax1.set_title(r'Squeezing Parameter $z$')
 
-      cf2 = ax2.contourf(T, Theta, Alpha_opt, levels=20, cmap='plasma')
+      cf2 = ax2.contourf(T, Theta, Alpha_opt, levels=20, cmap='plasma', c=0.5)
       fig.colorbar(cf2, ax=ax2, label=r'Displacement $|\alpha|^2$')
 
       ax2.set_xlabel(r'$T [K]$')
@@ -697,7 +697,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
     elif what_to_plot == 'snr':
       fig,ax=plt.subplots()
       contour_levels = [1]
-      plt.contourf(T, Theta, SNR_opt, levels=30, cmap='plasma')
+      plt.contourf(T, Theta, SNR_opt, levels=30, cmap='plasma', c=0.5)
       contour = ax.contour(T, Theta, g, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
       plt.colorbar(label=r'Optimal $\Gamma$')
       plt.xlabel(r'$T [K]$')
@@ -708,7 +708,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
     elif what_to_plot == 'g':
       contour_levels = [1]
       fig,ax=plt.subplots()
-      plt.contourf(T, Theta, g, levels=20, cmap='plasma')
+      plt.contourf(T, Theta, g, levels=20, cmap='plasma', c=0.5)
       contour = ax.contour(T, Theta, g, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
       plt.colorbar(label=r'$g^{(2)}(0)$')
       plt.xlabel(r'$T [K]$')
@@ -1106,4 +1106,4 @@ def optimal_strategy2():
 #multimode_optimization(3,1.5,4)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'parameters')
+heatmap_optimal_gaussian(np.linspace(0.01,1.5,5), np.linspace(0,10,5), 'parameters')
