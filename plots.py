@@ -677,14 +677,14 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
     if what_to_plot == 'parameters':
       fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
-      cf1 = ax1.contourf(T, Theta, Z_opt, levels=20, cmap='plasma', c=0.5)
+      cf1 = ax1.contourf(T, Theta, Z_opt, levels=20, cmap='viridis', alpha=0.7)
       fig.colorbar(cf1, ax=ax1, label=r'Squeezing parameter $z$')
 
       ax1.set_xlabel(r'$T [K]$')
       ax1.set_ylabel(r'$\epsilon [\omega]$')
       ax1.set_title(r'Squeezing Parameter $z$')
 
-      cf2 = ax2.contourf(T, Theta, Alpha_opt, levels=20, cmap='plasma', c=0.5)
+      cf2 = ax2.contourf(T, Theta, Alpha_opt, levels=20, cmap='viridis', alpha=0.7)
       fig.colorbar(cf2, ax=ax2, label=r'Displacement $|\alpha|^2$')
 
       ax2.set_xlabel(r'$T [K]$')
@@ -697,8 +697,9 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
     elif what_to_plot == 'snr':
       fig,ax=plt.subplots()
       contour_levels = [1]
-      plt.contourf(T, Theta, SNR_opt, levels=30, cmap='plasma', c=0.5)
+      plt.contourf(T, Theta, SNR_opt, levels=20, cmap='viridis', alpha=0.7)
       contour = ax.contour(T, Theta, g, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+      ax.clabel(contour, inline=True, fontsize=10,fmt=r'$g^{(0)}=1$')
       plt.colorbar(label=r'Optimal $\Gamma$')
       plt.xlabel(r'$T [K]$')
       plt.ylabel(r'$\epsilon [\omega]$')
@@ -708,7 +709,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
     elif what_to_plot == 'g':
       contour_levels = [1]
       fig,ax=plt.subplots()
-      plt.contourf(T, Theta, g, levels=20, cmap='plasma', c=0.5)
+      plt.contourf(T, Theta, g, levels=20, cmap='viridis', alpha=0.7)
       contour = ax.contour(T, Theta, g, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
       plt.colorbar(label=r'$g^{(2)}(0)$')
       plt.xlabel(r'$T [K]$')
@@ -749,58 +750,45 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
     plt.plot(t_vec, optimal_snr[rank], color= colors[rank])
   plt.legend(['Gaussian bound']+ [f'{rank} photon addition(s)' for rank in range(1,max_stellar_rank+1)])
   plt.xlabel(r'$T [K]$')
-  plt.ylabel(r'$SNR_{ext, opt}$')
+  plt.ylabel(r'Optimal $\Gamma$')
   plt.savefig('snr_with_stellar_rank.pdf')
   plt.show()
   return optimal_snr
 
 
-def snr_sv_comparison(stellar_rank, max_temp):  # since we are studying bipartite entanglement, it is sufficient to consider 2 modes
+def snr_sv_comparison(stellar_rank, max_temp, epsilon):  # since we are studying bipartite entanglement, it is sufficient to consider 2 modes
    #the ergotropy constraint is given by temperature and max_stellar_rank
 
-  def is_outlier(value, left, right, threshold=0.01):
-    """
-    Determines if a value is an outlier by comparing it to the average of neighboring values.
-    """
-    avg_neighbor = (left + right) / 2
-    return abs(value - avg_neighbor) > threshold * avg_neighbor
-
-  def replace_outliers_with_interpolation(data, threshold=0.01):
-      """
-      Detects and replaces outliers in a 2D list by interpolating neighboring values.
-      """
-      rows, cols = np.shape(data)
-      for i in range(rows):
-          for j in range(1, cols - 1):  # Avoid edges for simplicity
-              value, left, right = data[i][j], data[i][j - 1], data[i][j + 1]
-              if is_outlier(value, left, right, threshold):
-                  data[i][j] = (left + right) / 2
-      return data
-
-
   fig, (ax1,ax2) = plt.subplots(1,2, figsize=(12, 6))
-  t_vec = np.linspace(0.1,max_temp,100)
-  x_vec=np.linspace(0,2*np.pi,100)
+  t_vec = np.linspace(0,1,10)
+  x_vec=np.linspace(0,np.pi,100)
   X=x_vec
   Y=t_vec
   X_grid, Y_grid =np.meshgrid(X,Y)
   #create array for optimal SNR and SV of the corresponding state
   optimal_snr = []
   SV = []
-  z=0.5
-  for t in t_vec:
+  for t in range(len(t_vec)):
     optimal_snr += [[]]
     SV += [[]]
-    nu = 1/np.tanh(1/(2* t))
+    nu = 1/np.tanh(1/(2* t_vec[t]))
     print('nu=', nu)
     for x in x_vec:
-      optimal_state= State(2,[z,1/z],[x],[0,0],disp=[0,0,0,0], temp=[t,t],nongaussian_ops=[1]*stellar_rank, format='number')
-      optimal_snr[np.where(t_vec == t)[0][0]]+= [np.float64(optimal_state.SNR_extr())]
-      SV[np.where(t_vec == t)[0][0]]+= [-np.float64(np.real(optimal_state.SV()))]
+      state = State(2,[random.random(),random.random()],[x],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t_vec[t],t_vec[t]],nongaussian_ops=[1]*stellar_rank, format='number')
+      #print(state.__dict__)
+      result= state.optimize_ratio(epsilon,2)
+      while result.success == False:
+        result= state.optimize_ratio(epsilon,2)
+      #optimal_snr[t]+= [(-result.fun)]
+      optimal_state= State(2,[0.5,0.7],[x],[0,0],disp=[0,0,0,0], temp=[t_vec[t], t_vec[t]],nongaussian_ops=[1]*stellar_rank, format='number')
+      optimal_snr[t]+=[np.float(optimal_state.SNR_extr())]
+      SV[t]+= [-np.float64(np.real(optimal_state.SV()))]
+    ax1.plot(x_vec,optimal_snr[t])
+  plt.show()
   vmin_snr, vmax_snr = np.min(optimal_snr), np.max(optimal_snr)
   vmin_sv, vmax_sv = np.min(SV), np.max(SV)
-  c1=ax1.pcolormesh(X_grid,Y_grid,optimal_snr, cmap='jet')
-  c2=ax2.pcolormesh(X_grid,Y_grid,SV,cmap='jet')
+  c1=ax1.pcolormesh(X_grid,Y_grid,optimal_snr, cmap='viridis', alpha=0.7)
+  c2=ax2.pcolormesh(X_grid,Y_grid,SV,cmap='viridis', alpha=0.7)
   cbar1=fig.colorbar(c1,ax=ax1)
   cbar2=fig.colorbar(c2,ax=ax2)
   ax1.set_xlim(X.min(), X.max())
@@ -848,7 +836,7 @@ def multimode_optimization(max_stellar_rank, max_temp, max_modes):
       axes[rank//2,rank%2].set_xticks(ticks=np.arange(1,max_modes+1))
     rank+=1
   cbar_ax = fig.add_axes([0.9, 0.15, 0.02, 0.7])
-  cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'), cax=cbar_ax, location='right')
+  cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'), cax=cbar_ax, location='right', alpha=0.7)
   cbar.set_label(r'$T[K]$')
   plt.show()
     
@@ -978,7 +966,7 @@ def optimal_strategy():
   plt.plot([theta_vec3[0], theta_vec3[0]], [result[0], result3[0]], color='green', linestyle='--')
   plt.legend(['Gaussian', '1 photon addition', '2 photon additions', '3 photon additions'])
   plt.xlabel(r'Maximum ergotropy $\epsilon$ [$\omega$]')
-  plt.ylabel(r'Optimal $SNR_{extr}$')
+  plt.ylabel(r'Optimal $\Gamma$')
   plt.savefig('Optimal strategy.pdf')
   plt.show()
   
@@ -1095,6 +1083,29 @@ def optimal_strategy2():
 
   return
 
+
+def multimode_check(stellar_rank):  # since we are studying bipartite entanglement, it is sufficient to consider 2 modes
+   #the ergotropy constraint is given by temperature and max_stellar_rank
+
+  fig,ax = plt.subplots()
+  t_vec = np.linspace(0.1,1,10)
+  x_vec=np.linspace(0,np.pi,50)
+
+  #create array for optimal SNR and SV of the corresponding state
+  snr = []
+  for t in range(len(t_vec)):
+    snr += [[]]
+    nu = 1/np.tanh(1/(2* t_vec[t]))
+    print('nu=', nu)
+    for x in x_vec:
+      state= State(2,[0.5,0.3],[x],[0,0],disp=[0,0,0,0], temp=[t_vec[t], t_vec[t]],nongaussian_ops=[1]*stellar_rank, format='number')
+      snr[t]+=[state.SNR_extr()]
+    ax.plot(x_vec,snr[t])
+  plt.show()
+  
+  return 
+
+#multimode_check(0)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
 #nongaussian_advantage()
@@ -1106,4 +1117,5 @@ def optimal_strategy2():
 #multimode_optimization(3,1.5,4)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-heatmap_optimal_gaussian(np.linspace(0.01,1.5,5), np.linspace(0,10,5), 'parameters')
+#heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'snr')
+snr_sv_comparison(1, 1, 10)

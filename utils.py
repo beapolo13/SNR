@@ -512,7 +512,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
     
         #Define bounds for parameters
         disp_bounds = [(0, np.sqrt(max_energy))] * (2 * N)
-        squeezing_bounds = [(0.01, 1)] * N
+        squeezing_bounds = [(0.1, 1)] * N
         #bs_bounds = [(0,2*np.pi)]*(N*(N-1)//2)
         bounds = disp_bounds + squeezing_bounds 
         # Define constraints dictionary
