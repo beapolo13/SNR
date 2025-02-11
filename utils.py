@@ -509,14 +509,16 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
             #self.bs[:(N)*(N-1)//2] = attrs[3*N:]
             return max_energy - self.ergotropy()  # Must be non-negative
         
-    
+     
         #Define bounds for parameters
         disp_bounds = [(0, np.sqrt(max_energy))] * (2 * N)
-        squeezing_bounds = [(0.1, 1)] * N
+        squeezing_bounds = [(0.1, 1)]*N 
         #bs_bounds = [(0,2*np.pi)]*(N*(N-1)//2)
         bounds = disp_bounds + squeezing_bounds 
         # Define constraints dictionary
         constraint1 = {'type': 'ineq', 'fun': energy_constraint}
+       
+        
   
 
         # Initial guess for the attributes

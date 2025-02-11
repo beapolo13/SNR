@@ -726,7 +726,7 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
    #the ergotropy constraint is given by temperature and max_stellar_rank
   t_vec = np.linspace(0.1,max_temp,100)
 
-  gauss_snr_opt =[log(find_optimal_gaussian(t, theta)) for t in t_vec]
+  gauss_snr_opt =[find_optimal_gaussian(t, theta) for t in t_vec]
 
 
   optimal_snr = []
@@ -741,14 +741,17 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
       result= state.optimize_ratio(theta,1)
       while result.success == False:
         result= state.optimize_ratio(theta,1)
-      optimal_snr[rank]+= [log(-result.fun)]
+      optimal_snr[rank]+= [-result.fun]
       optimal_state= State(1,[result.x[2]],[],[random.random()],disp=[result.x[0],result.x[1]], temp=[t],nongaussian_ops=[1]*rank, format='number')
   
-  colors=['black','blue','orange','green']
-  plt.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
+  colors=['black','purple','orange','green']
+  fig,ax =plt.subplots()
+  ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
   for rank in range(1, max_stellar_rank+1):
-    plt.plot(t_vec, optimal_snr[rank], color= colors[rank])
-  plt.legend(['Gaussian bound']+ [f'{rank} photon addition(s)' for rank in range(1,max_stellar_rank+1)])
+    ax.plot(t_vec, optimal_snr[rank], color= colors[rank])
+  ax.set_yscale('log')
+  plt.grid(True)
+  plt.legend(['Gaussian bound']+ ['1 photon addition', '2 photon additions', '3 photon additions'])
   plt.xlabel(r'$T [K]$')
   plt.ylabel(r'Optimal $\Gamma$')
   plt.savefig('snr_with_stellar_rank.pdf')
@@ -940,10 +943,11 @@ def feasible_regions(constraint_theta, system_temp):
   plt.show()
 
 def optimal_strategy():
+  fig, ax = plt.subplots()
   t=0.5
   n_th=(1/np.tanh(1/(2* t))-1)/2
   print('n_th=',n_th)
-  theta_vec0=np.linspace(0.1,25,50)
+  theta_vec0=np.linspace(0.1,25,100)
   theta_vec1=np.linspace(n_th+1.0001,25,50)
   theta_vec2=np.linspace(2*(n_th+1.0001),25,50)
   theta_vec3=np.linspace(3*(n_th+1.0001),25,50)
@@ -953,19 +957,24 @@ def optimal_strategy():
   state_2pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[t], nongaussian_ops=[1,1])
   state_3pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[t], nongaussian_ops=[1,1,1])
 
-  result= [np.log(find_optimal_gaussian(t,theta)) for theta in theta_vec0]
-  result1= [np.log(-state_1pha.optimize_ratio(theta, 1).fun) for theta in theta_vec1]
-  result2= [np.log(-state_2pha.optimize_ratio(theta, 1).fun) for theta in theta_vec2]
-  result3= [np.log(-state_3pha.optimize_ratio(theta, 1).fun) for theta in theta_vec3]
-  plt.plot(theta_vec0,result, color='black', linestyle='dashed')
-  plt.plot(theta_vec1,result1, color='blue')
-  plt.plot(theta_vec2,result2, color='orange')
-  plt.plot(theta_vec3,result3, color='green')
-  plt.plot([theta_vec1[0], theta_vec1[0]], [result[0], result1[0]], color='blue', linestyle='--')
-  plt.plot([theta_vec2[0], theta_vec2[0]], [result[0], result2[0]], color='orange', linestyle='--')
-  plt.plot([theta_vec3[0], theta_vec3[0]], [result[0], result3[0]], color='green', linestyle='--')
+  result= [find_optimal_gaussian(t,theta) for theta in theta_vec0]
+  result1= [-state_1pha.optimize_ratio(theta, 1).fun for theta in theta_vec1]
+  result2= [-state_2pha.optimize_ratio(theta, 1).fun for theta in theta_vec2]
+  result3= [-state_3pha.optimize_ratio(theta, 1).fun for theta in theta_vec3]
+  ax.plot(theta_vec0,result, color='black')
+  ax.plot(theta_vec1,result1, color='purple')
+  ax.plot(theta_vec2,result2, color='orange')
+  ax.plot(theta_vec3,result3, color='green')
+  ax.plot([theta_vec1[0], theta_vec1[0]], [result[0], result1[0]], color='purple', linestyle='--')
+  ax.plot([theta_vec2[0], theta_vec2[0]], [result[0], result2[0]], color='orange', linestyle='--')
+  ax.plot([theta_vec3[0], theta_vec3[0]], [result[0], result3[0]], color='green', linestyle='--')
+  ax.set_yscale('log')
+  ax.set_yticks([10**0, 10**1])  # Example for y-axis
+  ax.set_yticklabels([r"$10^0$", r"$10^1$"])
+  #ax.set_yticks(ticks=[0,1])
+  plt.grid(True)
   plt.legend(['Gaussian', '1 photon addition', '2 photon additions', '3 photon additions'])
-  plt.xlabel(r'Maximum ergotropy $\epsilon$ [$\omega$]')
+  plt.xlabel(r'Energetic constraint $\epsilon$ [$\omega$]')
   plt.ylabel(r'Optimal $\Gamma$')
   plt.savefig('Optimal strategy.pdf')
   plt.show()
@@ -1088,24 +1097,69 @@ def multimode_check(stellar_rank):  # since we are studying bipartite entangleme
    #the ergotropy constraint is given by temperature and max_stellar_rank
 
   fig,ax = plt.subplots()
-  t_vec = np.linspace(0.1,1,10)
+  t_vec = np.linspace(0.1,1,6)
   x_vec=np.linspace(0,np.pi,50)
-
+  colors = plt.cm.jet(t_vec)
   #create array for optimal SNR and SV of the corresponding state
   snr = []
+  z_vec=[0.25,0.75]
+  #z_vec= [np.random.random(), np.random.random()]
   for t in range(len(t_vec)):
     snr += [[]]
     nu = 1/np.tanh(1/(2* t_vec[t]))
     print('nu=', nu)
     for x in x_vec:
-      state= State(2,[0.5,0.3],[x],[0,0],disp=[0,0,0,0], temp=[t_vec[t], t_vec[t]],nongaussian_ops=[1]*stellar_rank, format='number')
+      state= State(2,z_vec,[x],[0,0],disp=[5,0,3,0], temp=[t_vec[t], t_vec[t]],nongaussian_ops=[1]*stellar_rank, format='number')
       snr[t]+=[state.SNR_extr()]
-    ax.plot(x_vec,snr[t])
+    ax.plot(x_vec,snr[t], color=colors[range(len(t_vec)).index(t)])
   plt.show()
   
   return 
 
-#multimode_check(0)
+def entanglement_advantage(rank, max_temp, theta):
+  t_vec = np.linspace(0.1,max_temp,10)
+  gauss_snr_opt =[]
+
+  optimal_snr_ent = []
+  optimal_snr_sep=[]
+  for t in t_vec:
+    print(t)
+    nu = 1/np.tanh(1/(2* t))
+    state_gauss= State(2,[random.random(),random.random()],[0],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[], format='number')
+    state_sep = State(2,[random.random(),random.random()],[0],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
+    state_ent= State(2,[random.random(),random.random()],[np.pi/4],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
+    #print(state.__dict__)
+    result_gauss= state_gauss.optimize_ratio(theta,2)
+    while result_gauss.success == False:
+      result_gauss= state_gauss.optimize_ratio(theta,2)
+    gauss_snr_opt+= [-result_gauss.fun]
+    result_sep= state_sep.optimize_ratio(theta,2)
+    while result_sep.success == False:
+      result_sep= state_sep.optimize_ratio(theta,2)
+    optimal_snr_sep+= [-result_sep.fun]
+    result_ent = state_ent.optimize_ratio(theta,2)
+    while result_ent.success == False:
+      result_ent= state_ent.optimize_ratio(theta,2)
+    optimal_snr_ent+= [-result_ent.fun]
+    print(result_gauss.x, result_sep.x, result_ent.x)
+    
+  
+  colors=['black','purple','orange','green']
+  fig,ax =plt.subplots()
+  ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
+  ax.plot(t_vec, optimal_snr_sep, color= 'purple')
+  ax.plot(t_vec,optimal_snr_ent,color='orange')
+  ax.set_yscale('log')
+  plt.grid(True)
+  plt.legend(['Gaussian bound']+ ['1 photon addition min', '1 photon addition max'])
+  plt.xlabel(r'$T [K]$')
+  plt.ylabel(r'Optimal $\Gamma$')
+  plt.savefig('entanglement_adv.pdf')
+  plt.show()
+  return
+ 
+entanglement_advantage(1,1,5)
+#multimode_check(1)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
 #nongaussian_advantage()
@@ -1118,4 +1172,4 @@ def multimode_check(stellar_rank):  # since we are studying bipartite entangleme
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
 #heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'snr')
-snr_sv_comparison(1, 1, 10)
+#snr_sv_comparison(1, 1, 10)
