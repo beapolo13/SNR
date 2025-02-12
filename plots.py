@@ -1117,7 +1117,7 @@ def multimode_check(stellar_rank):  # since we are studying bipartite entangleme
   return 
 
 def entanglement_advantage(rank, max_temp, theta):
-  t_vec = np.linspace(0.1,max_temp,10)
+  t_vec = np.linspace(0.1,max_temp,50)
   gauss_snr_opt =[]
 
   optimal_snr_ent = []
@@ -1125,9 +1125,9 @@ def entanglement_advantage(rank, max_temp, theta):
   for t in t_vec:
     print(t)
     nu = 1/np.tanh(1/(2* t))
-    state_gauss= State(2,[random.random(),random.random()],[0],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[], format='number')
-    state_sep = State(2,[random.random(),random.random()],[0],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
-    state_ent= State(2,[random.random(),random.random()],[np.pi/4],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
+    state_gauss= State(2,[random.random(),1],[np.pi/4],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[], format='number')
+    state_sep = State(2,[random.random(),1],[0],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
+    state_ent= State(2,[random.random(),1],[np.pi/4],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
     #print(state.__dict__)
     result_gauss= state_gauss.optimize_ratio(theta,2)
     while result_gauss.success == False:
@@ -1147,8 +1147,9 @@ def entanglement_advantage(rank, max_temp, theta):
   colors=['black','purple','orange','green']
   fig,ax =plt.subplots()
   ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
-  ax.plot(t_vec, optimal_snr_sep, color= 'purple')
-  ax.plot(t_vec,optimal_snr_ent,color='orange')
+  ax.plot(t_vec, optimal_snr_sep, color= 'c')
+  ax.plot(t_vec,optimal_snr_ent,color='b')
+  ax.fill_between(t_vec,optimal_snr_sep,optimal_snr_ent, color='c',alpha=0.3)
   ax.set_yscale('log')
   plt.grid(True)
   plt.legend(['Gaussian bound']+ ['1 photon addition min', '1 photon addition max'])
@@ -1157,8 +1158,32 @@ def entanglement_advantage(rank, max_temp, theta):
   plt.savefig('entanglement_adv.pdf')
   plt.show()
   return
+
+
+def fock_always_better():
+  t_vec=np.linspace(0.1,5,50)
+  z_vec=np.linspace(0.01,1,50)
+  X=z_vec
+  Y=t_vec
+  X_grid, Y_grid =np.meshgrid(X,Y)
+  grid= np.vstack([X_grid.ravel(),Y_grid.ravel()]).T 
+  W= [[np.real(State(2,[1,z_vec[i]],[np.pi/4],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t_vec[j],t_vec[j]],nongaussian_ops=[1], format='number').SNR_extr()) for i in range(len(X))] for j in range(len(Y))]
+  print(np.shape(W), type(W))
+  fig,ax=plt.subplots(figsize=(10,6))
+  c=ax.pcolormesh(X_grid,Y_grid,W,norm=mcolors.LogNorm(vmin=np.min(W), vmax=np.max(W)),cmap='jet')
+  cbar=fig.colorbar(c,ax=ax, label='SNR extr')
+  ax.set_xlim(X.min(), X.max())
+  #ax.set_yscale('log')
+  print(Y.min() , Y.max())
+  ax.set_ylim(Y.min() , Y.max())
+  ax.grid(True, which='both', linestyle='--')
+  ax.set_xlabel('Squeezing parameter z', fontsize=22)
+  ax.set_ylabel(r'Noise $\gamma$', fontsize=22)
+  c.set_label('SNR extr')
+  plt.show()
  
-entanglement_advantage(1,1,5)
+#fock_always_better()
+entanglement_advantage(1,5,100)
 #multimode_check(1)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
