@@ -813,8 +813,8 @@ def snr_sv_comparison(stellar_rank, max_temp, epsilon):  # since we are studying
   return 
 
 
-def multimode_optimization(max_stellar_rank, max_temp, max_modes):
-  t_vec = np.linspace(0.5,max_temp,10)
+def multimode_optimization(max_stellar_rank, max_temp, max_modes, epsilon):
+  t_vec = np.linspace(0.25,max_temp,4)
   colors = plt.cm.viridis(t_vec)
   N_vec = np.arange(1,max_modes+1)
   fig,axes = plt.subplots(2,2)
@@ -825,18 +825,21 @@ def multimode_optimization(max_stellar_rank, max_temp, max_modes):
       for n in N_vec:
         state = State(n,[random.random()]*n,[2*np.pi*random.random()]*(n*(n-1)//2),[random.random()]*n,disp=[random.random(),random.random()]*n, temp=[t_vec[i]]*n,nongaussian_ops=[1]*rank, format='number')
         if rank ==0:
-          result=state.optimize_ratio((nu**2)*n,n)
+          result=state.optimize_ratio(epsilon,n)
         else:
-          result= state.optimize_ratio((nu**2+rank)*n,n)
+          result= state.optimize_ratio(epsilon,n)
         while result.success == False:
           if rank ==0:
-            result=state.optimize_ratio((nu**2)*n,n)
+            result=state.optimize_ratio(epsilon,n)
           else:
-            result= state.optimize_ratio((nu**2+rank)*n,n)
-        optimal_snr+= [log(-result.fun)]
+            result= state.optimize_ratio(epsilon,n)
+        optimal_snr+= [-result.fun]
+        print(result.x)
+      print(rank, i)
       axes[rank//2,rank%2].plot(N_vec,optimal_snr, color=colors[i])
+      axes[rank//2,rank%2].set_yscale('log')
       axes[rank//2,rank%2].set_xlabel('N')
-      axes[rank//2,rank%2].set_xticks(ticks=np.arange(1,max_modes+1))
+      #axes[rank//2,rank%2].set_xticks(ticks=np.arange(1,max_modes+1))
     rank+=1
   cbar_ax = fig.add_axes([0.9, 0.15, 0.02, 0.7])
   cbar = fig.colorbar(plt.cm.ScalarMappable(cmap='viridis'), cax=cbar_ax, location='right', alpha=0.7)
@@ -1183,7 +1186,7 @@ def fock_always_better():
   plt.show()
  
 #fock_always_better()
-entanglement_advantage(1,5,100)
+#entanglement_advantage(1,5,100)
 #multimode_check(1)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
@@ -1193,7 +1196,8 @@ entanglement_advantage(1,5,100)
 #snr_with_constraints()
 #minimum_energy_state(3, maxiter=10)
 #snr_vs_stellar_rank(3,1,5)
-#multimode_optimization(3,1.5,4)
+
+multimode_optimization(3, 0.8, 4, 5)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
 #heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'snr')
