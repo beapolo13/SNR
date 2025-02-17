@@ -187,34 +187,55 @@ def gaussian_mixed_bound(n_shots):
     return
 
 def gaussian_mixed_new_bound(n_shots):
-
-
     entangled_state_count=0
     for i in range(n_shots):
-        k1= 1+9*np.random.random()
-        k2= 1+9*np.random.random()
-        #k=float(max([k1,k2]))
+        w = 9*np.random.random()
+        factor= np.random.rand()
+        alpha = 1 +9* np.random.rand()
+        t2=9*np.random.random()
+        t1= t2/alpha+ 9*np.random.random()
+        k2= 1/np.tanh((w*alpha/t2))
+        k1= 1/np.tanh((w/t1))
         k=(k1+k2)/2
-        eps=k2-k
+        if k1 < k2:
+        #if w/t1 > w*alpha/t2: I think this is not the right condition (check??)
+            print('not valid')
+            continue
+        if np.isclose(k,1) and np.isclose(k1,1) and np.isclose(k2,1):
+            print('pure state')
+            continue
+        gamma=k1-k
         x= 2 * np.pi* np.random.random()
         z1= np.random.random()
         z2= np.random.random()
+       
         sep= z1*z2*(1+k1**2*k2**2-k1**2-k2**2)-4*cos(x)**2*sin(x)**2*(k1*k2*(z1**2+z2**2)-(k1**2+k2**2)*(z1*z2))
-        erg_gap = (-(k1+k2)/2 + (1/2)*(sqrt(k2**2*cos(x)**4+k1**2*sin(x)**4+k1*k2*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))+sqrt(k1**2*cos(x)**4+k2**2*sin(x)**4+k1*k2*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))))/((k1+k2-2)/2)
-        bound= (1/(k-1))*(-k+(1/2)*sqrt(1+k**4-2*k**2*eps**2+eps**4+2*(k**2+eps**2)))
+        sep2= (k1**2-1)*(k2**2-1)*(4*z1*z2*(3+cos(4*x))+(z1-z2)**2*cosh(2*(w/t1+alpha*w/t2))*(-1+cos(4*x))+2*(z1+z2)**2*cosh(2*(w/t1-w*alpha/t2))*sin(2*x)**2)
+        #if np.sign(sep) != np.sign(sep2):
+            #print('error!')
+        
+        erg_gap = (-(k*(1+alpha)+ gamma*(1-alpha)) + sqrt((k+gamma)**2*cos(x)**4+(k-gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))+alpha*sqrt((k-gamma)**2*cos(x)**4+(k+gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2))))/np.float64((k-1)*(1+alpha)+ gamma*(1-alpha))
+        bound= (-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)))/((k-1)*(1+alpha)+ gamma*(1-alpha))
+        
         if sep < 0:
             entangled_state_count +=1 
-            print(f'not separable state {entangled_state_count}')
+            print(f'{i}:not separable state {entangled_state_count}')
             if erg_gap < 100: 
                 plt.scatter(i,bound-erg_gap, c='b', s=1)
         else:
+            #print(f'{i}: {bound-erg_gap}')
+            if bound-erg_gap <0:
+                print(i, 'data:','t1,t2',t1,t2,'k:',k, 'gamma', gamma, 't2/t1',t2/t1,'alpha',alpha,'x',x,'z1,z2',z1,z2, 'w', w)
             plt.scatter(i,bound-erg_gap, c='r', s=1)
+                
         i+=1
     plt.axhline(y=0, color='black', linestyle='-')
+    plt.xlabel('Number of iterations')
+    plt.ylabel(r'Bound - $\Delta \epsilon_{r e l}$')
     plt.show()
     return
 
-gaussian_mixed_new_bound(100000)
+gaussian_mixed_new_bound(1000)
 
         
         
