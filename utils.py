@@ -282,10 +282,10 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
                                      [-r1*sp.sin(theta1)*sp.cos(psi1)-sp.cos(theta1)*sp.sin(psi1)/r1,0,  -r1*sp.sin(theta1)*sp.sin(psi1)+sp.cos(theta1)*sp.cos(psi1)/r1,0],
                                      [0, -r2*sp.sin(theta2)*sp.cos(psi2)-sp.cos(theta2)*sp.sin(psi2)/r2,0, -r2*sp.sin(theta2)*sp.sin(psi2)+sp.cos(theta2)*sp.cos(psi2)/r2]])
       elif self.format == 'number':
-        rotation_matrix = [[r1*cos(theta1)*cos(psi1)-sin(theta1)*sin(psi1)/r1,0,r1*cos(theta1)*sin(psi1)+sin(theta1)*cos(psi1)/r1,0],
+        rotation_matrix = np.array([[r1*cos(theta1)*cos(psi1)-sin(theta1)*sin(psi1)/r1,0,r1*cos(theta1)*sin(psi1)+sin(theta1)*cos(psi1)/r1,0],
                           [0, r2*cos(theta2)*cos(psi2)-sin(theta2)*sin(psi2)/r2,0,r2*cos(theta2)*sin(psi2)+sin(theta2)*cos(psi2)/r2],
                           [-r1*sin(theta1)*cos(psi1)-cos(theta1)*sin(psi1)/r1,0,  -r1*sin(theta1)*sin(psi1)+cos(theta1)*cos(psi1)/r1,0],
-                          [0, -r2*sin(theta2)*cos(psi2)-cos(theta2)*sin(psi2)/r2,0, -r2*sin(theta2)*sin(psi2)+cos(theta2)*cos(psi2)/r2]]
+                          [0, -r2*sin(theta2)*cos(psi2)-cos(theta2)*sin(psi2)/r2,0, -r2*sin(theta2)*sin(psi2)+cos(theta2)*cos(psi2)/r2]])
     print(rotation_matrix)
     self.matrix= rotation_matrix @ self.matrix @ rotation_matrix.T
     
@@ -434,6 +434,10 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
       modes=[i,i]
       sum+=self.expectationvalue(ops,modes)
     return sum/self.K()
+  
+  def energy(self): #only for two mode gaussians
+    return (1/4)*(self.omega[0]*(self.matrix[0,0]+self.matrix[2,2]-2))+(1/4)*(self.omega[1]*(self.matrix[1,1]+self.matrix[3,3]-2))
+    
   
   def expvalN2(self): 
     sum=0

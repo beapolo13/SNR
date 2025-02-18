@@ -190,36 +190,53 @@ def gaussian_mixed_new_bound(n_shots):
     entangled_state_count=0
     for i in range(n_shots):
         w = 9*np.random.random()
-        factor= np.random.rand()
-        alpha = 1 +9* np.random.rand()
+        alpha = 1 + 9* np.random.rand()
         t2=9*np.random.random()
         t1= t2/alpha+ 9*np.random.random()
-        k2= 1/np.tanh((w*alpha/t2))
+    
         k1= 1/np.tanh((w/t1))
+        k2= 1/np.tanh((w*alpha/t2))
+
         k=(k1+k2)/2
         if k1 < k2:
-        #if w/t1 > w*alpha/t2: I think this is not the right condition (check??)
             print('not valid')
             continue
-        if np.isclose(k,1) and np.isclose(k1,1) and np.isclose(k2,1):
-            print('pure state')
-            continue
-        gamma=k1-k
+        #if np.isclose(k,1) and np.isclose(k1,1) and np.isclose(k2,1):
+            #print('pure state')
+            #continue
+        gamma=(k1-k2)/2
         x= 2 * np.pi* np.random.random()
         z1= np.random.random()
         z2= np.random.random()
-       
+        #print('t1,t2',t1,t2,'k1,k2,k:',k, 'gamma', gamma, 't2/t1',t2/t1,'alpha',alpha,'x',x,'z1,z2',z1,z2, 'w', w)
+        r1= ((k1*z2*cos(x)**2+k2*z1*sin(x)**2)/((z1*z2)*(k1*z1*cos(x)**2+k2*z2*sin(x)**2)))**(1/4)
+        r2= ((k2*z1*cos(x)**2+k1*z2*sin(x)**2)/((z1*z2)*(k2*z2*cos(x)**2+k1*z1*sin(x)**2)))**(1/4)
+
+        #gp= State(2,[1,1],[0],[0,0],[w, alpha*w],[0,0,0,0],[t1,t2],None,'xxpp','number')
+        #print('global passive matrix', gp.matrix)
+        #state= State(2,[z1,z2],[x],[0,0],[w, alpha*w],[0,0,0,0],[t1,t2],None,'xxpp','number')
+        #print('initial matrix', state.matrix)
+        #print('initial energy', state.energy())
+        #loc_op=np.array([[r1,0,0,0],[0, r2,0,0],[0,0,  1/r1,0],[0,0,0,1/r2]])
+        #loc_passive_mat= loc_op @ state.matrix @ loc_op.T
+        #lp= (1/4)*(w*(loc_passive_mat[0,0]+loc_passive_mat[2,2]-2))+(1/4)*(alpha*w*(loc_passive_mat[1,1]+loc_passive_mat[3,3]-2))
+        #print('gp',gp.energy())
+        #print('lp',lp)
+        #gap= (lp-gp.energy())/gp.energy()
+        #print('gap', gap)
         sep= z1*z2*(1+k1**2*k2**2-k1**2-k2**2)-4*cos(x)**2*sin(x)**2*(k1*k2*(z1**2+z2**2)-(k1**2+k2**2)*(z1*z2))
-        sep2= (k1**2-1)*(k2**2-1)*(4*z1*z2*(3+cos(4*x))+(z1-z2)**2*cosh(2*(w/t1+alpha*w/t2))*(-1+cos(4*x))+2*(z1+z2)**2*cosh(2*(w/t1-w*alpha/t2))*sin(2*x)**2)
+        #sep2= (k1**2-1)*(k2**2-1)*(4*z1*z2*(3+cos(4*x))+(z1-z2)**2*cosh(2*(w/t1+alpha*w/t2))*(-1+cos(4*x))+2*(z1+z2)**2*cosh(2*(w/t1-w*alpha/t2))*sin(2*x)**2)
         #if np.sign(sep) != np.sign(sep2):
             #print('error!')
         
-        erg_gap = (-(k*(1+alpha)+ gamma*(1-alpha)) + sqrt((k+gamma)**2*cos(x)**4+(k-gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))+alpha*sqrt((k-gamma)**2*cos(x)**4+(k+gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2))))/np.float64((k-1)*(1+alpha)+ gamma*(1-alpha))
-        bound= (-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)))/((k-1)*(1+alpha)+ gamma*(1-alpha))
-        
+       
+        erg_gap = (-(k*(1+alpha)+ gamma*(1-alpha)) + sqrt((k+gamma)**2*cos(x)**4+(k-gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))+alpha*sqrt((k-gamma)**2*cos(x)**4+(k+gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2))))/((k-1)*(1+alpha)+ gamma*(1-alpha))
+        bound= (-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)+8*k*gamma))/((k-1)*(1+alpha)+ gamma*(1-alpha))
+        #if np.abs(erg_gap-gap)>10**(-4):
+            #print('error!')
+
         if sep < 0:
             entangled_state_count +=1 
-            print(f'{i}:not separable state {entangled_state_count}')
             if erg_gap < 100: 
                 plt.scatter(i,bound-erg_gap, c='b', s=1)
         else:
@@ -229,13 +246,14 @@ def gaussian_mixed_new_bound(n_shots):
             plt.scatter(i,bound-erg_gap, c='r', s=1)
                 
         i+=1
+    print(f'number of not separable states: {entangled_state_count}')
     plt.axhline(y=0, color='black', linestyle='-')
     plt.xlabel('Number of iterations')
     plt.ylabel(r'Bound - $\Delta \epsilon_{r e l}$')
     plt.show()
     return
 
-gaussian_mixed_new_bound(1000)
+gaussian_mixed_new_bound(10000)
 
         
         
