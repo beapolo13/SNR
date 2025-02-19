@@ -187,7 +187,10 @@ def gaussian_mixed_bound(n_shots):
     return
 
 def gaussian_mixed_new_bound(n_shots):
+    fig,ax = plt.subplots()
     entangled_state_count=0
+    pure_count=0
+    vacuum_count=0
     for i in range(n_shots):
         w = 9*np.random.random()
         alpha = 1 + 9* np.random.rand()
@@ -201,10 +204,18 @@ def gaussian_mixed_new_bound(n_shots):
         if k1 < k2:
             print('not valid')
             continue
-        #if np.isclose(k,1) and np.isclose(k1,1) and np.isclose(k2,1):
+        if np.isclose(k,1) and np.isclose(k1,1) and np.isclose(k2,1):
+            pure_count += 1
             #print('pure state')
             #continue
+        
         gamma=(k1-k2)/2
+
+        if np.isclose(k,1) and (np.isclose(gamma,0) or np.isclose(alpha,1)):
+            print('vacuum')
+            vacuum_count+=1
+            continue
+
         x= 2 * np.pi* np.random.random()
         z1= np.random.random()
         z2= np.random.random()
@@ -238,26 +249,116 @@ def gaussian_mixed_new_bound(n_shots):
         if sep < 0:
             entangled_state_count +=1 
             if erg_gap < 100: 
-                plt.scatter(i,bound-erg_gap, c='b', s=1)
+                ax.scatter(i,bound-erg_gap, c='b', s=1)
         else:
             #print(f'{i}: {bound-erg_gap}')
             if bound-erg_gap <0:
                 print(i, 'data:','t1,t2',t1,t2,'k:',k, 'gamma', gamma, 't2/t1',t2/t1,'alpha',alpha,'x',x,'z1,z2',z1,z2, 'w', w)
-            plt.scatter(i,bound-erg_gap, c='r', s=1)
+            ax.scatter(i,bound-erg_gap, c='r', s=1)
+            
                 
         i+=1
     print(f'number of not separable states: {entangled_state_count}')
-    plt.axhline(y=0, color='black', linestyle='-')
+    print(f'Pure state count {pure_count}')
+    print(f'Vacuum ground state count {vacuum_count}')
+    ax.axhline(y=0, xmin=0, xmax=n_shots, color='black', linestyle='-')
+    ax.set_yscale('symlog')
+
     plt.xlabel('Number of iterations')
     plt.ylabel(r'Bound - $\Delta \epsilon_{r e l}$')
+    plt.savefig('Bound_violation_separable_vs_entangled.pdf')
     plt.show()
     return
 
-gaussian_mixed_new_bound(10000)
 
-        
-        
+def heatmap_bound(alpha):
+    k_vec=np.linspace(1.0001,10,1000)
+    gamma_vec=np.linspace(0,9,1000)
+    X=k_vec
+    Y=gamma_vec
+    X_grid, Y_grid =np.meshgrid(X,Y)
+    W= [[np.float64((-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)+8*k*gamma))/((k-1)*(1+alpha)+ gamma*(1-alpha))) for k in k_vec] for gamma in gamma_vec]
+    fig,ax=plt.subplots(figsize=(10,6))
+    c=ax.pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis', 10),norm=mcolors.LogNorm(vmin=np.min(W), vmax=np.max(W)))
+    cbar=fig.colorbar(c,ax=ax, label=r'Bound on $\Delta \epsilon_{r e l}$ for separable states')
+    ax.set_xlim(X.min(), X.max())
+    ax.set_yscale('log')
+    ax.set_ylim(Y.min() , Y.max())
+    #ax.grid(True, which='both', linestyle='--')
+    ax.set_xlabel(r'Mean temperature factor $k$')
+    ax.set_ylabel(r'Fluctuation gap $\gamma$')
+    ax.set_xscale('log')
+    c.set_label(r'Bound on $\Delta \epsilon_{r e l}$ for separable states')
+    plt.savefig(f'Sep_bound_alpha={alpha}.pdf')
+    plt.show()
+    return
 
+def bound_violation_tms(alpha):
+    z_vec=np.linspace(0.1,1,100)
+    r_vec=np.array([-np.log(z)/2 for z in z_vec])
+    k_vec= np.linspace(1.001,10,100)
+    X=z_vec
+    Y=k_vec
+    X_grid, Y_grid =np.meshgrid(X,Y)
+    gamma=0
+    x= np.pi/4
+    epsilon = 1e-6
+
+    
+    #separability
+    
+    sep= [[np.float64((1+k**4-2*k**2)-4*cos(x)**2*sin(x)**2*(k**2*(z**2+1/z**2)-2*k**2)) for z in z_vec] for k in k_vec] 
+    sep_arr=np.array(sep)
+    erg_gap= [[(-(k*(1+alpha)+ gamma*(1-alpha)) + math.sqrt((k+gamma)**2*cos(x)**4+(k-gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z**2+(1/z)**2)))+alpha*sqrt((k-gamma)**2*cos(x)**4+(k+gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*(z**2+(1/z)**2)))/((k-1)*(1+alpha)+ gamma*(1-alpha)) for z in z_vec] for k in k_vec] 
+    
+    diff=[[np.float64((-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)+8*k*gamma))/((k-1)*(1+alpha)+ gamma*(1-alpha))-(-(k*(1+alpha)+ gamma*(1-alpha)) + sqrt((k+gamma)**2*cos(x)**4+(k-gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z**2+1/z**2)/(1)))+alpha*sqrt((k-gamma)**2*cos(x)**4+(k+gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z**2+1/z**2)/(1))))/((k-1)*(1+alpha)+ gamma*(1-alpha)))for z in z_vec]for k in k_vec]
+
+    #W_arr= np.array(bound)-np.array(erg_gap)
+    #W = list(W_arr)
+    W_arr= np.array(diff)
+    W = list(W_arr)
+
+    fig,ax=plt.subplots(1,2,figsize=(10,6))
+    c=ax[0].pcolormesh(X_grid,Y_grid,W,norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=cm.get_cmap('viridis', 10))
+    #c=ax[0].pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis', 10))
+    cbar=fig.colorbar(c,ax=ax[0], label=r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
+    contour_levels = [0]
+    contour = ax[0].contour(X_grid, Y_grid, W, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+    ax[0].clabel(contour, inline=True, fontsize=10,fmt='ERG')
+    ax[0].set_xlim(X.min(), X.max())
+    ax[0].set_yscale('log')
+    ax[0].set_ylim(Y.min() , Y.max())
+    #ax.grid(True, which='both', linestyle='--')
+    ax[0].set_ylabel(r'Temperature factor $k$')
+    ax[0].set_xlabel(r'Squeezing parameter $z$')
+    
+    c.set_label(r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
+
+
+    c2=ax[1].pcolormesh(X_grid,Y_grid,sep,norm=colors.SymLogNorm(0.00001, vmin=min(sep_arr+epsilon), vmax=sep_arr.max()),cmap=cm.get_cmap('viridis', 10))
+
+    #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
+    cbar=fig.colorbar(c,ax=ax[1], label=r'2-mode Gaussian separability condition')
+    contour_levels = [1]
+    contour = ax[1].contour(X_grid, Y_grid, sep, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+    ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
+    ax[1].set_xlim(X.min(), X.max())
+    ax[1].set_yscale('log')
+    ax[1].set_ylim(Y.min() , Y.max())
+    #ax.grid(True, which='both', linestyle='--')
+    ax[1].set_ylabel(r'Temperature factor $k$')
+    ax[1].set_xlabel(r'Squeezing parameter $z$')
+
+    c2.set_label(r'2-mode Gaussian separability condition')
+    plt.savefig(f'Sep_and_bound_violtion_tms_alpha={alpha}.pdf')
+    plt.show()
+    return
+         
+
+bound_violation_tms(3)
+#heatmap_bound(1)
+
+#gaussian_mixed_new_bound(10000)
 #one_dim_plot_squeezing_pure(np.pi/4)
 #mutual_information_TMSQ()
 #relative_ergotropic_gap_TMSQ()
