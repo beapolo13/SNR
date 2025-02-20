@@ -294,9 +294,9 @@ def heatmap_bound(alpha):
     return
 
 def bound_violation_tms(alpha, gamma):
-    z_vec=np.linspace(0.1,1,100)
+    z_vec=np.linspace(0.1,1,1000)
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
-    k_vec= np.linspace(1.001,10,100)
+    k_vec= np.linspace(1.001+gamma/2,10,1000)
     X=z_vec
     Y=k_vec
     X_grid, Y_grid =np.meshgrid(X,Y)
@@ -306,7 +306,7 @@ def bound_violation_tms(alpha, gamma):
     
     #separability
     
-    sep= [[np.float64((1+k**4+gamma**4-2*k**2*gamma**2-2*k**2-2*gamma**2)-4*cos(x)**2*sin(x)**2*((k**2-2*gamma**2)*(z**2+1/z**2)-(2*k**2+2*gamma**2))) for z in z_vec] for k in k_vec] 
+    sep= [[np.float64((1+k**4+gamma**4-2*k**2*gamma**2-2*k**2-2*gamma**2)-4*cos(x)**2*sin(x)**2*((k**2-gamma**2)*(z**2+1/z**2)-(2*k**2+2*gamma**2))) for z in z_vec] for k in k_vec] 
     sep_arr=np.array(sep)
     diff=[[np.float64((-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)+8*k*gamma))/((k-1)*(1+alpha)+ gamma*(1-alpha))-(-(k*(1+alpha)+ gamma*(1-alpha)) + sqrt((k+gamma)**2*cos(x)**4+(k-gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z**2+1/z**2)/(1)))+alpha*sqrt((k-gamma)**2*cos(x)**4+(k+gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z**2+1/z**2)/(1))))/((k-1)*(1+alpha)+ gamma*(1-alpha)))for z in z_vec]for k in k_vec]
     W_arr= np.array(diff)
@@ -318,7 +318,7 @@ def bound_violation_tms(alpha, gamma):
     cbar=fig.colorbar(c,ax=ax[0], label=r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
     contour_levels = [0]
     contour = ax[0].contour(X_grid, Y_grid, W, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
-    ax[0].clabel(contour, inline=True, fontsize=10,fmt='ERG')
+    #ax[0].clabel(contour, inline=True, fontsize=10,fmt='ERG')
     ax[0].set_xlim(X.min(), X.max())
     ax[0].set_yscale('log')
     ax[0].set_ylim(Y.min() , Y.max())
@@ -328,14 +328,13 @@ def bound_violation_tms(alpha, gamma):
     
     c.set_label(r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
 
-
     c2=ax[1].pcolormesh(X_grid,Y_grid,sep,norm=colors.SymLogNorm(0.00001, vmin=min(sep_arr+epsilon), vmax=sep_arr.max()),cmap=cm.get_cmap('viridis', 10))
 
     #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
     cbar=fig.colorbar(c,ax=ax[1], label=r'2-mode Gaussian separability condition')
     contour_levels = [0]
     contour = ax[1].contour(X_grid, Y_grid, sep, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
-    ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
+    #ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
     ax[1].set_xlim(X.min(), X.max())
     ax[1].set_yscale('log')
     ax[1].set_ylim(Y.min() , Y.max())
@@ -344,13 +343,16 @@ def bound_violation_tms(alpha, gamma):
     ax[1].set_xlabel(r'Squeezing parameter $z$')
 
     c2.set_label(r'2-mode Gaussian separability condition')
-    plt.savefig(f'Sep_and_bound_violtion_tms_alpha={alpha}.pdf')
-    fig.tight_layout()
+    plt.savefig(f'Sep_and_bound_violtion_tms_alpha={alpha}, gamma={gamma}.pdf')
+    plt.subplots_adjust(wspace=2)
+    y=[gamma/2+1] + [(gamma/2+1)//1 + i for i in range(1,8)] + [10]
+    ax[0].set_yticks(y)
+    ax[1].set_yticks(y)
     plt.show()
     return
          
 
-bound_violation_tms(3,0)
+bound_violation_tms(1,0)
 #heatmap_bound(1)
 
 #gaussian_mixed_new_bound(10000)
