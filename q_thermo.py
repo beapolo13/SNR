@@ -272,8 +272,8 @@ def gaussian_mixed_new_bound(n_shots):
 
 
 def heatmap_bound(alpha):
-    k_vec=np.linspace(1.0001,10,1000)
-    gamma_vec=np.linspace(0,9,1000)
+    k_vec=np.linspace(1.0001,10,100)
+    gamma_vec=np.linspace(0,9,100)
     X=k_vec
     Y=gamma_vec
     X_grid, Y_grid =np.meshgrid(X,Y)
@@ -293,31 +293,25 @@ def heatmap_bound(alpha):
     plt.show()
     return
 
-def bound_violation_tms(alpha):
+def bound_violation_tms(alpha, gamma):
     z_vec=np.linspace(0.1,1,100)
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
     k_vec= np.linspace(1.001,10,100)
     X=z_vec
     Y=k_vec
     X_grid, Y_grid =np.meshgrid(X,Y)
-    gamma=0
-    x= np.pi/4
+    x= np.pi/5
     epsilon = 1e-6
 
     
     #separability
     
-    sep= [[np.float64((1+k**4-2*k**2)-4*cos(x)**2*sin(x)**2*(k**2*(z**2+1/z**2)-2*k**2)) for z in z_vec] for k in k_vec] 
+    sep= [[np.float64((1+k**4+gamma**4-2*k**2*gamma**2-2*k**2-2*gamma**2)-4*cos(x)**2*sin(x)**2*((k**2-2*gamma**2)*(z**2+1/z**2)-(2*k**2+2*gamma**2))) for z in z_vec] for k in k_vec] 
     sep_arr=np.array(sep)
-    erg_gap= [[(-(k*(1+alpha)+ gamma*(1-alpha)) + math.sqrt((k+gamma)**2*cos(x)**4+(k-gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z**2+(1/z)**2)))+alpha*sqrt((k-gamma)**2*cos(x)**4+(k+gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*(z**2+(1/z)**2)))/((k-1)*(1+alpha)+ gamma*(1-alpha)) for z in z_vec] for k in k_vec] 
-    
     diff=[[np.float64((-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)+8*k*gamma))/((k-1)*(1+alpha)+ gamma*(1-alpha))-(-(k*(1+alpha)+ gamma*(1-alpha)) + sqrt((k+gamma)**2*cos(x)**4+(k-gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z**2+1/z**2)/(1)))+alpha*sqrt((k-gamma)**2*cos(x)**4+(k+gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z**2+1/z**2)/(1))))/((k-1)*(1+alpha)+ gamma*(1-alpha)))for z in z_vec]for k in k_vec]
-
-    #W_arr= np.array(bound)-np.array(erg_gap)
-    #W = list(W_arr)
     W_arr= np.array(diff)
     W = list(W_arr)
-
+ 
     fig,ax=plt.subplots(1,2,figsize=(10,6))
     c=ax[0].pcolormesh(X_grid,Y_grid,W,norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=cm.get_cmap('viridis', 10))
     #c=ax[0].pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis', 10))
@@ -339,7 +333,7 @@ def bound_violation_tms(alpha):
 
     #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
     cbar=fig.colorbar(c,ax=ax[1], label=r'2-mode Gaussian separability condition')
-    contour_levels = [1]
+    contour_levels = [0]
     contour = ax[1].contour(X_grid, Y_grid, sep, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
     ax[1].set_xlim(X.min(), X.max())
@@ -351,11 +345,12 @@ def bound_violation_tms(alpha):
 
     c2.set_label(r'2-mode Gaussian separability condition')
     plt.savefig(f'Sep_and_bound_violtion_tms_alpha={alpha}.pdf')
+    fig.tight_layout()
     plt.show()
     return
          
 
-bound_violation_tms(3)
+bound_violation_tms(3,0)
 #heatmap_bound(1)
 
 #gaussian_mixed_new_bound(10000)
