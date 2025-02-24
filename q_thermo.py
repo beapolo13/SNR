@@ -272,22 +272,36 @@ def gaussian_mixed_new_bound(n_shots):
 
 
 def heatmap_bound(alpha):
-    k_vec=np.linspace(1.0001,10,100)
-    gamma_vec=np.linspace(0,9,100)
+    k_vec=np.linspace(1.0001,10,1000)
+    gamma_vec=np.linspace(0,9,1000)
+    #gamma_vec =np.array([0, 0.00005])
     X=k_vec
     Y=gamma_vec
     X_grid, Y_grid =np.meshgrid(X,Y)
     W= [[np.float64((-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)+8*k*gamma))/((k-1)*(1+alpha)+ gamma*(1-alpha))) for k in k_vec] for gamma in gamma_vec]
+    for i in range(len(k_vec)):
+        for j in range(len(gamma_vec)):
+            if k_vec[i]-1 < gamma_vec[j]:
+                print('yes')
+                W[j][i] = np.NaN
+    print(np.nanmin(W), np.nanmax(W))
+
     fig,ax=plt.subplots(figsize=(10,6))
-    c=ax.pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis', 10),norm=mcolors.LogNorm(vmin=np.min(W), vmax=np.max(W)))
+    c=ax.pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis', 100),norm=mcolors.Normalize(vmin=np.nanmin(W), vmax=np.nanmax(W)))
     cbar=fig.colorbar(c,ax=ax, label=r'Bound on $\Delta \epsilon_{r e l}$ for separable states')
-    ax.set_xlim(X.min(), X.max())
-    ax.set_yscale('log')
-    ax.set_ylim(Y.min() , Y.max())
+    #ax.set_xlim(X.min(), X.max())
+    #ax.set_yscale('log')
+    #ax.set_ylim(Y.min() , Y.max())
     #ax.grid(True, which='both', linestyle='--')
     ax.set_xlabel(r'Mean temperature factor $k$')
     ax.set_ylabel(r'Fluctuation gap $\gamma$')
-    ax.set_xscale('log')
+    #ax.set_xscale('log')
+    x=np.arange(k_vec[0], k_vec[-1],1).tolist()
+    y =np.arange(gamma_vec[0], gamma_vec[-1],1).tolist()
+    ax.set_xticks(x)
+    ax.set_yticks(y)
+    ax.text(0.25, 0.75, r'non-physical values \ \ $k-\gamma < 1$', fontsize=12,
+        transform=ax.transAxes) 
     c.set_label(r'Bound on $\Delta \epsilon_{r e l}$ for separable states')
     plt.savefig(f'Sep_bound_alpha={alpha}.pdf')
     plt.show()
@@ -352,7 +366,56 @@ def bound_violation_tms(alpha, gamma):
     return
          
 
-bound_violation_tms(1,0)
+from qutip import wigner, Qobj, basis, states, thermal_dm, tensor, wigner, displace,squeeze
+
+
+def plot_onemodegaussian():
+    # Define system parameters
+    N = 30  # Hilbert space truncation (higher for better precision)
+    T = 0.5  # Temperature parameter (controls mixedness)
+
+    r = 0.8  # Squeezing parameter
+    alpha = 1.0 #Displacement parameter (complex)
+
+    # Generate a thermal state (Gaussian mixed state)
+    rho_thermal = thermal_dm(N, T)
+
+    # Apply squeezing transformation
+    S = squeeze(N, r)  # Squeezing operator
+    rho_squeezed = S * rho_thermal * S.dag()  # Squeezed thermal state
+
+    # Apply displacement transformation
+    D = displace(N, alpha)  # Displacement operator
+    rho = D * rho_squeezed * D.dag()  # Displaced squeezed thermal state
+    # Define phase-space grid
+    xvec = np.linspace(-5, 5, 200)
+    yvec = np.linspace(-5, 5, 200)
+
+    # Compute the Wigner function
+    W = wigner(rho, xvec, yvec)
+
+    # Create a meshgrid for 3D plotting
+    X, Y = np.meshgrid(xvec, yvec)
+
+    # Create a 3D figure
+    fig = plt.figure(figsize=(10, 7))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Plot the Wigner function
+    ax.plot_surface(X, Y, W, cmap="viridis", edgecolor='none', alpha=0.8)
+
+    # Labels and titles
+    ax.set_title("3D Wigner Function of a Gaussian Mixed State (Thermal)")
+    ax.set_xlabel("q")
+    ax.set_ylabel("p")
+    ax.set_zlabel("Wigner Function")
+
+    # Show the plot
+    plt.show()
+
+plot_onemodegaussian()
+
+#bound_violation_tms(1,0)
 #heatmap_bound(1)
 
 #gaussian_mixed_new_bound(10000)
