@@ -283,7 +283,7 @@ def heatmap_bound(alpha):
         for j in range(len(gamma_vec)):
             if k_vec[i]-1 < gamma_vec[j]:
                 print('yes')
-                W[j][i] = np.NaN
+                W[j][i] = np.nan
     print(np.nanmin(W), np.nanmax(W))
 
     fig,ax=plt.subplots(figsize=(10,6))
@@ -415,8 +415,8 @@ def plot_onemodegaussian():
 
 #plot_onemodegaussian()
 
-bound_violation_tms(1,1)
-#heatmap_bound(1)
+#bound_violation_tms(1,1)
+heatmap_bound(1)
 
 #gaussian_mixed_new_bound(10000)
 #one_dim_plot_squeezing_pure(np.pi/4)
