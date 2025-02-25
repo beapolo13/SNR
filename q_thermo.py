@@ -308,9 +308,9 @@ def heatmap_bound(alpha):
     return
 
 def bound_violation_tms(alpha, gamma):
-    z_vec=np.linspace(0.1,1,1000)
+    z_vec=np.linspace(0.1,1,500)
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
-    k_vec= np.linspace(1.001+gamma/2,10,1000)
+    k_vec= np.linspace(1.001+gamma/2,10,500)
     X=z_vec
     Y=k_vec
     X_grid, Y_grid =np.meshgrid(X,Y)
@@ -372,10 +372,10 @@ from qutip import wigner, Qobj, basis, states, thermal_dm, tensor, wigner, displ
 def plot_onemodegaussian():
     # Define system parameters
     N = 30  # Hilbert space truncation (higher for better precision)
-    T = 0.5  # Temperature parameter (controls mixedness)
+    T = 0.2  # Temperature parameter (controls mixedness)
 
     r = 0.8  # Squeezing parameter
-    alpha = 1.0 #Displacement parameter (complex)
+    alpha = 1.0j #Displacement parameter (complex)
 
     # Generate a thermal state (Gaussian mixed state)
     rho_thermal = thermal_dm(N, T)
@@ -413,9 +413,9 @@ def plot_onemodegaussian():
     # Show the plot
     plt.show()
 
-plot_onemodegaussian()
+#plot_onemodegaussian()
 
-#bound_violation_tms(1,0)
+bound_violation_tms(1,1)
 #heatmap_bound(1)
 
 #gaussian_mixed_new_bound(10000)
