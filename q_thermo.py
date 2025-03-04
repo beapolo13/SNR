@@ -414,33 +414,106 @@ def plot_onemodegaussian():
     plt.show()
 
 
-def optimization(n_modes, n_samples): 
+def experimental_optimization(n_samples,n_modes=2): 
     #samples is the amount of different random gaussian states that we'll try the optimization on
     #so far we'll do it for 2 modes and then generalize
     def generate_random_gaussian():
+        w = 9*np.random.random()
+        alpha = 1 + 9* np.random.rand()
+        t2=9*np.random.random()
+        t1= t2/alpha+ 9*np.random.random()
+        k1= 1/np.tanh((w/t1))
+        k2= 1/np.tanh((w*alpha/t2))
+        k=(k1+k2)/2
+        gamma=(k1-k2)/2
+        x= 2 * np.pi* np.random.random()
+        z1= np.random.random()
+        z2= np.random.random()
+        #print('t1,t2',t1,t2,'k1,k2,k:',k, 'gamma', gamma, 't2/t1',t2/t1,'alpha',alpha,'x',x,'z1,z2',z1,z2, 'w', w)
+        r1= ((k1*z2*cos(x)**2+k2*z1*sin(x)**2)/((z1*z2)*(k1*z1*cos(x)**2+k2*z2*sin(x)**2)))**(1/4)
+        r2= ((k2*z1*cos(x)**2+k1*z2*sin(x)**2)/((z1*z2)*(k2*z2*cos(x)**2+k1*z1*sin(x)**2)))**(1/4)
+        
+        return State(2,[z1,z2],[x],[0,0],[w, alpha*w],[0,0,0,0],[t1,t2],None,'xxpp','number')
+
+
+    def local_passive_energy(state, params):
+        r1=params[0]
+        r2=params[1]
+        loc_op=np.array([[r1,0,0,0],[0, r2,0,0],[0,0,  1/r1,0],[0,0,0,1/r2]])
+        loc_passive_mat= loc_op @ state.matrix @ loc_op.T
+        lp_energy = (1/4)*(state.omega[0]*(loc_passive_mat[0,0]+loc_passive_mat[2,2]-2))+(1/4)*(state.omega[1]*(loc_passive_mat[1,1]+loc_passive_mat[3,3]-2))
+        return lp_energy
+    
+    def global_passive_energy(state, params):
+      
+        r1=params[0]
+        r2=params[1]
+        #theta=params[2]
+        theta= state.bs[0]
+        loc_op=np.array([[r1,0,0,0],[0, r2,0,0],[0,0,  1/r1,0],[0,0,0,1/r2]])
+        glob_op= np.array([[cos(theta),sin(theta),0, 0],[-sin(theta), cos(theta),0,0,],[0,0, cos(theta),sin(theta)],[0,0,-sin(theta),cos(theta)]])
+        passive_mat1= glob_op.T @ state.matrix @ glob_op
+        
+        passive_mat= loc_op.T @ passive_mat1 @ loc_op
+       
+        gp_energy = (1/4)*(state.omega[0]*(passive_mat[0,0]+passive_mat[2,2]-2))+(1/4)*(state.omega[1]*(passive_mat[1,1]+passive_mat[3,3]-2))
+        return gp_energy
+    
+
+    for s in range(n_samples):
+        copies= 0
+        success = False
+        state= generate_random_gaussian()
+        k1,k2,z1,z2,x = 1/np.tanh((state.omega[0]/state.temp[0])), 1/np.tanh((state.omega[1]/state.temp[1])), state.squeezing[0], state.squeezing[1], state.bs[0]
         
 
-    def local_passive_energy(state):
+        print('State parameters z1,z2,x', z1,z2,x)
+        print('Initial energy', state.energy())
 
+        print('Local passive search')
+        true_r1= ((k1*z2*cos(x)**2+k2*z1*sin(x)**2)/((z1*z2)*(k1*z1*cos(x)**2+k2*z2*sin(x)**2)))**(1/4)
+        true_r2= ((k2*z1*cos(x)**2+k1*z2*sin(x)**2)/((z1*z2)*(k2*z2*cos(x)**2+k1*z1*sin(x)**2)))**(1/4)
+        print('True squeezing parameters', true_r1, true_r2 )
+        iteration_count = [0]  # Store iteration count (as list to modify in callback)
+        def callback(params):
+            """Counts the number of iterations."""
+            iteration_count[0] += 1
+        opti_lp= minimize(lambda params: local_passive_energy(state, params), x0=(1.0,1.0), bounds=[(1e-6, None), (1e-6, None)], method='COBYLA', callback=callback)
+        print('Optimization parameters:',opti_lp.x)
+        if np.isclose(true_r1, opti_lp.x[0], 0.05) and np.isclose(true_r2, opti_lp.x[1], 0.05):
+            print(f'Local search succeeded in {iteration_count[0]} copies')
+            print('Local passive energy', opti_lp.fun)
+            copies += iteration_count[0]
+        else: 
+            print('Failed local search')
+            continue
 
-    for s in n_samples:
-
-        state= State(2,[z1,z2],[x],[0,0],[w, alpha*w],[0,0,0,0],[t1,t2],None,'xxpp','number')
-        
-        #print('initial energy', state.energy())
-        #loc_op=np.array([[r1,0,0,0],[0, r2,0,0],[0,0,  1/r1,0],[0,0,0,1/r2]])
-        #loc_passive_mat= loc_op @ state.matrix @ loc_op.T
-        #lp= (1/4)*(w*(loc_passive_mat[0,0]+loc_passive_mat[2,2]-2))+(1/4)*(alpha*w*(loc_passive_mat[1,1]+loc_passive_mat[3,3]-2))
-
+        print('Global passive search')
+        true_gp_energy= State(2,[1,1],[0],[0,0],state.omega,[0,0,0,0],state.temp,None,'xxpp','number').energy()
+        print('True global passive energy:', true_gp_energy)
+        iteration_count = [0]  # Store iteration count (as list to modify in callback)
+        def callback(params):
+            """Counts the number of iterations."""
+            iteration_count[0] += 1
+        opti_gp= minimize(lambda params: global_passive_energy(state, params), x0=(1.0,1.0), bounds=[(1e-6, None), (1e-6, None)], method='Nelder-Mead', callback=callback)
+        print('Optimization result (energy):',opti_gp.fun)
+        if np.isclose(true_gp_energy, opti_gp.fun,0.1):
+            print(f'Global search succeeded in {iteration_count[0]} copies')
+            copies += iteration_count[0]
+        else: 
+            print('Failed global search')
+            continue
+        return
 
 #plot_onemodegaussian()
-
 #bound_violation_tms(1,1)
-heatmap_bound(1)
+#heatmap_bound(1)
 
 #gaussian_mixed_new_bound(10000)
 #one_dim_plot_squeezing_pure(np.pi/4)
 #mutual_information_TMSQ()
 #relative_ergotropic_gap_TMSQ()
+
+experimental_optimization(1)
 
 
