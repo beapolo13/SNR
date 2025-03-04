@@ -413,6 +413,26 @@ def plot_onemodegaussian():
     # Show the plot
     plt.show()
 
+
+def optimization(n_modes, n_samples): 
+    #samples is the amount of different random gaussian states that we'll try the optimization on
+    #so far we'll do it for 2 modes and then generalize
+    def generate_random_gaussian():
+        
+
+    def local_passive_energy(state):
+
+
+    for s in n_samples:
+
+        state= State(2,[z1,z2],[x],[0,0],[w, alpha*w],[0,0,0,0],[t1,t2],None,'xxpp','number')
+        
+        #print('initial energy', state.energy())
+        #loc_op=np.array([[r1,0,0,0],[0, r2,0,0],[0,0,  1/r1,0],[0,0,0,1/r2]])
+        #loc_passive_mat= loc_op @ state.matrix @ loc_op.T
+        #lp= (1/4)*(w*(loc_passive_mat[0,0]+loc_passive_mat[2,2]-2))+(1/4)*(alpha*w*(loc_passive_mat[1,1]+loc_passive_mat[3,3]-2))
+
+
 #plot_onemodegaussian()
 
 #bound_violation_tms(1,1)
