@@ -21,17 +21,25 @@ W=gaussian_wigner(Q,P)
 # Create 3D plot
 fig = plt.figure(figsize=(8, 6))
 ax = fig.add_subplot(111, projection='3d')
+fig.patch.set_facecolor('white') 
 
 # Plot the surface
-ax.plot_surface(Q, P, W, cmap='plasma', edgecolor= 'k', alpha=0.8)
+ax.plot_surface(Q, P, W, cmap='plasma', edgecolor='k', alpha=1)
 
 # Add contour lines
-ax.contour(Q, P, W, levels=10, linewidths=0.1, colors='black', linestyles='solid')
+#ax.contour(Q, P, W, levels=10, linewidths=0.1, colors='black', linestyles='solid')
 
 # Labels and aesthetics
-ax.set_xlabel("q")
-ax.set_ylabel("p")
-ax.set_zlabel("W")
-ax.set_title("Wigner Function (Example)")
+#ax.set_xlabel("q")
+#ax.set_ylabel("p")
+#ax.set_zlabel("W")
+#ax.set_title("Wigner Function (Example)")
+# Remove ticks
+plt.xticks([])  # Removes X-axis ticks
+plt.yticks([])  # Removes Y-axis ticks
+ax.set_facecolor('white')  # Set background color to white
+
+# Optionally, remove the grid
+ax.grid(False)
 
 plt.show()
