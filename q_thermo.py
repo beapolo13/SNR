@@ -248,8 +248,7 @@ def gaussian_mixed_new_bound(n_shots):
 
         if sep < 0:
             entangled_state_count +=1 
-            if erg_gap < 100: 
-                ax.scatter(i,bound-erg_gap, c='b', s=1)
+            ax.scatter(i,bound-erg_gap, c='b', s=1)
         else:
             #print(f'{i}: {bound-erg_gap}')
             if bound-erg_gap <0:
@@ -509,11 +508,11 @@ def experimental_optimization(n_samples,n_modes=2):
 #bound_violation_tms(1,1)
 #heatmap_bound(1)
 
-#gaussian_mixed_new_bound(10000)
+gaussian_mixed_new_bound(10000)
 #one_dim_plot_squeezing_pure(np.pi/4)
 #mutual_information_TMSQ()
 #relative_ergotropic_gap_TMSQ()
 
-experimental_optimization(1)
+#experimental_optimization(1)
 
 
