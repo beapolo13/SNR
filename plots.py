@@ -18,6 +18,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.ticker as ticker
 from numpy import where
 import matplotlib.colors as mcolors
+from math import factorial, sqrt
 
 
 from utils import *
@@ -580,6 +581,7 @@ def find_optimal_gaussian(t, theta): #finds the optimal squeezing, displacement 
 
     return optimal_snr
 
+
 def plot_optimal_gaussian(t_vec,theta):
   alpha_vec=[]
   z_vec=[]
@@ -724,7 +726,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
 
 def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
    #the ergotropy constraint is given by temperature and max_stellar_rank
-  t_vec = np.linspace(0.1,max_temp,100)
+  t_vec = np.linspace(0.05,max_temp,50)
 
   gauss_snr_opt =[find_optimal_gaussian(t, theta) for t in t_vec]
 
@@ -733,6 +735,8 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
   for i in range(max_stellar_rank+1):
     optimal_snr += [[]]
     i+= 1
+  optimal_snr += [[]]
+  print(np.shape(optimal_snr))
   for t in t_vec:
     nu = 1/np.tanh(1/(2* t))
     for rank in range(1, max_stellar_rank+1):
@@ -743,15 +747,16 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
         result= state.optimize_ratio(theta,1)
       optimal_snr[rank]+= [-result.fun]
       optimal_state= State(1,[result.x[2]],[],[random.random()],disp=[result.x[0],result.x[1]], temp=[t],nongaussian_ops=[1]*rank, format='number')
-  
+    optimal_snr[-1] += [find_optimal_coherent_fock(t, theta, 5)]
   colors=['black','purple','orange','green']
   fig,ax =plt.subplots()
   ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
   for rank in range(1, max_stellar_rank+1):
     ax.plot(t_vec, optimal_snr[rank], color= colors[rank])
+  ax.plot(t_vec,optimal_snr[-1], 'b')
   ax.set_yscale('log')
   plt.grid(True)
-  plt.legend(['Gaussian bound']+ ['1 photon addition', '2 photon additions', '3 photon additions'])
+  plt.legend(['Gaussian bound']+ ['1 photon addition', '2 photon additions', '3 photon additions']+ ['Coherent-fock'])
   plt.xlabel(r'$T [K]$')
   plt.ylabel(r'Optimal $\Gamma$')
   plt.savefig('snr_with_stellar_rank.pdf')
@@ -1184,6 +1189,75 @@ def fock_always_better():
   ax.set_ylabel(r'Noise $\gamma$', fontsize=22)
   c.set_label('SNR extr')
   plt.show()
+
+
+def find_optimal_coherent_fock(t, theta,n): #finds the optimal squeezing, displacement parameters & optimal SNR for a certain temperature through the lagrange multipliers method
+    nu = 1/np.tanh(1/(2* t))
+    nth= 0.5*(nu-1)
+    print('thermal nth', nth)
+    # Define the variable (symbol)
+    a = 0.000
+    def N(a):
+      return 2+(2*exp(-(a**2)/2)*(a**n))/(math.sqrt(factorial(n)))
+    def ergotropy(a): 
+      return (1+nth)*(a**2+n*(N(a)-1))/N(a)
+    def mean_n(a):
+      return nth + (1+nth)*(a**2+n*(N(a)-1))/N(a)
+    def n_squared(a):
+      return nth**2 + nth*(1+nth) + 3*nth*(1+nth)*(a**2+n*(N(a)-1))/N(a) + (1+nth)**2*(a**4+a**2+n**2*(N(a)-1))/N(a)
+    def snr(a):
+      return ergotropy(a)/math.sqrt(np.float64(n_squared(a)-mean_n(a)**2))
+    
+    a_vec=[0]
+    while ergotropy(a_vec[-1]) < theta:
+      a_vec += [a_vec[-1]+0.001]
+  
+    
+    result=np.max([snr(a) for a in a_vec])
+    print(result)
+
+    return result
+
+
+def gaussian_vs_rare_state(t_vec, theta,n):
+  rare_state= []
+  gaussian=[]
+  for t in t_vec:
+    rare_state += [find_optimal_coherent_fock(t,theta,n)]
+    gaussian += [find_optimal_gaussian(t,theta)]
+  
+  plt.plot(t_vec, gaussian, 'r')
+  plt.plot(t_vec, rare_state, 'b')
+  plt.legend(['Gaussian', 'Coherent-fock'])
+  plt.xlabel(r'T[K]')
+  plt.ylabel(r'Optimal $\Gamma$')
+  plt.show()
+
+  return
+
+def q_mandel(alpha,n):
+  t_vec=[0.0000001]
+  t_vec = np.linspace(0,6,50)
+  factor=1
+  q =[]
+  def N(a):
+    return 2+(2*exp(-(a**2)/2)*(a**n))/(math.sqrt(factorial(n)))
+  for t in t_vec:
+    nu = 1/np.tanh(factor/(2* t))
+    nth= (nu-1)/2
+    mean_n= nth + (1+nth)*(alpha**2+n*(N(alpha)-1))/N(alpha)
+    n_squared= nth**2 + nth*(1+nth) + 3*nth*(1+nth)*(alpha**2+n*(N(alpha)-1))/N(alpha) + (1+nth)**2*(alpha**4+alpha**2+n**2*(N(alpha)-1))/N(alpha)
+    qfact = (n_squared-mean_n**2-mean_n)/mean_n
+    print(nth,N(alpha), mean_n, n_squared, qfact)
+    q +=[ qfact]
+  plt.plot(t_vec,q)
+  plt.show()
+    
+
+#q_mandel(1,1)
+
+#gaussian_vs_rare_state(np.linspace(0.01,2,50), 5, 3)
+
  
 #fock_always_better()
 #entanglement_advantage(1,5,100)
@@ -1195,9 +1269,9 @@ def fock_always_better():
 #snr_with_constraints()
 #snr_with_constraints()
 #minimum_energy_state(3, maxiter=10)
-#snr_vs_stellar_rank(3,1,5)
+snr_vs_stellar_rank(3,1,5)
 
-multimode_optimization(3, 0.8, 4, 5)
+#multimode_optimization(3, 0.8, 4, 5)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
 #heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'snr')
