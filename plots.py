@@ -683,14 +683,14 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
       fig.colorbar(cf1, ax=ax1, label=r'Squeezing parameter $z$')
 
       ax1.set_xlabel(r'$T [K]$')
-      ax1.set_ylabel(r'$\epsilon [\omega]$')
+      ax1.set_ylabel(r'$\epsilon$')
       ax1.set_title(r'Squeezing Parameter $z$')
 
       cf2 = ax2.contourf(T, Theta, Alpha_opt, levels=20, cmap='viridis', alpha=0.7)
       fig.colorbar(cf2, ax=ax2, label=r'Displacement $|\alpha|^2$')
 
       ax2.set_xlabel(r'$T [K]$')
-      ax2.set_ylabel(r'$\epsilon [\omega]$')
+      ax2.set_ylabel(r'$\epsilon$')
       ax2.set_title(r'Displacement $|\alpha|^2$')
 
       plt.savefig('optimal_parameters_gaussian.pdf')
@@ -704,7 +704,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
       ax.clabel(contour, inline=True, fontsize=10,fmt=r'$g^{(0)}=1$')
       plt.colorbar(label=r'Optimal $\Gamma$')
       plt.xlabel(r'$T [K]$')
-      plt.ylabel(r'$\epsilon [\omega]$')
+      plt.ylabel(r'$\epsilon$')
       #plt.title(r'Optimal $SNR_{ext}$')
       plt.savefig('optimal_snr.pdf')
 
@@ -725,9 +725,10 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
 
 
 def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
-   #the ergotropy constraint is given by temperature and max_stellar_rank
-  t_vec = np.linspace(0.05,max_temp,50)
-
+  #the ergotropy constraint is given by temperature and max_stellar_rank
+  t_vec = np.linspace(0.1,max_temp,100)
+  if theta < max_stellar_rank*0.5*(1/np.tanh(1/(2* t_vec[-1])) + 1):
+    print('Not feasible')
   gauss_snr_opt =[find_optimal_gaussian(t, theta) for t in t_vec]
 
 
@@ -735,7 +736,7 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
   for i in range(max_stellar_rank+1):
     optimal_snr += [[]]
     i+= 1
-  optimal_snr += [[]]
+  optimal_snr += [[],[]]
   print(np.shape(optimal_snr))
   for t in t_vec:
     nu = 1/np.tanh(1/(2* t))
@@ -747,16 +748,18 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
         result= state.optimize_ratio(theta,1)
       optimal_snr[rank]+= [-result.fun]
       optimal_state= State(1,[result.x[2]],[],[random.random()],disp=[result.x[0],result.x[1]], temp=[t],nongaussian_ops=[1]*rank, format='number')
-    optimal_snr[-1] += [find_optimal_coherent_fock(t, theta, 5)]
+    optimal_snr[-2] += [find_optimal_coherent_fock(t, theta, 5)]
+    optimal_snr[-1] += [find_optimal_noisy_cat(t,theta)]
   colors=['black','purple','orange','green']
   fig,ax =plt.subplots()
   ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
   for rank in range(1, max_stellar_rank+1):
     ax.plot(t_vec, optimal_snr[rank], color= colors[rank])
+  ax.plot(t_vec,optimal_snr[-2], 'magenta')
   ax.plot(t_vec,optimal_snr[-1], 'b')
   ax.set_yscale('log')
   plt.grid(True)
-  plt.legend(['Gaussian bound']+ ['1 photon addition', '2 photon additions', '3 photon additions']+ ['Coherent-fock'])
+  plt.legend(['Gaussian bound']+ ['1 photon addition', '2 photon additions', '3 photon additions']+ ['Coherent-fock', 'Noisy cat'])
   plt.xlabel(r'$T [K]$')
   plt.ylabel(r'Optimal $\Gamma$')
   plt.savefig('snr_with_stellar_rank.pdf')
@@ -982,7 +985,7 @@ def optimal_strategy():
   #ax.set_yticks(ticks=[0,1])
   plt.grid(True)
   plt.legend(['Gaussian', '1 photon addition', '2 photon additions', '3 photon additions'])
-  plt.xlabel(r'Energetic constraint $\epsilon$ [$\omega$]')
+  plt.xlabel(r'Photon number constraint $\epsilon$')
   plt.ylabel(r'Optimal $\Gamma$')
   plt.savefig('Optimal strategy.pdf')
   plt.show()
@@ -1125,7 +1128,7 @@ def multimode_check(stellar_rank):  # since we are studying bipartite entangleme
   return 
 
 def entanglement_advantage(rank, max_temp, theta):
-  t_vec = np.linspace(0.1,max_temp,50)
+  t_vec = np.linspace(0.1,max_temp,10)
   gauss_snr_opt =[]
 
   optimal_snr_ent = []
@@ -1155,9 +1158,9 @@ def entanglement_advantage(rank, max_temp, theta):
   colors=['black','purple','orange','green']
   fig,ax =plt.subplots()
   ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
-  ax.plot(t_vec, optimal_snr_sep, color= 'c')
-  ax.plot(t_vec,optimal_snr_ent,color='b')
-  ax.fill_between(t_vec,optimal_snr_sep,optimal_snr_ent, color='c',alpha=0.3)
+  ax.plot(t_vec, optimal_snr_sep, color= 'black', alpha=0.5)
+  ax.plot(t_vec,optimal_snr_ent,color='black')
+  ax.fill_between(t_vec,optimal_snr_sep,optimal_snr_ent, color='grey',alpha=0.3)
   ax.set_yscale('log')
   plt.grid(True)
   plt.legend(['Gaussian bound']+ ['1 photon addition min', '1 photon addition max'])
@@ -1199,17 +1202,17 @@ def find_optimal_coherent_fock(t, theta,n): #finds the optimal squeezing, displa
     a = 0.000
     def N(a):
       return 2+(2*exp(-(a**2)/2)*(a**n))/(math.sqrt(factorial(n)))
-    def ergotropy(a): 
+    def ergotropy_coherent_fock(a): 
       return (1+nth)*(a**2+n*(N(a)-1))/N(a)
-    def mean_n(a):
+    def mean_n_coherent_fock(a):
       return nth + (1+nth)*(a**2+n*(N(a)-1))/N(a)
-    def n_squared(a):
+    def n_squared_coherent_fock(a):
       return nth**2 + nth*(1+nth) + 3*nth*(1+nth)*(a**2+n*(N(a)-1))/N(a) + (1+nth)**2*(a**4+a**2+n**2*(N(a)-1))/N(a)
     def snr(a):
-      return ergotropy(a)/math.sqrt(np.float64(n_squared(a)-mean_n(a)**2))
+      return ergotropy_coherent_fock(a)/math.sqrt(np.float64(n_squared_coherent_fock(a)-mean_n_coherent_fock(a)**2))
     
     a_vec=[0]
-    while ergotropy(a_vec[-1]) < theta:
+    while ergotropy_coherent_fock(a_vec[-1]) < theta:
       a_vec += [a_vec[-1]+0.001]
   
     
@@ -1252,7 +1255,59 @@ def q_mandel(alpha,n):
     q +=[ qfact]
   plt.plot(t_vec,q)
   plt.show()
+  
+
+def find_optimal_noisy_cat(t, theta): #finds the optimal squeezing, displacement parameters & optimal SNR for a certain temperature through the lagrange multipliers method
+    #p = 0.5*(1 + exp(-2*t))
+    #p= np.tanh(2*t)
+    nu = 1/np.tanh(1/(2* t))
+    nth= 0.5*(nu-1)
+    p= 0.5*(1+exp(-nth))
+    print('thermal p', p)
+
+    def N_thermal():
+      thermal_st = State(1,[1],[0],[0],temp=[t])
+      return thermal_st.expvalN()
     
+    def n_squared_thermal():
+      thermal_st = State(1,[1],[0],[0],temp=[t])
+      return thermal_st.expvalN2()
+    
+    def N_cat_even(alpha):
+      return alpha**2*((1-exp(-2*alpha**2))/(1+exp(-2*alpha**2)))
+    
+    def N_cat_odd(alpha):
+      return alpha**2*((1+exp(-2*alpha**2))/(1-exp(-2*alpha**2)))
+
+    def N_noisy_cat(alpha):
+      return p*N_cat_even(alpha) + (1-p)*N_cat_odd(alpha)
+      #return p*N_cat_even(alpha) + (1-p)*N_thermal()
+
+    def ergotropy_noisy_cat(alpha): 
+      return N_noisy_cat(alpha)-nth
+    
+    def n_squared_even_cat(alpha):
+      return (alpha**4 + alpha**2 + exp(-2*alpha**2)*(alpha**4-alpha**2) )/(1+exp(-2*alpha**2))
+    
+    def n_squared_odd_cat(alpha):
+      return (alpha**4 + alpha**2 - exp(-2*alpha**2)*(alpha**4-alpha**2) )/(1-exp(-2*alpha**2))
+    
+    def n_squared_noisy_cat(alpha):
+      return p*n_squared_even_cat(alpha) + (1-p)*n_squared_odd_cat(alpha)
+      #return p*n_squared_even_cat(alpha) + (1-p)*n_squared_thermal()
+    def snr_noisy_cat(alpha):
+      return ergotropy_noisy_cat(alpha)/math.sqrt(np.float64(n_squared_noisy_cat(alpha)-N_noisy_cat(alpha)**2))
+    
+    alpha_vec=[0.01]
+    while ergotropy_noisy_cat(alpha_vec[-1]) < theta:
+      alpha_vec += [alpha_vec[-1]+0.01]
+  
+    
+    result=np.max([snr_noisy_cat(alpha) for alpha in alpha_vec])
+    result_index= [snr_noisy_cat(alpha) for alpha in alpha_vec].index(result)
+    print(result, result_index, len(alpha_vec))
+
+    return result
 
 #q_mandel(1,1)
 
@@ -1260,7 +1315,7 @@ def q_mandel(alpha,n):
 
  
 #fock_always_better()
-#entanglement_advantage(1,5,100)
+entanglement_advantage(1,3,100)
 #multimode_check(1)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
@@ -1269,10 +1324,10 @@ def q_mandel(alpha,n):
 #snr_with_constraints()
 #snr_with_constraints()
 #minimum_energy_state(3, maxiter=10)
-snr_vs_stellar_rank(3,1,5)
+#snr_vs_stellar_rank(3,1,5)
 
 #multimode_optimization(3, 0.8, 4, 5)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-#heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'snr')
+#heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'parameters')
 #snr_sv_comparison(1, 1, 10)
