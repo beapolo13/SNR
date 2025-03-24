@@ -18,7 +18,7 @@ from pprint import pprint
 from scipy.linalg import block_diag
 import os
 from mpl_toolkits.mplot3d import Axes3D
-#import winsound
+import winsound
 
 
 
@@ -433,6 +433,14 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
       ops=['adag','a']
       modes=[i,i]
       sum+=self.expectationvalue(ops,modes)
+    return sum/self.K()
+  
+  def expvalE(self):
+    sum=0
+    for i in range(1,self.N+1):
+      ops=['adag','a']
+      modes=[i,i]
+      sum+=self.omega[i-1]*self.expectationvalue(ops,modes)
     return sum/self.K()
   
   def energy(self): #only for two mode gaussians

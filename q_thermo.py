@@ -503,12 +503,125 @@ def experimental_optimization(n_samples,n_modes=2):
             print('Failed global search')
             continue
         return
+    
+def nongaussian_erg_gap(nongaussian_ops, gaussian_parameters=None):
+    def create_state(nongaussian_ops, gaussian_parameters=None):
+        if gaussian_parameters is not None:
+            z1, z2, x, w, alpha, t1, t2 = gaussian_parameters
+        else:
+            w = 9*np.random.random()
+            alpha = 1 + 9* np.random.rand()
+            t2=9*np.random.random()
+            t1= t2/alpha+ 9*np.random.random()
+            x= 2 * np.pi* np.random.random()
+            z1= np.random.random()
+            z2= np.random.random()
+        k1= 1/np.tanh((w/t1))
+        k2= 1/np.tanh((w*alpha/t2))
+        k=(k1+k2)/2
+        gamma=(k1-k2)/2
+        state=  State(2,[z1,z2],[x],[0,0],[w, alpha*w],[0,0,0,0],[t1,t2],nongaussian_ops,'xxpp','number')
+        print('Initial state energy', state.expvalE())
+        return state
+    
+    def global_passive_energy(state,params):
+        r1=params[0]
+        r2=params[1]
+        theta=params[2]
+        theta= state.bs[0]
+        initial_matrix=state.matrix
+        #print('Initial energy', state.expvalE())
+        loc_op=np.array([[r1,0,0,0],[0, r2,0,0],[0,0,  1/r1,0],[0,0,0,1/r2]])
+        glob_op= np.array([[cos(theta),sin(theta),0, 0],[-sin(theta), cos(theta),0,0,],[0,0, cos(theta),sin(theta)],[0,0,-sin(theta),cos(theta)]])
+        passive_mat1= glob_op.T @ initial_matrix @ glob_op
+        passive_mat= loc_op.T @ passive_mat1 @ loc_op
+        state.matrix = passive_mat
+        gp_energy = state.expvalE()
+        #print('Global passive energy', gp_energy)
+        state.matrix = initial_matrix
+        return gp_energy
+    
+    def local_passive_energy(state, params):
+        r1=params[0]
+        r2=params[1]
+        initial_matrix=state.matrix
+        #print('Initial energy', state.expvalE())
+        loc_op=np.array([[r1,0,0,0],[0, r2,0,0],[0,0,  1/r1,0],[0,0,0,1/r2]])
+        loc_passive_mat= loc_op @ state.matrix @ loc_op.T
+        state.matrix = loc_passive_mat
+        lp_energy = state.expvalE()
+        #print('Local passive energy', lp_energy)
+        state.matrix = initial_matrix
+        return lp_energy 
+    
+    state= create_state(nongaussian_ops, gaussian_parameters)
+    opti_lp= minimize(lambda params: local_passive_energy(state, params), x0=(1.0,1.0), bounds=[(1e-6, None), (1e-6, None)], method='COBYLA')
+    print('Optimization result (local):',opti_lp.fun)
+    opti_gp= minimize(lambda params: global_passive_energy(state, params), x0=(1.0,1.0, 0.0), bounds=[(1e-6, None), (1e-6, None), (0, 2*np.pi)], method='Nelder-Mead')
+    print('Optimization result (energy):',opti_gp.fun)
+    ergotropic_gap= opti_lp.fun - opti_gp.fun
+    print('Ergotropic gap', ergotropic_gap, 'Relative erg gap', ergotropic_gap/opti_gp.fun )
+    return ergotropic_gap/opti_gp.fun
+
+def plot_nongaussian_erg_gap(nongaussian_ops, gamma,alpha):
+    z_vec=np.linspace(0.1,1,100)
+    k_vec= np.linspace(1.001+gamma/2,10,100)
+    X=z_vec
+    Y=k_vec
+    X_grid, Y_grid =np.meshgrid(X,Y)
+    x= np.pi/4
+    epsilon = 1e-6
+
+    
+    erggap= [[ nongaussian_erg_gap(nongaussian_ops,(z,1/z,x,1,1*alpha,k,k)) for z in z_vec] for k in k_vec] 
+    W_arr= np.array(erggap)
+    W = list(W_arr)
+ 
+    fig,ax=plt.subplots(1,2,figsize=(10,6))
+    c=ax[0].pcolormesh(X_grid,Y_grid,W,norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=cm.get_cmap('viridis', 10))
+    print(min(W_arr+epsilon), W_arr.max())
+    #c=ax[0].pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis', 10))
+    cbar=fig.colorbar(c,ax=ax[0], label=r'Ergotorpic gap for nongaussian states')
+    #ax[0].clabel(contour, inline=True, fontsize=10,fmt='ERG')
+    ax[0].set_xlim(X.min(), X.max())
+    ax[0].set_yscale('log')
+    ax[0].set_ylim(Y.min() , Y.max())
+    #ax.grid(True, which='both', linestyle='--')
+    ax[0].set_ylabel(r'Temperature factor $k$')
+    ax[0].set_xlabel(r'Squeezing parameter $z$')
+    
+    c.set_label(r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
+
+    c2=ax[1].pcolormesh(X_grid,Y_grid,W,norm=colors.SymLogNorm(0.00001, vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=cm.get_cmap('viridis', 10))
+
+    #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
+    cbar=fig.colorbar(c,ax=ax[1], label=r'2-mode Gaussian separability condition')
+    #ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
+    ax[1].set_xlim(X.min(), X.max())
+    ax[1].set_yscale('log')
+    ax[1].set_ylim(Y.min() , Y.max())
+    #ax.grid(True, which='both', linestyle='--')
+    ax[1].set_ylabel(r'Temperature factor $k$')
+    ax[1].set_xlabel(r'Squeezing parameter $z$')
+
+    c2.set_label(r'SV criterio')
+    #plt.savefig()
+    plt.subplots_adjust(wspace=2)
+    y=[gamma/2+1] + [(gamma/2+1)//1 + i for i in range(1,8)] + [10]
+    ax[0].set_yticks(y)
+    ax[1].set_yticks(y)
+    beep()
+    plt.show()
+    return
+
+    
+plot_nongaussian_erg_gap([-1],0,1)
 
 #plot_onemodegaussian()
 #bound_violation_tms(1,1)
 #heatmap_bound(1)
 
-gaussian_mixed_new_bound(10000)
+#gaussian_mixed_new_bound(10000)
 #one_dim_plot_squeezing_pure(np.pi/4)
 #mutual_information_TMSQ()
 #relative_ergotropic_gap_TMSQ()
