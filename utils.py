@@ -435,6 +435,14 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
       sum+=self.expectationvalue(ops,modes)
     return sum/self.K()
   
+  def expvalE(self): 
+    sum=0
+    for i in range(1,self.N+1):
+      ops=['adag','a']
+      modes=[i,i]
+      sum+=self.omega[i-1]*self.expectationvalue(ops,modes)
+    return sum/self.K()
+  
   def energy(self): #only for two mode gaussians
     if self.required_ordering == 'xxpp':
       return (1/4)*(self.omega[0]*(self.matrix[0,0]+self.matrix[2,2]-2))+(1/4)*(self.omega[1]*(self.matrix[1,1]+self.matrix[3,3]-2))
