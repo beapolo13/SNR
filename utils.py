@@ -435,11 +435,8 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
       sum+=self.expectationvalue(ops,modes)
     return sum/self.K()
   
-<<<<<<< HEAD
-  def expvalE(self): 
-=======
+
   def expvalE(self):
->>>>>>> b4c35ee81c518422016f2d40cad693afaa95809a
     sum=0
     for i in range(1,self.N+1):
       ops=['adag','a']

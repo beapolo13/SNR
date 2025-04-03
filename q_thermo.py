@@ -485,7 +485,7 @@ def experimental_optimization(n_samples,n_modes=2):
         def callback(params):
             """Counts the number of iterations."""
             iteration_count[0] += 1
-        opti_lp= minimize(lambda params: local_passive_energy(state, params), x0=(1.0,1.0), bounds=[(1e-6, None), (1e-6, None)], method='COBYLA', callback=callback)
+        opti_lp= minimize(lambda params: local_passive_energy(state, params), x0=(1.0,1.0), bounds=[(1e-6, None), (1e-6, None)], method='Nelder-Mead', callback=callback)
         print('Optimization parameters:',opti_lp.x)
         if np.isclose(true_r1, opti_lp.x[0], 0.05) and np.isclose(true_r2, opti_lp.x[1], 0.05):
             print(f'Local search succeeded in {iteration_count[0]} copies')
@@ -512,12 +512,24 @@ def experimental_optimization(n_samples,n_modes=2):
             continue
         return
     
-<<<<<<< HEAD
 def find_ergotropic_gap(state):
     print('Initial energy', state.expvalE())
     print('Local passive search')
     
-=======
+
+    opti_lp= minimize(lambda params: local_passive_energy(state, params), x0=(1,1), bounds=[(1e-6, None), (1e-6, None)], method='COBYLA')
+    print('Optimization parameters:',opti_lp.x)
+    print('Local passive energy', opti_lp.fun)
+
+    print('Global passive search')
+        
+    opti_gp= minimize(lambda params: global_passive_energy(state, params), x0=(1,1,0.0), bounds=[(1e-6, None), (1e-6, None), (0, 2*np.pi)], method='Nelder-Mead')
+    print('Optimization parameters:',opti_gp.x)
+    print('Optimization result (energy):',opti_gp.fun)
+    print('')
+
+    return (np.real(opti_lp.fun) - np.real(opti_gp.fun))/np.real(opti_gp.fun)
+    
 def nongaussian_erg_gap(nongaussian_ops, gaussian_parameters=None):
     def create_state(nongaussian_ops, gaussian_parameters=None):
         if gaussian_parameters is not None:
@@ -629,24 +641,14 @@ def plot_nongaussian_erg_gap(nongaussian_ops, gamma,alpha):
     return
 
     
-plot_nongaussian_erg_gap([-1],0,1)
->>>>>>> b4c35ee81c518422016f2d40cad693afaa95809a
 
-    opti_lp= minimize(lambda params: local_passive_energy(state, params), x0=(1.0,1.0), bounds=[(1e-6, None), (1e-6, None)], method='COBYLA')
-    #print('Optimization parameters:',opti_lp.x)
-    print('Local passive energy', opti_lp.fun)
 
-    print('Global passive search')
-        
-    opti_gp= minimize(lambda params: global_passive_energy(state, params), x0=(1.0,1.0,0.0), bounds=[(1e-6, None), (1e-6, None), (0, 2*np.pi)], method='Nelder-Mead')
-    print('Optimization result (energy):',opti_gp.fun)
-    return np.real(opti_lp.fun) - np.real(opti_gp.fun)
 
 def photon_subtracted_tms():
-    z_vec=np.linspace(0.1,1,100)
+    z_vec=np.linspace(0.1,1,200)
     
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
-    t_vec = np.linspace(0.1,5,100)
+    t_vec = np.linspace(0.1,10,200)
     print(z_vec, t_vec)
     
     k_vec= np.array([1/np.tanh((1/t)) for t in t_vec])
@@ -658,7 +660,8 @@ def photon_subtracted_tms():
     print('k_value', State(2, [1,1],[x],[0,0],None, None, [0.1,0.1], [-1]).K())
     sv = [[np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]], [-1]).SV()) for z in z_vec] for j in range(len(k_vec))]
     sv_arr = np.array(sv)
-    W = [[np.float64(find_ergotropic_gap(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]], [-1]))) for z in z_vec] for j in range(len(k_vec))]
+    W= [[0 for z in z_vec] for j in range(len(k_vec))]
+    #W = [[-np.float64(find_ergotropic_gap(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]], [-1]))) for z in z_vec] for j in range(len(k_vec))]
     W_arr= np.array(W)
     
 
@@ -683,7 +686,7 @@ def photon_subtracted_tms():
     c2=ax[1].pcolormesh(X_grid,Y_grid,sv,norm=colors.SymLogNorm(0.00001, vmin=min(sv_arr+epsilon), vmax=sv_arr.max()),cmap=cm.get_cmap('viridis', 10))
 
     #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
-    cbar=fig.colorbar(c,ax=ax[1], label=r'2-mode Gaussian separability condition')
+    cbar=fig.colorbar(c,ax=ax[1], label=r'2-mode SV separability condition')
     contour_levels = [0]
     contour = ax[1].contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     #ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
@@ -694,7 +697,7 @@ def photon_subtracted_tms():
     ax[1].set_ylabel(r'Temperature factor $k$')
     ax[1].set_xlabel(r'Squeezing parameter $z$')
 
-    c2.set_label(r'2-mode Gaussian separability condition')
+    c2.set_label(r'2-mode SV separability condition')
     #plt.savefig(f'Sep_and_bound_violtion_tms_alpha={alpha}, gamma={gamma}.pdf')
     plt.subplots_adjust(wspace=2)
     y=[1] + [1 + i for i in range(1,8)] + [10]
