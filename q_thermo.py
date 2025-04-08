@@ -512,10 +512,52 @@ def experimental_optimization(n_samples,n_modes=2):
             continue
         return
     
+def local_passive_phadd(state, params): #implements a local Gaussian general operation (a minimization of this function leads to the local passive) on a photon added state on mode 1
+    r1=params[0]
+    r2=params[1]
+    loc_op=np.array([[r1,0,0,0],[0, r2,0,0],[0,0,  1/r1,0],[0,0,0,1/r2]])
+    loc_passive_mat= loc_op @ state.matrix @ loc_op.T
+    state_copy = copy.deepcopy(state)
+    state_copy.matrix = loc_passive_mat
+    lp_energy = r1**2*(state_copy.expectationvalue(['a','adag','a','adag'], [1,1,1,1])+ state_copy.expectationvalue(['a','adag','a','adag'], [1,2,2,1]))/state.expectationvalue(['a','adag'], [1,1])
+    lp_energy= np.real(lp_energy)
+    #print('initial state energy', state.expvalE(), 'new state energy', state_copy.expvalE())
+    #lp_energy = (1/4)*(state.omega[0]*(loc_passive_mat[0,0]+loc_passive_mat[2,2]-2))+(1/4)*(state.omega[1]*(loc_passive_mat[1,1]+loc_passive_mat[3,3]-2))
+    return lp_energy
+    
+def global_passive_phadd(state, params): #implements a global Gaussian general operation (a minimization of this function leads to the global passive)
+      
+    r1=params[0]
+    r2=params[1]
+    #theta=params[2]
+    angle= params[2]
+    loc_op=np.array([[r1,0,0,0],[0, r2,0,0],[0,0,  1/r1,0],[0,0,0,1/r2]])
+    glob_op= np.array([[cos(angle),sin(angle),0, 0],[-sin(angle), cos(angle),0,0,],[0,0, cos(angle),sin(angle)],[0,0,-sin(angle),cos(angle)]])
+    G= loc_op @ glob_op 
+    passive_mat= G @ state.matrix @ G.T
+    
+    state_copy = copy.deepcopy(state)
+    state_copy.matrix = passive_mat
+
+    gp_energy= G[0,0]**2 * state_copy.expectationvalue(['a','adag','a','adag'], [1,1,1,1]) + G[0,0]*G[0,2] * state_copy.expectationvalue(['adag','adag','a','adag'], [1,1,1,1]) + G[0,0]*G[0,1] * state_copy.expectationvalue(['a','adag','a','adag'], [2,1,1,1]) + G[0,0]*G[0,3] * state_copy.expectationvalue(['adag','adag','a','adag'], [2,1,1,1]) 
+    gp_energy += G[0,0]*G[0,2] * state_copy.expectationvalue(['a','adag','a','a'], [1,1,1,1]) + G[0,2]**2 * state_copy.expectationvalue(['adag','adag','a','a'], [1,1,1,1]) + G[0,2]*G[0,1] * state_copy.expectationvalue(['a','adag','a','a'], [2,1,1,1]) + G[0,2]*G[0,3] * state_copy.expectationvalue(['adag','adag','a','a'], [2,1,1,1])
+    gp_energy += G[0,1]*G[0,0] * state_copy.expectationvalue(['a','adag','a','adag'], [1,1,1,2]) + G[0,1]*G[0,2] * state_copy.expectationvalue(['adag','adag','a','adag'], [1,1,1,2]) + G[0,1]**2 * state_copy.expectationvalue(['a','adag','a','adag'], [2,1,1,2]) + G[0,1]*G[0,3] * state_copy.expectationvalue(['adag','adag','a','adag'], [2,1,1,2])
+    gp_energy += G[0,0]*G[0,3] * state_copy.expectationvalue(['a','adag','adag','a'], [1,1,1,2]) + G[0,3]*G[0,2] * state_copy.expectationvalue(['adag','adag','a','a'], [1,1,1,2]) + G[0,3]*G[0,1] * state_copy.expectationvalue(['a','adag','a','a'], [2,1,1,2]) + G[0,3]*G[0,3] * state_copy.expectationvalue(['adag','adag','a','a'], [2,1,1,2])
+
+    gp_energy+=  G[0,0]**2 * state_copy.expectationvalue(['a','adag','a','adag'], [1,2,2,1]) + G[0,0]*G[0,2] * state_copy.expectationvalue(['adag','adag','a','adag'], [1,2,2,1]) + G[0,0]*G[0,1] * state_copy.expectationvalue(['a','adag','a','adag'], [2,2,2,1]) + G[0,0]*G[0,3] * state_copy.expectationvalue(['adag','adag','a','adag'], [2,2,2,1]) 
+    gp_energy += G[0,0]*G[0,2] * state_copy.expectationvalue(['a','adag','a','a'], [1,2,2,1]) + G[0,2]**2 * state_copy.expectationvalue(['adag','adag','a','a'], [1,2,2,1]) + G[0,2]*G[0,1] * state_copy.expectationvalue(['a','adag','a','a'], [2,2,2,1]) + G[0,2]*G[0,3] * state_copy.expectationvalue(['adag','adag','a','a'], [2,2,2,1])
+    gp_energy += G[0,1]*G[0,0] * state_copy.expectationvalue(['a','adag','a','adag'], [1,2,2,2]) + G[0,1]*G[0,2] * state_copy.expectationvalue(['adag','adag','a','adag'], [1,2,2,2]) + G[0,1]**2 * state_copy.expectationvalue(['a','adag','a','adag'], [2,2,2,2]) + G[0,1]*G[0,3] * state_copy.expectationvalue(['adag','adag','a','adag'], [2,2,2,2])
+    gp_energy += G[0,0]*G[0,3] * state_copy.expectationvalue(['a','adag','adag','a'], [1,2,2,2]) + G[0,3]*G[0,2] * state_copy.expectationvalue(['adag','adag','a','a'], [1,2,2,2]) + G[0,3]*G[0,1] * state_copy.expectationvalue(['a','adag','a','a'], [2,2,2,2]) + G[0,3]*G[0,3] * state_copy.expectationvalue(['adag','adag','a','a'], [2,2,2,2])
+
+
+    gp_energy= np.real(gp_energy)/state.expectationvalue(['a','adag'], [1,1])
+    #print('initial state energy', state.expvalE(), 'new state energy', state_copy.expvalE())
+    #gp_energy = (1/4)*(state.omega[0]*(passive_mat[0,0]+passive_mat[2,2]-2))+(1/4)*(state.omega[1]*(passive_mat[1,1]+passive_mat[3,3]-2))
+    return gp_energy
+    
 def find_ergotropic_gap(state):
     print('Initial energy', state.expvalE())
     print('Local passive search')
-    
 
     opti_lp= minimize(lambda params: local_passive_energy(state, params), x0=(1,1), bounds=[(1e-6, None), (1e-6, None)], method='COBYLA')
     print('Optimization parameters:',opti_lp.x)
@@ -528,7 +570,28 @@ def find_ergotropic_gap(state):
     print('Optimization result (energy):',opti_gp.fun)
     print('')
 
-    return (np.real(opti_lp.fun) - np.real(opti_gp.fun))/np.real(opti_gp.fun)
+    
+
+def find_ergotropic_gap_phadd(state):
+    state.nongaussian_ops=[1]
+    print('Initial energy', state.expvalE())
+    state.nongaussian_ops=[]
+    
+
+    opti_lp= minimize(lambda params: local_passive_phadd(state, params), x0=(1,1), bounds=[(1e-6, None), (1e-6, None)], method='COBYLA')
+    print('Optimization parameters:',opti_lp.x)
+    print('Local passive energy', opti_lp.fun)
+
+    print('Global passive search')
+        
+    opti_gp= minimize(lambda params: global_passive_phadd(state, params), x0=(1,1,0.0), bounds=[(1e-6, None), (1e-6, None), (0, 2*np.pi)], method='COBYLA')
+    print('Optimization parameters:',opti_gp.x)
+    print('Optimization result (energy):',opti_gp.fun)
+    print('')
+    eg=(np.real(opti_lp.fun) - np.real(opti_gp.fun))/np.real(opti_gp.fun)
+    print('eg', eg)
+
+    return eg
     
 def nongaussian_erg_gap(nongaussian_ops, gaussian_parameters=None):
     def create_state(nongaussian_ops, gaussian_parameters=None):
@@ -644,11 +707,11 @@ def plot_nongaussian_erg_gap(nongaussian_ops, gamma,alpha):
 
 
 
-def photon_subtracted_tms():
-    z_vec=np.linspace(0.1,1,200)
+def photon_added_tms():
+    z_vec=np.linspace(0.1,1,10)
     
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
-    t_vec = np.linspace(0.1,10,200)
+    t_vec = np.linspace(0.1,10,10)
     print(z_vec, t_vec)
     
     k_vec= np.array([1/np.tanh((1/t)) for t in t_vec])
@@ -657,11 +720,11 @@ def photon_subtracted_tms():
     X_grid, Y_grid =np.meshgrid(X,Y)
     x= np.pi/4
     epsilon = 1e-6
-    print('k_value', State(2, [1,1],[x],[0,0],None, None, [0.1,0.1], [-1]).K())
-    sv = [[np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]], [-1]).SV()) for z in z_vec] for j in range(len(k_vec))]
+    print('k_value', State(2, [1,1],[x],[0,0],None, None, [0.1,0.1], [1]).K())
+    sv = [[-np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]],[1]).SV()) for z in z_vec] for j in range(len(k_vec))]
     sv_arr = np.array(sv)
-    W= [[0 for z in z_vec] for j in range(len(k_vec))]
-    #W = [[-np.float64(find_ergotropic_gap(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]], [-1]))) for z in z_vec] for j in range(len(k_vec))]
+    #W= [[0 for z in z_vec] for j in range(len(k_vec))]
+    W = [[np.float64(find_ergotropic_gap_phadd(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]]))) for z in z_vec] for j in range(len(k_vec))]
     W_arr= np.array(W)
     
 
@@ -681,7 +744,7 @@ def photon_subtracted_tms():
     ax[0].set_ylabel(r'Temperature factor $k$')
     ax[0].set_xlabel(r'Squeezing parameter $z$')
     
-    c.set_label(r'Ergotropic gap for TMS photon-subtracted states')
+    c.set_label(r'Ergotropic gap for TMS photon-added states')
 
     c2=ax[1].pcolormesh(X_grid,Y_grid,sv,norm=colors.SymLogNorm(0.00001, vmin=min(sv_arr+epsilon), vmax=sv_arr.max()),cmap=cm.get_cmap('viridis', 10))
 
@@ -706,7 +769,7 @@ def photon_subtracted_tms():
     plt.show()
     return
 
-photon_subtracted_tms()
+photon_added_tms()
 #plot_onemodegaussian()
 #bound_violation_tms(1,1)
 #heatmap_bound(1)
