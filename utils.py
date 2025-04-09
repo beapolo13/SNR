@@ -1,6 +1,8 @@
 import numpy as np
 from numpy import transpose, real, sqrt, sin, cos, linalg, cosh, sinh, diag
 import sympy as sp
+import math
+from math import factorial
 from sympy import symbols, Matrix, simplify, exp, sqrt, tanh, diag, cos, sin, coth
 import scipy
 import matplotlib.pyplot as plt
@@ -612,6 +614,61 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         #self.bs[:N*(N-1)//2] =result.x[3*N:]
 
         return result
+   
+def optimize_snr_cat(m, T, epsilon_constraint, z0):  #returns the optimal value of snr_cat as a function of the system's temperature. the # of ph subtractions m,  and the constraint on deltaN \leq epsilon
+  #z0 is the initial guess for the squeezing parameter
+  
+  #First compute the snr _ extr (gamma) of a one-mode cat state consisting of a squeezed (z) thermal state (T) after m (tending to infinity) photon subtractions
+  def I1(z,nu):
+    return  (nu/4)*(z-1/z)
+  def I3(z,nu):
+    return  (nu/4)*(z+1/z)-(1/2)
+  def tr(nu,z,r):
+    result =0
+    if r%2 == 0: #if r even
+      for j in range(0,r//2+1):
+        result += I3(z,nu)**(2*j)*I1(z,nu)**(r-2*j)*factorial(r)**2/(factorial(2*j)*factorial((r-2*j)//2)**2*2**(r-2*j))
+    elif r%2 == 1: #if r odd
+      for j in range(0,(r-1)//2+1):
+        result += I3(z,nu)**(2*j+1)*I1(z,nu)**(r-2*j-1)*factorial(r)**2/(factorial(2*j+1)*factorial((r-2*j-1)//2)**2*2**(r-2*j-1))
+    return result
+       
+  def n_cat(nu,z,m):
+    return tr(nu,z,m+1)/tr(nu,z,m)
+  def n0_cat(nu):
+    return (nu-1)/2
+  def numerator(nu,z,m):
+    return n_cat(nu,z,m)-n0_cat(nu)
+  #print('delta n', numerator(nu,z,m))
+  def denominator(nu,z,m):
+    return math.sqrt(n_cat(nu,z,m)+tr(nu,z,m+2)/tr(nu,z,m)-n_cat(nu,z,m)**2)
+  def snr_cat(z,m,T): 
+    nu = 1/np.tanh(1/(2* T))
+    return numerator(nu,z,m)/denominator(nu,z,m)
+   
+  nu = 1/np.tanh(1/(2* T)) 
+  objective = lambda z: -snr_cat(z, m, T)
+
+    # Constraint: deltan(z, m, T) <= epsilon
+  constraint1 = {
+        'type': 'ineq',  # means: constraint_fun(z) >= 0 → we'll return epsilon - deltan
+        'fun': lambda z: epsilon_constraint - numerator(nu, z, m)
+    }
+  
+  bounds = [(0, 1)]
+  result = minimize(
+        objective,
+        z0,
+        constraints=[constraint1],
+        bounds=bounds,
+        method='SLSQP',  # handles inequality constraints
+        options={'disp': True, 'maxiter': 10000, 'gtol': 1e-6}
+    )
+
+  print(result.success)
+  return -result.fun
+
+
 
 #optimal_state= State(1,[result.x[2]],[],[0,0],disp=[result.x[0],result.x[1]], temp=[0.1], nongaussian_ops=[1])
 #print(result)

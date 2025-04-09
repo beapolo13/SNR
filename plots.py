@@ -726,7 +726,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
 
 def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
   #the ergotropy constraint is given by temperature and max_stellar_rank
-  t_vec = np.linspace(0.1,max_temp,100)
+  t_vec = np.linspace(0.1,max_temp,50)
   if theta < max_stellar_rank*0.5*(1/np.tanh(1/(2* t_vec[-1])) + 1):
     print('Not feasible')
   gauss_snr_opt =[find_optimal_gaussian(t, theta) for t in t_vec]
@@ -749,7 +749,7 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
       optimal_snr[rank]+= [-result.fun]
       optimal_state= State(1,[result.x[2]],[],[random.random()],disp=[result.x[0],result.x[1]], temp=[t],nongaussian_ops=[1]*rank, format='number')
     optimal_snr[-2] += [find_optimal_coherent_fock(t, theta, 5)]
-    optimal_snr[-1] += [find_optimal_noisy_cat(t,theta)]
+    optimal_snr[-1] += [optimize_snr_cat(10,t,theta,0.5)]
   colors=['black','purple','orange','green']
   fig,ax =plt.subplots()
   ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
@@ -759,13 +759,13 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
   ax.plot(t_vec,optimal_snr[-1], 'b')
   ax.set_yscale('log')
   plt.grid(True)
-  plt.legend(['Gaussian bound']+ ['1 photon addition', '2 photon additions', '3 photon additions']+ ['Coherent-fock', 'Noisy cat'])
+  #plt.legend(['Gaussian bound']+ ['1 photon addition', '2 photon additions', '3 photon additions']+ ['Coherent-fock', 'Noisy cat'])
+  plt.legend(['Gaussian bound']+ ['Coherent-fock', 'Noisy cat'])
   plt.xlabel(r'$T [K]$')
   plt.ylabel(r'Optimal $\Gamma$')
-  plt.savefig('snr_with_stellar_rank.pdf')
+  #plt.savefig('snr_with_stellar_rank.pdf')
   plt.show()
   return optimal_snr
-
 
 def snr_sv_comparison(stellar_rank, max_temp, epsilon):  # since we are studying bipartite entanglement, it is sufficient to consider 2 modes
    #the ergotropy constraint is given by temperature and max_stellar_rank
@@ -1313,9 +1313,9 @@ def find_optimal_noisy_cat(t, theta): #finds the optimal squeezing, displacement
 
 #gaussian_vs_rare_state(np.linspace(0.01,2,50), 5, 3)
 
- 
+snr_vs_stellar_rank(0,1,5)
 #fock_always_better()
-entanglement_advantage(1,3,100)
+#entanglement_advantage(1,3,100)
 #multimode_check(1)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
