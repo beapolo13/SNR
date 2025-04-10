@@ -726,7 +726,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
 
 def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
   #the ergotropy constraint is given by temperature and max_stellar_rank
-  t_vec = np.linspace(0.1,max_temp,50)
+  t_vec = np.linspace(0.05,max_temp,50)
   if theta < max_stellar_rank*0.5*(1/np.tanh(1/(2* t_vec[-1])) + 1):
     print('Not feasible')
   gauss_snr_opt =[find_optimal_gaussian(t, theta) for t in t_vec]
@@ -749,7 +749,7 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
       optimal_snr[rank]+= [-result.fun]
       optimal_state= State(1,[result.x[2]],[],[random.random()],disp=[result.x[0],result.x[1]], temp=[t],nongaussian_ops=[1]*rank, format='number')
     optimal_snr[-2] += [find_optimal_coherent_fock(t, theta, 5)]
-    optimal_snr[-1] += [optimize_snr_cat(10,t,theta,0.5)]
+    optimal_snr[-1] += [optimize_snr_cat(3,t,theta,0.5)]
   colors=['black','purple','orange','green']
   fig,ax =plt.subplots()
   ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
@@ -759,11 +759,11 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
   ax.plot(t_vec,optimal_snr[-1], 'b')
   ax.set_yscale('log')
   plt.grid(True)
-  #plt.legend(['Gaussian bound']+ ['1 photon addition', '2 photon additions', '3 photon additions']+ ['Coherent-fock', 'Noisy cat'])
-  plt.legend(['Gaussian bound']+ ['Coherent-fock', 'Noisy cat'])
+  plt.legend(['Gaussian bound']+ ['1 photon addition', '2 photon additions', '3 photon additions']+ ['Coherent-fock', 'Noisy cat'])
+  #plt.legend(['Gaussian bound']+ ['1 ph add','Coherent-fock', 'Noisy cat'])
   plt.xlabel(r'$T [K]$')
   plt.ylabel(r'Optimal $\Gamma$')
-  #plt.savefig('snr_with_stellar_rank.pdf')
+  plt.savefig('snr_with_stellar_rank.pdf')
   plt.show()
   return optimal_snr
 
@@ -1309,11 +1309,102 @@ def find_optimal_noisy_cat(t, theta): #finds the optimal squeezing, displacement
 
     return result
 
+def check():
+  def I1(z,nu):
+    return  (nu/4)*(z-1/z)
+  def I3(z,nu):
+    return  (nu/4)*(z+1/z)-(1/2)
+  def tr(nu,z,r):
+    result =0
+    if r%2 == 0: #if r even
+      for j in range(0,r//2+1):
+        result += I3(z,nu)**(2*j)*I1(z,nu)**(r-2*j)*factorial(r)**2/(factorial(2*j)*factorial((r-2*j)//2)**2*2**(r-2*j))
+    elif r%2 == 1: #if r odd
+      for j in range(0,(r-1)//2+1):
+        result += I3(z,nu)**(2*j+1)*I1(z,nu)**(r-2*j-1)*factorial(r)**2/(factorial(2*j+1)*factorial((r-2*j-1)//2)**2*2**(r-2*j-1))
+    return result
+       
+  def n_cat(nu,z,m):
+    return tr(nu,z,m+1)/tr(nu,z,m)
+  def n0_cat(nu):
+    return (nu-1)/2
+  def numerator(nu,z,m):
+    return n_cat(nu,z,m)-n0_cat(nu)
+  #print('delta n', numerator(nu,z,m))
+  def denominator(nu,z,m):
+    return math.sqrt(n_cat(nu,z,m)+tr(nu,z,m+2)/tr(nu,z,m)-n_cat(nu,z,m)**2)
+  def snr_cat(z,m,T): 
+    nu = 1/np.tanh(1/(2* T))
+    return numerator(nu,z,m)/denominator(nu,z,m)
+  
+  t= np.linspace(0.01,1,200)
+  z_vec = np.linspace(0.001,1,100)
+  nu_vec = [1/np.tanh(1/(2* T)) for T in t]
+  #first check what cat states fulfill the condition on maximum ergotropy
+
+  n0= [np.min([numerator(nu,z,0) for z in z_vec]) for nu in nu_vec]
+  n1= [np.min([numerator(nu,z,1) for z in z_vec]) for nu in nu_vec]
+  n2= [np.min([numerator(nu,z,2) for z in z_vec]) for nu in nu_vec]
+  n3= [np.min([numerator(nu,z,3) for z in z_vec]) for nu in nu_vec]
+  n4= [np.min([numerator(nu,z,4) for z in z_vec]) for nu in nu_vec]
+  n5= [np.min([numerator(nu,z,5) for z in z_vec]) for nu in nu_vec]
+  n6= [np.min([numerator(nu,z,6) for z in z_vec]) for nu in nu_vec]
+  n7= [np.min([numerator(nu,z,7) for z in z_vec]) for nu in nu_vec]
+
+  n0= [numerator(nu,1,0) for nu in nu_vec]
+  n1= [numerator(nu,1,1) for nu in nu_vec]
+  n2= [numerator(nu,1,2) for nu in nu_vec]
+  n3= [numerator(nu,1,3) for nu in nu_vec]
+  n4= [numerator(nu,1,4) for nu in nu_vec]
+  n5= [numerator(nu,1,5) for nu in nu_vec]
+  n6= [numerator(nu,1,6) for nu in nu_vec]
+  n7= [numerator(nu,1,7) for nu in nu_vec]
+  plt.plot(t, n0)
+  plt.plot(t, n1)
+  plt.plot(t, n2)
+  plt.plot(t, n3)
+  plt.plot(t, n4)
+  plt.plot(t, n5)
+  plt.plot(t, n6)
+  plt.plot(t, n7)
+  plt.legend(['Gauss','1','2','3','4','5','6','7'])
+  plt.show()
+
+ 
+  z0= [np.max([snr_cat(z,0,T) for z in z_vec]) for T in t]
+  z1=[np.max([snr_cat(z,1,T) for z in z_vec]) for T in t]
+  z2= [np.max([snr_cat(z,2,T) for z in z_vec]) for T in t]
+  z3=[np.max([snr_cat(z,3,T) for z in z_vec]) for T in t]
+  z4=[np.max([snr_cat(z,4,T) for z in z_vec]) for T in t]
+  z5=[np.max([snr_cat(z,5,T) for z in z_vec]) for T in t]
+  z6= [np.max([snr_cat(z,6,T) for z in z_vec]) for T in t]
+  z7 = [np.max([snr_cat(z,7,T) for z in z_vec]) for T in t]
+  
+  # plt.plot(t,y1a)
+  # plt.plot(t,y1b)
+  # plt.plot(t,y2a)
+  # plt.plot(t,y2b)
+  # plt.plot(t,y3a)
+  # plt.plot(t,y3b)
+  plt.plot(t,z0)
+  plt.plot(t,z1)
+  plt.plot(t,z2)
+  plt.plot(t,z3)
+  plt.plot(t,z4)
+  plt.plot(t,z5)
+  plt.plot(t,z6)
+  plt.plot(t,z7)
+  plt.legend(['Gauss','1','2','3','4','5','6','7'])
+  #plt.legend(['Gaussian','1 cat', '1 wick', '2cat', '2 wick', '3 cat', '3 wick'])
+  plt.show()
+  return
+
+check()
 #q_mandel(1,1)
 
 #gaussian_vs_rare_state(np.linspace(0.01,2,50), 5, 3)
 
-snr_vs_stellar_rank(0,1,5)
+#snr_vs_stellar_rank(3,1,5)
 #fock_always_better()
 #entanglement_advantage(1,3,100)
 #multimode_check(1)
