@@ -1337,7 +1337,7 @@ def check():
     nu = 1/np.tanh(1/(2* T))
     return numerator(nu,z,m)/denominator(nu,z,m)
   
-  t= np.linspace(0.01,1,200)
+  t= np.linspace(0.1,1,100)
   z_vec = np.linspace(0.001,1,100)
   nu_vec = [1/np.tanh(1/(2* T)) for T in t]
   #first check what cat states fulfill the condition on maximum ergotropy
@@ -1379,6 +1379,27 @@ def check():
   z5=[np.max([snr_cat(z,5,T) for z in z_vec]) for T in t]
   z6= [np.max([snr_cat(z,6,T) for z in z_vec]) for T in t]
   z7 = [np.max([snr_cat(z,7,T) for z in z_vec]) for T in t]
+
+  plt.plot(t,z0)
+  plt.plot(t,z1)
+  plt.plot(t,z2)
+  plt.plot(t,z3)
+  plt.plot(t,z4)
+  plt.plot(t,z5)
+  plt.plot(t,z6)
+  plt.plot(t,z7)
+  plt.legend(['Gauss','1','2','3','4','5','6','7'])
+  #plt.legend(['Gaussian','1 cat', '1 wick', '2cat', '2 wick', '3 cat', '3 wick'])
+  plt.show()
+
+  z0= [optimize_snr_cat(0, T, 5, 0.5) for T in t]
+  z1=[optimize_snr_cat(1, T, 5, 0.5) for T in t]
+  z2= [optimize_snr_cat(2, T, 5, 0.5) for T in t]
+  z3=[optimize_snr_cat(3, T, 5, 0.5) for T in t]
+  z4=[optimize_snr_cat(4, T, 5, 0.5) for T in t]
+  z5=[optimize_snr_cat(5, T, 5, 0.5) for T in t]
+  z6= [optimize_snr_cat(6, T, 5, 0.5) for T in t]
+  z7 = [optimize_snr_cat(7, T, 5, 0.5) for T in t]
   
   # plt.plot(t,y1a)
   # plt.plot(t,y1b)

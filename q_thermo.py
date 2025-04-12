@@ -708,34 +708,39 @@ def plot_nongaussian_erg_gap(nongaussian_ops, gamma,alpha):
 
 
 def photon_added_tms():
-    z_vec=np.linspace(0.1,1,10)
+    z_vec=np.linspace(0.1,1,30)
     
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
-    t_vec = np.linspace(0.1,10,10)
+    t_vec = np.linspace(0.1,10,30)
     print(z_vec, t_vec)
     
-    k_vec= np.array([1/np.tanh((1/t)) for t in t_vec])
+    k_vec= np.array([1/np.tanh((1/(2*t))) for t in t_vec])
     X=z_vec
     Y=k_vec
     X_grid, Y_grid =np.meshgrid(X,Y)
     x= np.pi/4
     epsilon = 1e-6
-    print('k_value', State(2, [1,1],[x],[0,0],None, None, [0.1,0.1], [1]).K())
-    sv = [[-np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]],[1]).SV()) for z in z_vec] for j in range(len(k_vec))]
+
+    
+    sv = [[np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]],[-1]).SV()) for z in z_vec] for j in range(len(k_vec))]
     sv_arr = np.array(sv)
-    #W= [[0 for z in z_vec] for j in range(len(k_vec))]
-    W = [[np.float64(find_ergotropic_gap_phadd(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]]))) for z in z_vec] for j in range(len(k_vec))]
+    sv_simp = [[(k*z-1) for z in z_vec] for k in k_vec]
+    sv_simp = np.array(sv_simp)
+    print('array difference',np.argmax(np.abs(sv-sv_simp)), np.max(np.abs(sv-sv_simp)))
+    print('min sv', np.min(sv_arr), np.argmin(sv_arr), 'max sv', np.max(sv_arr))
+    W= [[0 for z in z_vec] for j in range(len(k_vec))]
+    #W = [[np.float64(find_ergotropic_gap_phadd(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]]))) for z in z_vec] for j in range(len(k_vec))]
     W_arr= np.array(W)
     
 
 
 
     fig,ax=plt.subplots(1,2,figsize=(10,6))
-    c=ax[0].pcolormesh(X_grid,Y_grid,W,norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=cm.get_cmap('viridis', 10))
+    c=ax[0].pcolormesh(X_grid,Y_grid,sv_simp,norm=colors.SymLogNorm(0.0000001,vmin=min(sv_simp+epsilon), vmax=sv_simp.max()),cmap=cm.get_cmap('viridis', 10))
     #c=ax[0].pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis', 10))
     cbar=fig.colorbar(c,ax=ax[0], label=r'Ergotropic gap for TMS photon-subtracted states')
     contour_levels = [0]
-    contour = ax[0].contour(X_grid, Y_grid, W, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+    contour = ax[0].contour(X_grid, Y_grid, sv_simp, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     #ax[0].clabel(contour, inline=True, fontsize=10,fmt='ERG')
     ax[0].set_xlim(X.min(), X.max())
     ax[0].set_yscale('log')
@@ -746,7 +751,7 @@ def photon_added_tms():
     
     c.set_label(r'Ergotropic gap for TMS photon-added states')
 
-    c2=ax[1].pcolormesh(X_grid,Y_grid,sv,norm=colors.SymLogNorm(0.00001, vmin=min(sv_arr+epsilon), vmax=sv_arr.max()),cmap=cm.get_cmap('viridis', 10))
+    c2=ax[1].pcolormesh(X_grid,Y_grid,sv,norm=colors.SymLogNorm(0.0000001, vmin=min(sv_arr+epsilon), vmax=sv_arr.max()),cmap=cm.get_cmap('viridis', 10))
 
     #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
     cbar=fig.colorbar(c,ax=ax[1], label=r'2-mode SV separability condition')

@@ -492,7 +492,9 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
     sum2= self.expectationvalue(['adag','a'],[2,2])/self.K()
     sum3= self.expectationvalue(['adag','adag'],[1,2])/self.K()
     sum4= self.expectationvalue(['a','a'],[1,2])/self.K()
+    #print(sum1,sum2,sum3,sum4)
     return ((sum1*sum2)-(sum3*sum4))
+  
   
   def antibunching(self): #N=1 or N=2
     if self.N==1:
@@ -664,7 +666,7 @@ def optimize_snr_cat(m, T, epsilon_constraint, z0):  #returns the optimal value 
         method='SLSQP',  # handles inequality constraints
         options={'disp': True, 'maxiter': 10000, 'gtol': 1e-6}
     )
-
+  print('m=', m, 'T=', T, 'optimal z', result.x)
   print(result.success)
   return -result.fun
 
