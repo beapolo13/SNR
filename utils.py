@@ -484,6 +484,18 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
   def SNR_extr(self):
     return self.ergotropy()/(self.varianceN())
   
+  def sum_a(self):
+    return self.expectationvalue(['adag','a'],[1,1])/self.K()
+  
+  def sum_b(self):
+    return self.expectationvalue(['adag','a'],[2,2])/self.K()
+  
+  def sum_c(self):
+    return self.expectationvalue(['adag','adag'],[1,2])/self.K()
+  
+  def sum_d(self):
+    return self.expectationvalue(['a','a'],[1,2])/self.K()
+
   def SV(self):  #works for N=2 only
     if self.N != 2: 
       print('This function only computes bipartite entanglement! N has to be 2')
@@ -493,7 +505,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
     sum3= self.expectationvalue(['adag','adag'],[1,2])/self.K()
     sum4= self.expectationvalue(['a','a'],[1,2])/self.K()
     #print(sum1,sum2,sum3,sum4)
-    return ((sum1*sum2)-(sum3*sum4))
+    return (sum1*sum2)-(sum3*sum4)
   
   
   def antibunching(self): #N=1 or N=2

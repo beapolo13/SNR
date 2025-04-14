@@ -707,7 +707,7 @@ def plot_nongaussian_erg_gap(nongaussian_ops, gamma,alpha):
 
 
 
-def photon_added_tms():
+def photon_sub_tms():
     z_vec=np.linspace(0.1,1,30)
     
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
@@ -724,7 +724,7 @@ def photon_added_tms():
     
     sv = [[np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]],[-1]).SV()) for z in z_vec] for j in range(len(k_vec))]
     sv_arr = np.array(sv)
-    sv_simp = [[(k*z-1) for z in z_vec] for k in k_vec]
+    sv_simp = [[(k**2/2-(k/2)*(z+1/z)+0.5) for z in z_vec] for k in k_vec]
     sv_simp = np.array(sv_simp)
     print('array difference',np.argmax(np.abs(sv-sv_simp)), np.max(np.abs(sv-sv_simp)))
     print('min sv', np.min(sv_arr), np.argmin(sv_arr), 'max sv', np.max(sv_arr))
@@ -774,7 +774,7 @@ def photon_added_tms():
     plt.show()
     return
 
-photon_added_tms()
+photon_sub_tms()
 #plot_onemodegaussian()
 #bound_violation_tms(1,1)
 #heatmap_bound(1)
