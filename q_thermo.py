@@ -803,7 +803,87 @@ def photon_add_tms():
     plt.show()
     return
 
-photon_add_tms()
+def find_ergotropic_gap_phsub(z,k):
+    a= k*(z+1/z)-1
+    c=k*(-z+1/z)
+    d=k*(-1/z+z)
+    b= (a+1)+ (((k/2)*(-z+1/z))**2)/a
+    gamma= a**2 + b**2 +2*c*d 
+    det = a**2*b**2-a*b*c**2-a*b*d**2+c**2*d**2
+    numinus = sqrt((gamma - sqrt(gamma**2-4*det))/2) 
+    nuplus = sqrt((gamma + sqrt(gamma**2-4*det))/2) 
+    eloc= 0.5*(a+b-2)
+    eglob= 0.5*(nuplus+numinus-2)
+    rel_gap = (eloc - eglob)/eglob
+    return rel_gap
+
+def photon_sub_tms():
+    z_vec=np.linspace(0.1,1,500)
+    
+    r_vec=np.array([-np.log(z)/2 for z in z_vec])
+    t_vec = np.linspace(0.1,10,500)
+    print(z_vec, t_vec)
+    
+    k_vec= np.array([1/np.tanh((1/(2*t))) for t in t_vec])
+    X=z_vec
+    Y=k_vec
+    X_grid, Y_grid =np.meshgrid(X,Y)
+    x= np.pi/4
+    epsilon = 1e-6
+
+    
+    sv = [[np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]],[-1]).SV()) for z in z_vec] for j in range(len(k_vec))]
+    sv_arr = np.array(sv)
+    
+    
+    W = [[np.float64(find_ergotropic_gap_phsub(z,k)) for z in z_vec] for k in k_vec]
+    W_arr= np.array(W)
+    print(W)
+    
+
+    fig,ax=plt.subplots(1,2,figsize=(10,6))
+    c=ax[0].pcolormesh(X_grid,Y_grid,sv,norm=colors.SymLogNorm(0.0000001,vmin=min(sv_arr+epsilon), vmax=sv_arr.max()),cmap=cm.get_cmap('viridis', 40))
+    #c=ax[0].pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis', 10))
+    cbar=fig.colorbar(c,ax=ax[0], label=r'2-mode SV separability condition')
+    contour_levels = [0]
+    contour = ax[0].contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+    #ax[0].clabel(contour, inline=True, fontsize=10,fmt='ERG')
+    ax[0].set_xlim(X.min(), X.max())
+    ax[0].set_yscale('log')
+    ax[0].set_ylim(Y.min() , Y.max())
+    #ax.grid(True, which='both', linestyle='--')
+    ax[0].set_ylabel(r'Temperature factor $k$')
+    ax[0].set_xlabel(r'Squeezing parameter $z$')
+    
+    c.set_label(r'2-mode SV separability condition')
+
+    c2=ax[1].pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis_r', 40))
+
+    #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
+    cbar=fig.colorbar(c2,ax=ax[1], label=r'Ergotropic gap for TMS photon-subtracted states')
+    #contour_levels = [0]
+    contour = ax[1].contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+    #contour = ax[1].contour(X_grid, Y_grid, W,levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+    #ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
+    ax[1].set_xlim(X.min(), X.max())
+    ax[1].set_yscale('log')
+    ax[1].set_ylim(Y.min() , Y.max())
+    #ax.grid(True, which='both', linestyle='--')
+    ax[1].set_ylabel(r'Temperature factor $k$')
+    ax[1].set_xlabel(r'Squeezing parameter $z$')
+
+    c2.set_label(r'Ergotropic gap for TMS photon-subtracted states')
+    plt.subplots_adjust(wspace=2)
+    y=[1] + [1 + i for i in range(1,8)] + [10]
+    ax[0].set_yticks(y)
+    ax[1].set_yticks(y)
+    beep()
+    plt.savefig(f'Photon-subtracted TMS sep condition vs rel ergotropic gap.pdf')
+    plt.show()
+    return
+
+photon_sub_tms()
+#photon_add_tms()
 #plot_onemodegaussian()
 #bound_violation_tms(1,1)
 #heatmap_bound(1)
