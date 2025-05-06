@@ -94,35 +94,46 @@ def optimization():
 #2º ver si ese ratio se puede mejorar haciendo operaciones no gaussianas sobre los modos (y ver qué operaciones lo favorecen)
 #3º ver como escala esta evolución con N
 
-def optimization_1(): #without constraints on the values of z (just the sum of them =N and non negativity)
+def optimization_1(n_max, epsilon, t, nongaussian_ops_vec): #without constraints on the values of z (just the sum of them =N and non negativity)
   ratio_vec=[]
-  for N in range(2,n_max):
-    print('Number of modes', N, 'Non-gaussian operations', nongaussian_ops)
-    theta=[0]*(N*(N-1))//2
-    phi=[0]*N
-    free_pars=2*np.pi*np.random.rand(N+N**2) #z is included in this parameter list
-    def cost(free_pars):
-        return np.real(1/SNR_ng(V_tms(free_pars[:N],theta,phi,free_pars[N:]),nongaussian_ops)) #we take the inverse of the SNR to minimize
-    def non_negativity(free_pars):
-        return free_pars[:N]-10**-3
-    def constraint_function(free_pars):
-        return np.abs(N-np.sum(free_pars[:N]))-10**-5
-    nonneg= {'type': 'ineq', 'fun': non_negativity}
-    constraint = {'type': 'eq', 'fun': constraint_function}
-    print(constraint)
-    start = time.time()
-    out=minimize(cost,free_pars,constraints=[nonneg,constraint])
-    ratio_vec+=[1/out.fun]
-    print(out)
-    end = time.time()
-    print('Time taken to find maximum ratio', end - start)
-    print('optimal ratio:',1/out.fun)
-    print('optimal squeezing:',out.x[:N])
-    print(N-sum(out.x[:N]))
-    print('')
-  plt.plot(np.arange(2,n_max),ratio_vec,'o')
-  plt.show()
-  return
+  colors=['r','b','g']
+  i=0
+  for nongaussian_ops in nongaussian_ops_vec:
+    ratio_vec+=[[]]
+    print(ratio_vec)
+    for N in range(2,n_max):
+      print('Number of modes', N, 'Non-gaussian operations', nongaussian_ops)
+      theta=[0]*((N*(N-1))//2)
+      phi=[0]*N
+      z=[0.5]*N 
+      disp=[0]*(2*N)
+      pars = z+disp+ theta+phi
+      def cost(pars):
+          return -State(N,pars[:N],pars[3*N:3*N+(N*(N-1))//2],pars[3*N+(N*(N-1))//2:],disp=pars[N:3*N],temp=[t]*N, nongaussian_ops=nongaussian_ops).SNR_extr() #we take the inverse of the SNR to minimize
+      def non_negativity(pars):
+          return pars-10**-4
+      def sq(pars):
+          return 1-pars[:N]
+      def constraint_function(pars):
+          return epsilon-State(N,pars[:N],pars[3*N:3*N+(N*(N-1))//2],pars[3*N+(N*(N-1))//2:],disp=pars[N:3*N],temp=[t]*N, nongaussian_ops=nongaussian_ops).ergotropy()
+      squeez= {'type': 'ineq', 'fun': sq}
+      nonneg= {'type': 'ineq', 'fun': non_negativity}
+      constraint = {'type': 'eq', 'fun': constraint_function}
+      start = time.time()
+      out=minimize(cost,pars,constraints=[squeez,constraint])
+      ratio_vec[i]+=[-out.fun]
+      print(out)
+      end = time.time()
+      print('Time taken to find maximum ratio', end - start)
+      print('optimal ratio:',-out.fun)
+      print('optimal parameters:',out.x)
+      print('')
+    plt.plot(np.arange(2,n_max),ratio_vec[i],linestyle='dashdot', marker='o',color=colors[i])
+    i+=1
+  #plt.show()
+  return ratio_vec
+
+#optimization_1(6,10,0.5,[[],[1],[1,1]])
 
 def optimization_2():  #with constraints on the values of z (CANNOT BE TOO CLOSE TO 1)
   ratio_vec=[]
@@ -275,6 +286,6 @@ def optimization_5(nongaussian_ops, n_max):
   return
 
 
-print(optimization_5([[],[-1],[-1,-1],[-1,-1,-1]],6))
+#print(optimization_5([[],[-1],[-1,-1],[-1,-1,-1]],6))
 #print(optimization_5([1],7))
 #print(optimization_4(6))

@@ -21,8 +21,10 @@ import matplotlib.colors as mcolors
 from math import factorial, sqrt
 
 
+
 from utils import *
 from expectation_values_cat import *
+from optimizations import *
 params = {'axes.linewidth': 2,
          'axes.labelsize': 15,
          'axes.titlesize': 15,
@@ -1420,7 +1422,26 @@ def check():
   plt.show()
   return
 
-check()
+
+def multimode_plots():
+  n_max=6
+  y_vec = optimization_1(n_max,10,0.5,[[],[1],[1,1]])
+  print(y_vec)
+  print(np.shape(y_vec[0]))
+  print(np.shape(y_vec[1]))
+  colors=['r','b','g']
+  for i in range(len(y_vec)):
+    plt.plot(np.arange(2,n_max),y_vec[i],linestyle='dashdot', marker='o',color=colors[i])
+  plt.xlabel(r'Number of modes $N$')
+  plt.ylabel(r'Optimal $\Gamma$')
+  plt.xticks(ticks=[2,3,4,5], labels=['2','3','4','5'])
+  plt.legend(['Gaussian','1 photon addition','2 photon additions'])
+  plt.savefig('gamma_vs_nmodes.pdf')
+  plt.show()
+
+multimode_plots()
+
+#check()
 #q_mandel(1,1)
 
 #gaussian_vs_rare_state(np.linspace(0.01,2,50), 5, 3)
