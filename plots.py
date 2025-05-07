@@ -728,7 +728,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
 
 def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
   #the ergotropy constraint is given by temperature and max_stellar_rank
-  t_vec = np.linspace(0.05,max_temp,50)
+  t_vec = np.linspace(0.05,max_temp,20)
   if theta < max_stellar_rank*0.5*(1/np.tanh(1/(2* t_vec[-1])) + 1):
     print('Not feasible')
   gauss_snr_opt =[find_optimal_gaussian(t, theta) for t in t_vec]
@@ -751,7 +751,7 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
       optimal_snr[rank]+= [-result.fun]
       optimal_state= State(1,[result.x[2]],[],[random.random()],disp=[result.x[0],result.x[1]], temp=[t],nongaussian_ops=[1]*rank, format='number')
     optimal_snr[-2] += [find_optimal_coherent_fock(t, theta, 5)]
-    optimal_snr[-1] += [optimize_snr_cat(3,t,theta,0.5)]
+    optimal_snr[-1] += [optimize_snr_cat(1,t,theta,0.5)]
   colors=['black','purple','orange','green']
   fig,ax =plt.subplots()
   ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
@@ -765,7 +765,7 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
   #plt.legend(['Gaussian bound']+ ['1 ph add','Coherent-fock', 'Noisy cat'])
   plt.xlabel(r'$T [K]$')
   plt.ylabel(r'Optimal $\Gamma$')
-  plt.savefig('snr_with_stellar_rank.pdf')
+  #plt.savefig('snr_with_stellar_rank.pdf')
   plt.show()
   return optimal_snr
 
@@ -1142,17 +1142,17 @@ def entanglement_advantage(rank, max_temp, theta):
     state_sep = State(2,[random.random(),1],[0],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
     state_ent= State(2,[random.random(),1],[np.pi/4],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
     #print(state.__dict__)
-    result_gauss= state_gauss.optimize_ratio(theta,2)
+    result_gauss= state_gauss.optimize_ratio_with_bs(theta,2)
     while result_gauss.success == False:
-      result_gauss= state_gauss.optimize_ratio(theta,2)
+      result_gauss= state_gauss.optimize_ratio_with_bs(theta,2)
     gauss_snr_opt+= [-result_gauss.fun]
-    result_sep= state_sep.optimize_ratio(theta,2)
+    result_sep= state_sep.optimize_ratio_with_bs(theta,2)
     while result_sep.success == False:
-      result_sep= state_sep.optimize_ratio(theta,2)
+      result_sep= state_sep.optimize_ratio_with_bs(theta,2)
     optimal_snr_sep+= [-result_sep.fun]
-    result_ent = state_ent.optimize_ratio(theta,2)
+    result_ent = state_ent.optimize_ratio_with_bs(theta,2)
     while result_ent.success == False:
-      result_ent= state_ent.optimize_ratio(theta,2)
+      result_ent= state_ent.optimize_ratio_with_bs(theta,2)
     optimal_snr_ent+= [-result_ent.fun]
     print(result_gauss.x, result_sep.x, result_ent.x)
     
@@ -1168,7 +1168,7 @@ def entanglement_advantage(rank, max_temp, theta):
   plt.legend(['Gaussian bound']+ ['1 photon addition min', '1 photon addition max'])
   plt.xlabel(r'$T [K]$')
   plt.ylabel(r'Optimal $\Gamma$')
-  plt.savefig('entanglement_adv.pdf')
+  #plt.savefig('entanglement_adv.pdf')
   plt.show()
   return
 
@@ -1339,8 +1339,8 @@ def check():
     nu = 1/np.tanh(1/(2* T))
     return numerator(nu,z,m)/denominator(nu,z,m)
   
-  t= np.linspace(0.1,1,100)
-  z_vec = np.linspace(0.001,1,100)
+  t= np.linspace(0.1,1,200)
+  z_vec = np.linspace(0.001,1,200)
   nu_vec = [1/np.tanh(1/(2* T)) for T in t]
   #first check what cat states fulfill the condition on maximum ergotropy
 
@@ -1439,7 +1439,7 @@ def multimode_plots():
   plt.savefig('gamma_vs_nmodes.pdf')
   plt.show()
 
-multimode_plots()
+#multimode_plots()
 
 #check()
 #q_mandel(1,1)
@@ -1448,7 +1448,7 @@ multimode_plots()
 
 #snr_vs_stellar_rank(3,1,5)
 #fock_always_better()
-#entanglement_advantage(1,3,100)
+entanglement_advantage(1,3,5)
 #multimode_check(1)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
