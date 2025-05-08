@@ -578,6 +578,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         def objective(attrs):
             self.disp[:2*N] = attrs[:2*N]
             self.squeezing[:N] = attrs[2*N:3*N]
+            self.pshift[:N]= attrs[3*N:4*N]
             #self.bs[:(N)*(N-1)//2] = attrs[3*N:]
             return -np.float64(np.real(self.SNR_extr()))  # Negative for maximization
 
@@ -585,12 +586,14 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         def energy_constraint(attrs):
             self.disp[:2*N] = attrs[:2*N]
             self.squeezing[:N] = attrs[2*N:3*N]
+            self.pshift[:N]= attrs[3*N:4*N]
             #self.bs[:(N)*(N-1)//2] = attrs[3*N:]
             return max_energy - self.ergotropy()  # Must be non-negative
         
         def sq_constraint(attrs):
             self.disp[:2*N] = attrs[:2*N]
             self.squeezing[:N] = attrs[2*N:3*N]
+            self.pshift[:N]= attrs[3*N:4*N]
             #self.bs[:(N)*(N-1)//2] = attrs[3*N:]
             return 1- self.squeezing[0]  # Must be non-negative
         
@@ -600,8 +603,9 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         #disp_bounds = [(0, 0)] * (2 * N)
         #squeezing_bounds = [(0.001, 1)]*N
         squeezing_bounds = [(0.1, 1)]*N
+        psbounds = [(0,2*np.pi)]*N
         bs_bounds = [(0,2*np.pi)]*(N*(N-1)//2)
-        bounds = disp_bounds + squeezing_bounds 
+        bounds = disp_bounds + squeezing_bounds +psbounds
         # Define constraints dictionary
         constraint1 = {'type': 'ineq', 'fun': energy_constraint}
         constraint2 = {'type': 'ineq', 'fun': sq_constraint}
@@ -610,7 +614,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
   
 
         # Initial guess for the attributes
-        initial_guess = self.disp[:2*N] + self.squeezing[:N] 
+        initial_guess = self.disp[:2*N] + self.squeezing[:N] + self.pshift[:N]
         #initial_guess = self.disp[:2*N] + self.squeezing[:] 
         # Perform optimization
         
@@ -685,6 +689,65 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
 
         return result
    
+  def optimize_ratio_without_ps(self, max_energy, N):
+    
+          # Objective function (we minimize -ratio to maximize ratio)
+          def objective(attrs):
+              self.disp[:2*N] = attrs[:2*N]
+              self.squeezing[:N] = attrs[2*N:3*N]
+      
+              return -np.float64(np.real(self.SNR_extr()))  # Negative for maximization
+
+          # Constraint: energy should not exceed max_energy
+          def energy_constraint(attrs):
+              self.disp[:2*N] = attrs[:2*N]
+              self.squeezing[:N] = attrs[2*N:3*N]
+              
+              return max_energy - self.ergotropy()  # Must be non-negative
+          
+          def sq_constraint(attrs):
+              self.disp[:2*N] = attrs[:2*N]
+              self.squeezing[:N] = attrs[2*N:3*N]
+          
+              return 1- self.squeezing[0]  # Must be non-negative
+          
+      
+          #Define bounds for parameters
+          disp_bounds = [(0, np.sqrt(max_energy))] * (2 * N)
+          #disp_bounds = [(0, 0)] * (2 * N)
+          #squeezing_bounds = [(0.001, 1)]*N
+          squeezing_bounds = [(0.1, 1)]*N
+          bs_bounds = [(0,2*np.pi)]*(N*(N-1)//2)
+          bounds = disp_bounds + squeezing_bounds 
+          # Define constraints dictionary
+          constraint1 = {'type': 'ineq', 'fun': energy_constraint}
+          constraint2 = {'type': 'ineq', 'fun': sq_constraint}
+        
+          
+    
+
+          # Initial guess for the attributes
+          initial_guess = self.disp[:2*N] + self.squeezing[:N] 
+          #initial_guess = self.disp[:2*N] + self.squeezing[:] 
+          # Perform optimization
+          
+          #result = shgo(objective, constraints=[constraint1, constraint2], bounds=bounds)
+          #result = shgo(objective, constraints=[constraint1], bounds=bounds)
+          result = minimize(objective,initial_guess, method='SLSQP', bounds=bounds, constraints=[constraint1, constraint2])
+
+          attrs = self.disp[:2*N] + self.squeezing[:N]
+          #result = minimize(objective, attrs,constraints=[constraint1, constraint2], bounds=bounds)
+
+          # Update the attributes with the optimized values
+          self.disp[:2*N] = result.x[:2*N]
+          self.squeezing[:N] = result.x[2*N:3*N]
+      
+
+          return result
+   
+
+
+
 def optimize_snr_cat(m, T, epsilon_constraint, z0):  #returns the optimal value of snr_cat as a function of the system's temperature. the # of ph subtractions m,  and the constraint on deltaN \leq epsilon
   #z0 is the initial guess for the squeezing parameter
   

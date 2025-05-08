@@ -680,8 +680,9 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
     # Plot heatmaps
     if what_to_plot == 'parameters':
       params = {'axes.linewidth': 2,
-         'axes.labelsize': 25,
-         'axes.titlesize': 25,
+         'axes.labelsize': 29,
+         'axes.titlesize': 30,
+         'axes.titlepad' : 30,
          'axes.linewidth': 1.2,
          'lines.markeredgecolor': "black",
      	'lines.linewidth': 1.2,
@@ -741,7 +742,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
 
 def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
   #the ergotropy constraint is given by temperature and max_stellar_rank
-  t_vec = np.linspace(0.05,max_temp,20)
+  t_vec = np.linspace(0.05,max_temp,2)
   if theta < max_stellar_rank*0.5*(1/np.tanh(1/(2* t_vec[-1])) + 1):
     print('Not feasible')
   gauss_snr_opt =[find_optimal_gaussian(t, theta) for t in t_vec]
@@ -756,13 +757,12 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
   for t in t_vec:
     nu = 1/np.tanh(1/(2* t))
     for rank in range(1, max_stellar_rank+1):
-      state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1]*rank, format='number')
+      state = State(1,[random.random()],[],[0],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1]*rank, format='number')
       #print(state.__dict__)
       result= state.optimize_ratio(theta,1)
       while result.success == False:
         result= state.optimize_ratio(theta,1)
       optimal_snr[rank]+= [-result.fun]
-      optimal_state= State(1,[result.x[2]],[],[random.random()],disp=[result.x[0],result.x[1]], temp=[t],nongaussian_ops=[1]*rank, format='number')
     optimal_snr[-2] += [find_optimal_coherent_fock(t, theta, 5)]
     optimal_snr[-1] += [optimize_snr_cat(1,t,theta,0.5)]
   colors=['black','purple','orange','green']
@@ -973,8 +973,10 @@ def optimal_strategy():
   t=0.5
   n_th=(1/np.tanh(1/(2* t))-1)/2
   print('n_th=',n_th)
-  theta_vec0=np.linspace(0.1,25,100)
-  theta_vec1=np.linspace(n_th+1.0001,25,50)
+  theta_vec0=[5,10]
+  theta_vec1=[5,10]
+  #theta_vec0=np.linspace(0.1,25,100)
+  #theta_vec1=np.linspace(n_th+1.0001,25,50)
   theta_vec2=np.linspace(2*(n_th+1.0001),25,50)
   theta_vec3=np.linspace(3*(n_th+1.0001),25,50)
 
@@ -984,7 +986,9 @@ def optimal_strategy():
   state_3pha= State(1,[np.random.random()],[],[0],disp=[np.random.random(), np.random.random()], temp=[t], nongaussian_ops=[1,1,1])
 
   result= [find_optimal_gaussian(t,theta) for theta in theta_vec0]
+  print(result)
   result1= [-state_1pha.optimize_ratio(theta, 1).fun for theta in theta_vec1]
+  print(result1)
   result2= [-state_2pha.optimize_ratio(theta, 1).fun for theta in theta_vec2]
   result3= [-state_3pha.optimize_ratio(theta, 1).fun for theta in theta_vec3]
   ax.plot(theta_vec0,result, color='black')
@@ -1002,7 +1006,7 @@ def optimal_strategy():
   plt.legend(['Gaussian', '1 photon addition', '2 photon additions', '3 photon additions'])
   plt.xlabel(r'Photon number constraint $\epsilon$')
   plt.ylabel(r'Optimal $\Gamma$')
-  plt.savefig('Optimal strategy.pdf')
+  #plt.savefig('Optimal strategy.pdf')
   plt.show()
   
   return
@@ -1091,29 +1095,32 @@ def multimode_check(stellar_rank):  # since we are studying bipartite entangleme
 def entanglement_advantage(rank, max_temp, theta):
   t_vec = np.linspace(0.1,max_temp,10)
   gauss_snr_opt =[]
-
   optimal_snr_ent = []
   optimal_snr_sep=[]
   for t in t_vec:
     print(t)
     nu = 1/np.tanh(1/(2* t))
-    state_gauss= State(2,[random.random(),1],[np.pi/4],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[], format='number')
-    state_sep = State(2,[random.random(),1],[0],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
-    state_ent= State(2,[random.random(),1],[np.pi/4],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
+    state_gauss= State(2,[random.random(),1],[np.pi/4],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[], format='number')
+    state_sep = State(2,[random.random(),1],[0],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
+    state_ent= State(2,[random.random(),1],[np.pi/4],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
     #print(state.__dict__)
     result_gauss= state_gauss.optimize_ratio_with_bs(theta,2)
     while result_gauss.success == False:
       result_gauss= state_gauss.optimize_ratio_with_bs(theta,2)
     gauss_snr_opt+= [-result_gauss.fun]
-    result_sep= state_sep.optimize_ratio_with_bs(theta,2)
+
+
+    result_sep= state_sep.optimize_ratio_without_ps(theta,2)
     while result_sep.success == False:
-      result_sep= state_sep.optimize_ratio_with_bs(theta,2)
+      result_sep= state_sep.optimize_ratio_without_ps(theta,2)
     optimal_snr_sep+= [-result_sep.fun]
-    result_ent = state_ent.optimize_ratio_with_bs(theta,2)
+
+
+    result_ent = state_ent.optimize_ratio_without_ps(theta,2)
     while result_ent.success == False:
-      result_ent= state_ent.optimize_ratio_with_bs(theta,2)
+      result_ent= state_ent.optimize_ratio_without_ps(theta,2)
     optimal_snr_ent+= [-result_ent.fun]
-    print(result_gauss.x, result_sep.x, result_ent.x)
+    #print(result_gauss.x, result_sep.x, result_ent.x)
     
   
   colors=['black','purple','orange','green']
@@ -1402,12 +1409,12 @@ def multimode_plots():
 
 #check()
 #q_mandel(1,1)
-
+#snr_vs_stellar_rank(3,1,5)
 #gaussian_vs_rare_state(np.linspace(0.01,2,50), 5, 3)
 
-#snr_vs_stellar_rank(3,1,5)
+
 #fock_always_better()
-#entanglement_advantage(1,3,5)
+entanglement_advantage(1,3,5)
 #multimode_check(1)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
@@ -1421,5 +1428,5 @@ def multimode_plots():
 #multimode_optimization(3, 0.8, 4, 5)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'parameters')
+#heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'parameters')
 #snr_sv_comparison(1, 1, 10)
