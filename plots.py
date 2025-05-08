@@ -679,6 +679,19 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
 
     # Plot heatmaps
     if what_to_plot == 'parameters':
+      params = {'axes.linewidth': 2,
+         'axes.labelsize': 25,
+         'axes.titlesize': 25,
+         'axes.linewidth': 1.2,
+         'lines.markeredgecolor': "black",
+     	'lines.linewidth': 1.2,
+         'xtick.labelsize': 20,
+         'ytick.labelsize': 20,
+         "text.usetex": True,
+         "font.serif": ["Palatino"],
+         "font.family": "serif"
+         }
+      plt.rcParams.update(params)
       fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
       cf1 = ax1.contourf(T, Theta, Z_opt, levels=20, cmap='viridis', alpha=0.7)
@@ -1050,60 +1063,6 @@ def nongaussian_advantage(): #correr este código con MUCHOS más puntos (500 ap
   plt.show()
   return
 
-def optimal_strategy2():
-  temp_vec=np.linspace(0.4,1,3)
-  nu_vec = [1/np.tanh(1/(2* t)) for t in temp_vec ]
-  theta_vec = np.linspace(0.5,20,30)
-  cmap=cm.rainbow
-  norm = mcolors.Normalize(vmin=temp_vec.min(),vmax=temp_vec.max())
-  fig, ax = plt.subplots(1,1)
-  for t in temp_vec:
-    i=np.where(temp_vec==t)
-    nu= 1/np.tanh(1/(2* t))
-    n_th=(nu -1)/2
-    gaussian_snr_bound =[]
-    gaussian_snr_bound2 =  []
-    one_phadd =[]
-    two_phadd= []
-    three_phadd = []
-    #optimal_strategy=[]
-    index_1_ph = np.where(theta_vec > n_th+1)[0][0]  #identify the first value of theta where 1 photon addition can start to be applied
-    index_2_ph = np.where(theta_vec > 2*(n_th+1))[0][0]  #identify the first value of theta where 2 photon additions can start to be applied
-    index_3_ph = np.where(theta_vec > 3*(n_th+1))[0][0]  #identify the first value of theta where 3 photon additions can start to be applied
-    print(index_1_ph,index_2_ph, index_3_ph)
-    for theta in theta_vec:
-      z_gauss, a_sq_gauss, n2_gauss, snr_opt_gauss = find_optimal_gaussian(t, theta)
-      gaussian_snr_bound +=[np.log(snr_opt_gauss)]
-      if n_th+1.000001 < theta :
-        state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1], format='number')
-        result= state.optimize_ratio(theta,1)
-        while result.success == False:
-          result= state.optimize_ratio(theta,1)
-        one_phadd += [np.log(-result.fun)]
-      if 2*(n_th+1.000001) < theta:
-        state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1,1], format='number')
-        result= state.optimize_ratio(theta,1)
-        while result.success == False:
-          result= state.optimize_ratio(theta,1)
-        two_phadd += [np.log(-result.fun)]
-      if 3*(n_th+1.000001)< theta:
-        state = State(1,[random.random()],[],[random.random()],disp=[random.random(),random.random()], temp=[t],nongaussian_ops=[1,1,1], format='number')
-        result= state.optimize_ratio(theta,1)
-        while result.success == False:
-          result= state.optimize_ratio(theta,1)
-        three_phadd += [np.log(-result.fun)]
-      print('t, theta', t, theta)
-    ax.plot(theta_vec,gaussian_snr_bound,  color= cmap(norm(temp_vec[i]))) #we plot the gaussian bound
-    ax.plot(theta_vec[index_1_ph:], one_phadd, linestyle='dashed', color= cmap(norm(temp_vec[i])))
-    ax.plot(theta_vec[index_2_ph:], two_phadd, linestyle='dashdot', color= cmap(norm(temp_vec[i])))
-    ax.plot(theta_vec[index_3_ph:], three_phadd, linestyle='dotted', color= cmap(norm(temp_vec[i])))
-
-
-  cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, location='right') 
-  cbar.set_label(r'Noise $\gamma$')  
-  plt.show()
-
-  return
 
 
 def multimode_check(stellar_rank):  # since we are studying bipartite entanglement, it is sufficient to consider 2 modes
@@ -1448,7 +1407,7 @@ def multimode_plots():
 
 #snr_vs_stellar_rank(3,1,5)
 #fock_always_better()
-entanglement_advantage(1,3,5)
+#entanglement_advantage(1,3,5)
 #multimode_check(1)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
@@ -1462,5 +1421,5 @@ entanglement_advantage(1,3,5)
 #multimode_optimization(3, 0.8, 4, 5)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-#heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'parameters')
+heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'parameters')
 #snr_sv_comparison(1, 1, 10)
