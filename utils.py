@@ -664,7 +664,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
         bs_bounds = [(0,2*np.pi)]*(N*(N-1)//2)
         bounds = disp_bounds + squeezing_bounds +bs_bounds
         # Define constraints dictionary
-        constraint1 = {'type': 'ineq', 'fun': energy_constraint}
+        constraint1 = {'type': 'eq', 'fun': energy_constraint}
         constraint2 = {'type': 'ineq', 'fun': sq_constraint}
        
         
@@ -720,7 +720,7 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
           bs_bounds = [(0,2*np.pi)]*(N*(N-1)//2)
           bounds = disp_bounds + squeezing_bounds 
           # Define constraints dictionary
-          constraint1 = {'type': 'ineq', 'fun': energy_constraint}
+          constraint1 = {'type': 'eq', 'fun': energy_constraint}
           constraint2 = {'type': 'ineq', 'fun': sq_constraint}
         
           
@@ -788,20 +788,82 @@ def optimize_snr_cat(m, T, epsilon_constraint, z0):  #returns the optimal value 
         'fun': lambda z: epsilon_constraint - numerator(nu, z, m)
     }
   
-  bounds = [(0, 1)]
+  bounds = [(0.01, 1)]
   result = minimize(
         objective,
         z0,
         constraints=[constraint1],
         bounds=bounds,
         method='SLSQP',  # handles inequality constraints
-        options={'disp': True, 'maxiter': 10000, 'gtol': 1e-9}
+        options={'disp': True, 'maxiter': 10000, 'gtol': 1e-6}
     )
   print('m=', m, 'T=', T, 'optimal z', result.x)
   print(result.success)
   return -result.fun
 
 
+def optimize_snr_sq_phadd(m, T, epsilon_constraint, z0):  #returns the optimal value of snr_cat as a function of the system's temperature. the # of ph subtractions m,  and the constraint on deltaN \leq epsilon
+  #z0 is the initial guess for the squeezing parameter
+  
+
+  def I1(z,nu):
+    return  (nu/4)*(z-1/z)
+  def I4(z,nu):
+    return  (nu/4)*(z+1/z)+(1/2)
+  def tr(nu,z,r):
+    result =0
+    if r%2 == 0: #if r even
+      for j in range(0,r//2+1):
+        result += I4(z,nu)**(2*j)*I1(z,nu)**(r-2*j)*factorial(r)**2/(factorial(2*j)*factorial((r-2*j)//2)**2*2**(r-2*j))
+    elif r%2 == 1: #if r odd
+      for j in range(0,(r-1)//2+1):
+        result += I4(z,nu)**(2*j+1)*I1(z,nu)**(r-2*j-1)*factorial(r)**2/(factorial(2*j+1)*factorial((r-2*j-1)//2)**2*2**(r-2*j-1))
+    return result
+       
+  def n_cat(nu,z,m):
+    return tr(nu,z,m+1)/tr(nu,z,m)-1
+  def n0_cat(nu):
+    return (nu-1)/2
+  def numerator(nu,z,m):
+    return n_cat(nu,z,m)-n0_cat(nu)
+  #print('delta n', numerator(nu,z,m))
+  def denominator(nu,z,m):
+    return math.sqrt((-3*tr(nu,z,m)+tr(nu,z,m+2))/tr(nu,z,m)+1-n_cat(nu,z,m)**2)
+  def snr_cat(z,m,T): 
+    nu = 1/np.tanh(1/(2* T))
+    return numerator(nu,z,m)/denominator(nu,z,m)
+   
+  nu = 1/np.tanh(1/(2* T)) 
+  objective = lambda z: -snr_cat(z, m, T)
+
+    # Constraint: deltan(z, m, T) <= epsilon
+  constraint1 = {
+        'type': 'ineq',  # means: constraint_fun(z) >= 0 → we'll return epsilon - deltan
+        'fun': lambda z: epsilon_constraint - numerator(nu, z, m)
+    }
+  
+  bounds = [(0.01, 1)]
+  result = minimize(
+        objective,
+        z0,
+        constraints=[constraint1],
+        bounds=bounds,
+        method='SLSQP',  # handles inequality constraints
+        options={'disp': True, 'maxiter': 10000, 'gtol': 1e-6}
+    )
+  print('m=', m, 'T=', T, 'optimal z', result.x)
+  print(result.success)
+  return -result.fun
+
+def remove_outliers(vector, tolerance):
+  new_vector= vector
+  print(vector)
+  print(new_vector)
+  for i in range(1,len(vector)-1):
+    if np.abs(vector[i]-vector[i-1]) > tolerance or np.abs(vector[i]-vector[i+1]) > tolerance:
+        new_vector[i] = (vector[i+1]+vector[i-1])/2
+  print(new_vector)
+  return new_vector
 
 #optimal_state= State(1,[result.x[2]],[],[0,0],disp=[result.x[0],result.x[1]], temp=[0.1], nongaussian_ops=[1])
 #print(result)

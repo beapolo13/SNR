@@ -696,18 +696,18 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
       fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
       cf1 = ax1.contourf(T, Theta, Z_opt, levels=20, cmap='viridis', alpha=0.7)
-      fig.colorbar(cf1, ax=ax1, label=r'Squeezing parameter $z$')
+      fig.colorbar(cf1, ax=ax1, label=r'Optimal $z$')
 
       ax1.set_xlabel(r'$T [K]$')
       ax1.set_ylabel(r'$\epsilon$')
-      ax1.set_title(r'Squeezing Parameter $z$')
+      ax1.set_title(r'Squeezing')
 
       cf2 = ax2.contourf(T, Theta, Alpha_opt, levels=20, cmap='viridis', alpha=0.7)
-      fig.colorbar(cf2, ax=ax2, label=r'Displacement $|\alpha|^2$')
+      fig.colorbar(cf2, ax=ax2, label=r'Optimal $|\alpha|^2$')
 
       ax2.set_xlabel(r'$T [K]$')
       ax2.set_ylabel(r'$\epsilon$')
-      ax2.set_title(r'Displacement $|\alpha|^2$')
+      ax2.set_title(r'Displacement')
 
       plt.savefig('optimal_parameters_gaussian.pdf')
     
@@ -1093,42 +1093,54 @@ def multimode_check(stellar_rank):  # since we are studying bipartite entangleme
   return 
 
 def entanglement_advantage(rank, max_temp, theta):
-  t_vec = np.linspace(0.1,max_temp,10)
+  t_vec = np.linspace(0.1,max_temp,20)
   gauss_snr_opt =[]
-  optimal_snr_ent = []
-  optimal_snr_sep=[]
+  optimal_snr_phadd = []
+  snr_max=[]
+  snr_min=[]
   for t in t_vec:
-    print(t)
     nu = 1/np.tanh(1/(2* t))
-    state_gauss= State(2,[random.random(),1],[np.pi/4],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[], format='number')
-    state_sep = State(2,[random.random(),1],[0],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
-    state_ent= State(2,[random.random(),1],[np.pi/4],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
+    state_gauss= State(2,[random.random(),random.random()],[np.pi/4],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[], format='number')
+    state_phadd = State(2,[random.random(),random.random()],[random.random()],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
+    state_phadd_sep = State(2,[random.random(),random.random()],[0],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
     #print(state.__dict__)
     result_gauss= state_gauss.optimize_ratio_with_bs(theta,2)
     while result_gauss.success == False:
       result_gauss= state_gauss.optimize_ratio_with_bs(theta,2)
     gauss_snr_opt+= [-result_gauss.fun]
+    print(t,'optimal z',result_gauss.x[4:6])
 
 
-    result_sep= state_sep.optimize_ratio_without_ps(theta,2)
-    while result_sep.success == False:
-      result_sep= state_sep.optimize_ratio_without_ps(theta,2)
-    optimal_snr_sep+= [-result_sep.fun]
+    max_phadd= state_phadd.optimize_ratio_with_bs(theta,2)
+    while max_phadd.success == False:
+      max_phadd= state_phadd.optimize_ratio_with_bs(theta,2)
+    snr_max+= [-max_phadd.fun]
+    print(max_phadd.x)
+
+    min_phadd= state_phadd_sep.optimize_ratio_without_ps(theta,2)
+    while min_phadd.success == False:
+      min_phadd= state_phadd_sep.optimize_ratio_without_ps(theta,2)
+    snr_min+= [-min_phadd.fun]
+    print(min_phadd.x)
+    
+  
+    
 
 
-    result_ent = state_ent.optimize_ratio_without_ps(theta,2)
-    while result_ent.success == False:
-      result_ent= state_ent.optimize_ratio_without_ps(theta,2)
-    optimal_snr_ent+= [-result_ent.fun]
+    # result_ent = state_ent.optimize_ratio_without_ps(theta,2)
+    # while result_ent.success == False:
+    #   result_ent= state_ent.optimize_ratio_without_ps(theta,2)
+    # optimal_snr_ent+= [-result_ent.fun]
     #print(result_gauss.x, result_sep.x, result_ent.x)
     
   
   colors=['black','purple','orange','green']
   fig,ax =plt.subplots()
+  gauss_snr_opt = remove_outliers(gauss_snr_opt,0.05)
   ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
-  ax.plot(t_vec, optimal_snr_sep, color= 'black', alpha=0.5)
-  ax.plot(t_vec,optimal_snr_ent,color='black')
-  ax.fill_between(t_vec,optimal_snr_sep,optimal_snr_ent, color='grey',alpha=0.3)
+  ax.plot(t_vec, snr_min, color= 'black', alpha=0.5)
+  ax.plot(t_vec,snr_max,color='black')
+  #ax.fill_between(t_vec,optimal_snr_sep,optimal_snr_ent, color='grey',alpha=0.3)
   ax.set_yscale('log')
   plt.grid(True)
   plt.legend(['Gaussian bound']+ ['1 photon addition min', '1 photon addition max'])
@@ -1298,6 +1310,8 @@ def check():
     return (nu-1)/2
   def numerator(nu,z,m):
     return n_cat(nu,z,m)-n0_cat(nu)
+  
+  print(numerator(1.5,0.01,50))
   #print('delta n', numerator(nu,z,m))
   def denominator(nu,z,m):
     return math.sqrt(n_cat(nu,z,m)+tr(nu,z,m+2)/tr(nu,z,m)-n_cat(nu,z,m)**2)
@@ -1310,79 +1324,96 @@ def check():
   nu_vec = [1/np.tanh(1/(2* T)) for T in t]
   #first check what cat states fulfill the condition on maximum ergotropy
 
-  n0= [np.min([numerator(nu,z,0) for z in z_vec]) for nu in nu_vec]
-  n1= [np.min([numerator(nu,z,1) for z in z_vec]) for nu in nu_vec]
-  n2= [np.min([numerator(nu,z,2) for z in z_vec]) for nu in nu_vec]
-  n3= [np.min([numerator(nu,z,3) for z in z_vec]) for nu in nu_vec]
-  n4= [np.min([numerator(nu,z,4) for z in z_vec]) for nu in nu_vec]
-  n5= [np.min([numerator(nu,z,5) for z in z_vec]) for nu in nu_vec]
-  n6= [np.min([numerator(nu,z,6) for z in z_vec]) for nu in nu_vec]
-  n7= [np.min([numerator(nu,z,7) for z in z_vec]) for nu in nu_vec]
+  # n0= [np.min([numerator(nu,z,0) for z in z_vec]) for nu in nu_vec]
+  # n1= [np.min([numerator(nu,z,1) for z in z_vec]) for nu in nu_vec]
+  # n2= [np.min([numerator(nu,z,2) for z in z_vec]) for nu in nu_vec]
+  # n3= [np.min([numerator(nu,z,3) for z in z_vec]) for nu in nu_vec]
+  # n4= [np.min([numerator(nu,z,4) for z in z_vec]) for nu in nu_vec]
+  # n5= [np.min([numerator(nu,z,5) for z in z_vec]) for nu in nu_vec]
+  # n6= [np.min([numerator(nu,z,6) for z in z_vec]) for nu in nu_vec]
+  # n7= [np.min([numerator(nu,z,7) for z in z_vec]) for nu in nu_vec]
 
-  n0= [numerator(nu,1,0) for nu in nu_vec]
-  n1= [numerator(nu,1,1) for nu in nu_vec]
-  n2= [numerator(nu,1,2) for nu in nu_vec]
-  n3= [numerator(nu,1,3) for nu in nu_vec]
-  n4= [numerator(nu,1,4) for nu in nu_vec]
-  n5= [numerator(nu,1,5) for nu in nu_vec]
-  n6= [numerator(nu,1,6) for nu in nu_vec]
-  n7= [numerator(nu,1,7) for nu in nu_vec]
-  plt.plot(t, n0)
-  plt.plot(t, n1)
-  plt.plot(t, n2)
-  plt.plot(t, n3)
-  plt.plot(t, n4)
-  plt.plot(t, n5)
-  plt.plot(t, n6)
-  plt.plot(t, n7)
-  plt.legend(['Gauss','1','2','3','4','5','6','7'])
-  plt.show()
+  # n0= [numerator(nu,1,0) for nu in nu_vec]
+  # n1= [numerator(nu,1,1) for nu in nu_vec]
+  # n2= [numerator(nu,1,2) for nu in nu_vec]
+  # n3= [numerator(nu,1,3) for nu in nu_vec]
+  # n4= [numerator(nu,1,4) for nu in nu_vec]
+  # n5= [numerator(nu,1,5) for nu in nu_vec]
+  # n6= [numerator(nu,1,6) for nu in nu_vec]
+  # n7= [numerator(nu,1,7) for nu in nu_vec]
+  # plt.plot(t, n0)
+  # plt.plot(t, n1)
+  # plt.plot(t, n2)
+  # plt.plot(t, n3)
+  # plt.plot(t, n4)
+  # plt.plot(t, n5)
+  # plt.plot(t, n6)
+  # plt.plot(t, n7)
+  # plt.legend(['Gauss','1','2','3','4','5','6','7'])
+  # plt.show()
 
  
-  z0= [np.max([snr_cat(z,0,T) for z in z_vec]) for T in t]
-  z1=[np.max([snr_cat(z,1,T) for z in z_vec]) for T in t]
-  z2= [np.max([snr_cat(z,2,T) for z in z_vec]) for T in t]
-  z3=[np.max([snr_cat(z,3,T) for z in z_vec]) for T in t]
-  z4=[np.max([snr_cat(z,4,T) for z in z_vec]) for T in t]
-  z5=[np.max([snr_cat(z,5,T) for z in z_vec]) for T in t]
-  z6= [np.max([snr_cat(z,6,T) for z in z_vec]) for T in t]
-  z7 = [np.max([snr_cat(z,7,T) for z in z_vec]) for T in t]
+  # z0= [np.max([snr_cat(z,0,T) for z in z_vec]) for T in t]
+  # z1=[np.max([snr_cat(z,1,T) for z in z_vec]) for T in t]
+  # z2= [np.max([snr_cat(z,2,T) for z in z_vec]) for T in t]
+  # z3=[np.max([snr_cat(z,3,T) for z in z_vec]) for T in t]
+  # z4=[np.max([snr_cat(z,4,T) for z in z_vec]) for T in t]
+  # z5=[np.max([snr_cat(z,5,T) for z in z_vec]) for T in t]
+  # z6= [np.max([snr_cat(z,6,T) for z in z_vec]) for T in t]
+  # z7 = [np.max([snr_cat(z,7,T) for z in z_vec]) for T in t]
 
-  plt.plot(t,z0)
-  plt.plot(t,z1)
-  plt.plot(t,z2)
-  plt.plot(t,z3)
-  plt.plot(t,z4)
-  plt.plot(t,z5)
-  plt.plot(t,z6)
-  plt.plot(t,z7)
-  plt.legend(['Gauss','1','2','3','4','5','6','7'])
-  #plt.legend(['Gaussian','1 cat', '1 wick', '2cat', '2 wick', '3 cat', '3 wick'])
-  plt.show()
+  # plt.plot(t,z0)
+  # plt.plot(t,z1)
+  # plt.plot(t,z2)
+  # plt.plot(t,z3)
+  # plt.plot(t,z4)
+  # plt.plot(t,z5)
+  # plt.plot(t,z6)
+  # plt.plot(t,z7)
+  # plt.legend(['Gauss','1','2','3','4','5','6','7'])
+  # #plt.legend(['Gaussian','1 cat', '1 wick', '2cat', '2 wick', '3 cat', '3 wick'])
+  # plt.show()
+  epsilon =5
+  plot= 'cat'
+  if plot == 'cat':
+    z0= [optimize_snr_cat(0, T, epsilon, 0.5) for T in t]
+    z1=[optimize_snr_cat(1, T, epsilon, 0.5) for T in t]
+    z2= [optimize_snr_cat(2, T, epsilon, 0.5) for T in t]
+    z3=[optimize_snr_cat(3, T, epsilon, 0.5) for T in t]
+    z4=[optimize_snr_cat(4, T, epsilon, 0.5) for T in t]
+    z5=[optimize_snr_cat(5, T, epsilon, 0.5) for T in t]
+    z6= [optimize_snr_cat(6, T, epsilon, 0.5) for T in t]
+    z7 = [optimize_snr_cat(7, T, epsilon, 0.5) for T in t]
+    #x= [optimize_snr_cat(50, T, epsilon, 0.5) for T in t]
+    plt.plot(t,z0)
+    plt.plot(t,z1)
+    plt.plot(t,z2)
+    plt.plot(t,z3)
+    plt.plot(t,z4)
+    plt.plot(t,z5)
+    plt.plot(t,z6)
+    plt.plot(t,z7)
+    #plt.plot(t,x)
 
-  z0= [optimize_snr_cat(0, T, 5, 0.5) for T in t]
-  z1=[optimize_snr_cat(1, T, 5, 0.5) for T in t]
-  z2= [optimize_snr_cat(2, T, 5, 0.5) for T in t]
-  z3=[optimize_snr_cat(3, T, 5, 0.5) for T in t]
-  z4=[optimize_snr_cat(4, T, 5, 0.5) for T in t]
-  z5=[optimize_snr_cat(5, T, 5, 0.5) for T in t]
-  z6= [optimize_snr_cat(6, T, 5, 0.5) for T in t]
-  z7 = [optimize_snr_cat(7, T, 5, 0.5) for T in t]
-  
-  # plt.plot(t,y1a)
-  # plt.plot(t,y1b)
-  # plt.plot(t,y2a)
-  # plt.plot(t,y2b)
-  # plt.plot(t,y3a)
-  # plt.plot(t,y3b)
-  plt.plot(t,z0)
-  plt.plot(t,z1)
-  plt.plot(t,z2)
-  plt.plot(t,z3)
-  plt.plot(t,z4)
-  plt.plot(t,z5)
-  plt.plot(t,z6)
-  plt.plot(t,z7)
+  if plot == 'phadd':
+    z0= [optimize_snr_sq_phadd(0, T, epsilon, 0.5) for T in t]
+    z1=[optimize_snr_sq_phadd(1, T, epsilon, 0.5) for T in t]
+    z2= [optimize_snr_sq_phadd(2, T, epsilon, 0.5) for T in t]
+    z3=[optimize_snr_sq_phadd(3, T, epsilon, 0.5) for T in t]
+    z4=[optimize_snr_sq_phadd(4, T, epsilon, 0.5) for T in t]
+    z5=[optimize_snr_sq_phadd(5, T, epsilon, 0.5) for T in t]
+    z6= [optimize_snr_sq_phadd(6, T, epsilon, 0.5) for T in t]
+    z7 = [optimize_snr_sq_phadd(7, T, epsilon, 0.5) for T in t]
+    
+
+    plt.plot(t,z0)
+    plt.plot(t,z1)
+    plt.plot(t,z2)
+    plt.plot(t,z3)
+    plt.plot(t,z4)
+    plt.plot(t,z5)
+    plt.plot(t,z6)
+    plt.plot(t,z7)
   plt.legend(['Gauss','1','2','3','4','5','6','7'])
   #plt.legend(['Gaussian','1 cat', '1 wick', '2cat', '2 wick', '3 cat', '3 wick'])
   plt.show()
@@ -1407,14 +1438,14 @@ def multimode_plots():
 
 #multimode_plots()
 
-#check()
+check()
 #q_mandel(1,1)
 #snr_vs_stellar_rank(3,1,5)
 #gaussian_vs_rare_state(np.linspace(0.01,2,50), 5, 3)
 
 
 #fock_always_better()
-entanglement_advantage(1,3,5)
+#entanglement_advantage(2,2,5)
 #multimode_check(1)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
