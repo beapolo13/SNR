@@ -199,7 +199,8 @@ def gaussian_mixed_new_bound(n_shots):
         t1= t2/alpha+ 9*np.random.random()
     
         k1= 1/np.tanh((w/t1))
-        k2= 1/np.tanh((w*alpha/t2))
+        k2=k1
+        #k2= 1/np.tanh((w*alpha/t2))
 
         k=(k1+k2)/2
         if k1 < k2:
@@ -266,7 +267,7 @@ def gaussian_mixed_new_bound(n_shots):
 
     plt.xlabel('Number of iterations')
     plt.ylabel(r'Bound - $\Delta \epsilon_{r e l}$')
-    plt.savefig('Bound_violation_separable_vs_entangled.pdf')
+    #plt.savefig('Bound_violation_separable_vs_entangled.pdf')
     plt.show()
     return
 
@@ -882,13 +883,13 @@ def photon_sub_tms():
     plt.show()
     return
 
-photon_sub_tms()
+#photon_sub_tms()
 #photon_add_tms()
 #plot_onemodegaussian()
 #bound_violation_tms(1,1)
 #heatmap_bound(1)
 
-#gaussian_mixed_new_bound(10000)
+gaussian_mixed_new_bound(10000)
 #one_dim_plot_squeezing_pure(np.pi/4)
 #mutual_information_TMSQ()
 #relative_ergotropic_gap_TMSQ()
