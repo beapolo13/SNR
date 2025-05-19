@@ -27,7 +27,7 @@ from utils import *
 #from plots import *
 
 params = {'axes.linewidth': 2,
-         'axes.labelsize': 15,
+         'axes.labelsize': 20,
          'axes.titlesize': 15,
          'axes.linewidth': 2,
          'lines.markeredgecolor': "black",
@@ -371,18 +371,19 @@ def bound_violation_tms_reduced(alpha):
     i=0
     fig,ax=plt.subplots(1,3,figsize=(10,6), constrained_layout=True)
     W_total=[]
+   
+    
     for gamma in gamma_vec:
 
-        z_vec=np.linspace(0.1,1,200)
+        z_vec=np.linspace(0.1,1,400)
         r_vec=np.array([-np.log(z)/2 for z in z_vec])
-        k_vec= np.linspace(1.001+gamma/2,10,200)
+        k_vec= np.linspace(1.001+gamma/2,10,400)
         X=z_vec
         Y=k_vec
         X_grid, Y_grid =np.meshgrid(X,Y)
         x= np.pi/5
         epsilon = 1e-6
-        x_center = ((X_grid.min() + X_grid.max()) / 2 ) 
-        y_center = (Y_grid.min() + Y_grid.max()) / 2 
+        
 
 
     
@@ -394,12 +395,13 @@ def bound_violation_tms_reduced(alpha):
         W_arr= np.array(diff)
         W = list(W_arr)
         W_total+=[W]
-        c=ax[i].pcolormesh(X_grid,Y_grid,W,norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=cm.get_cmap('viridis', 20))
+
+        c=ax[i].pcolormesh(X_grid,Y_grid,W, norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=plt.colormaps.get_cmap('viridis'),  shading='auto')
         #cbar=fig.colorbar(c,ax=ax[i], label=r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
         contour_levels = [0]
-        contour = ax[i].contour(X_grid, Y_grid, W, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
-        ax[i].contour(X_grid, Y_grid, sep, levels=contour_levels, colors='red', linewidths=1.5, label='PPT')
-        ax[i].clabel(contour, inline=True, fontsize=10,fmt='PPT',manual=[(x_center,y_center)])
+        contour = ax[i].contour(X_grid, Y_grid, W, levels=contour_levels, colors='red', linestyles='dashed', linewidths=1.5)
+        contour2= ax[i].contour(X_grid, Y_grid, sep, levels=contour_levels, colors='red', linewidths=1.5)
+        ax[i].clabel(contour2, inline=True, fontsize=15,fmt='PPT',colors= 'black', manual=True)
         ax[i].set_xlim(X.min(), X.max())
         ax[i].set_yscale('log')
         ax[i].set_ylim(Y.min() , Y.max())
@@ -410,26 +412,27 @@ def bound_violation_tms_reduced(alpha):
         c.set_label(r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
 
         
-        plt.savefig(f'Bound violation reduced.pdf')
+        
         plt.subplots_adjust(wspace=2)
         y=[gamma/2+1] + [(gamma/2+1)//1 + i for i in range(1,8)] + [10]
         ax[i].set_yticks(y)
         i+=1
     
     mappable = None
-    cmap = cm.get_cmap('viridis', 20)
+    cmap=plt.colormaps.get_cmap('viridis')
     global_min = min(W_total)
     global_max = max(W_total)
     titles = [r'$\gamma=1$', r'$\gamma=0.5$', r'$\gamma=0$']
 
     norm = colors.SymLogNorm(linthresh=epsilon, vmin=global_min, vmax=global_max)
     for ax, d, title in zip(ax, W_total, titles):
-        c = ax.pcolormesh(X_grid, Y_grid, d, norm=norm, cmap=cmap, shading='auto')
+        c = ax.pcolormesh(X_grid, Y_grid, d, norm=norm, cmap=cmap,shading='auto')
         ax.set_title(title, fontsize=12)
         if mappable is None:
             mappable = c  # Only need one for the colorbar
 
-    fig.colorbar(mappable, ax=ax, orientation='vertical', label=r'Bound - $\Delta \epsilon_{r e l}$ for TMS states', fraction=0.3, pad=0.04)
+    fig.colorbar(mappable, ax=ax, orientation='vertical', label=r'$B_1$ - $\Delta \epsilon_{r e l}$', fraction=0.3, pad=0.04)
+    plt.savefig(f'Bound violation reduced.pdf')
     plt.show()
     return
          
@@ -951,10 +954,10 @@ def photon_sub_tms():
     return
 
 def photon_sub_tms_reduced():
-    z_vec=np.linspace(0.1,1,500)
+    z_vec=np.linspace(0.1,1,200)
     
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
-    t_vec = np.linspace(0.1,10,500)
+    t_vec = np.linspace(0.1,10,200)
     print(z_vec, t_vec)
     
     k_vec= np.array([1/np.tanh((1/(2*t))) for t in t_vec])
@@ -980,32 +983,33 @@ def photon_sub_tms_reduced():
     c2=ax.pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis_r', 40))
 
     #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
-    cbar=fig.colorbar(c2,ax=ax, label=r'Ergotropic gap for TMS photon-subtracted states')
+    cbar=fig.colorbar(c2,ax=ax, label=r'$\Delta \epsilon_{rel}$')
     contour_levels = [0]
     contour = ax.contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+    ax.clabel(contour, inline=True, fontsize=20,fmt='SV')
     #contour = ax[1].contour(X_grid, Y_grid, W,levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     #ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
     ax.set_xlim(X.min(), X.max())
     ax.set_yscale('log')
     ax.set_ylim(Y.min() , Y.max())
     #ax.grid(True, which='both', linestyle='--')
-    ax.set_ylabel(r'Temperature factor $k$')
-    ax.set_xlabel(r'Squeezing parameter $z$')
+    ax.set_ylabel(r'$k$')
+    ax.set_xlabel(r' $z$')
 
     c2.set_label(r'Ergotropic gap for TMS photon-subtracted states')
     plt.subplots_adjust(wspace=2)
     y=[1] + [1 + i for i in range(1,8)] + [10]
     ax.set_yticks(y)
-    beep()
+    #beep()
     plt.savefig(f'Photon-subtracted reduced.pdf')
     plt.show()
     return
 
 
-photon_sub_tms_reduced()
+#photon_sub_tms_reduced()
 #photon_add_tms()
 #plot_onemodegaussian()
-#bound_violation_tms_reduced(1)
+bound_violation_tms_reduced(1)
 #heatmap_bound(1)
 
 #gaussian_mixed_new_bound(10000)
