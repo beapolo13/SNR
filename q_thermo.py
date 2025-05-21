@@ -396,7 +396,7 @@ def bound_violation_tms_reduced(alpha):
         W = list(W_arr)
         W_total+=[W]
 
-        c=ax[i].pcolormesh(X_grid,Y_grid,W, norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=plt.colormaps.get_cmap('viridis'),  shading='auto')
+        c=ax[i].pcolormesh(X_grid,Y_grid,W, norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=cm.get_cmap('viridis', 40),  shading='auto')
         #cbar=fig.colorbar(c,ax=ax[i], label=r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
         contour_levels = [0]
         contour = ax[i].contour(X_grid, Y_grid, W, levels=contour_levels, colors='red', linestyles='dashed', linewidths=1.5)
@@ -419,7 +419,7 @@ def bound_violation_tms_reduced(alpha):
         i+=1
     
     mappable = None
-    cmap=plt.colormaps.get_cmap('viridis')
+    cmap=cm.get_cmap('viridis', 40)
     global_min = min(W_total)
     global_max = max(W_total)
     titles = [r'$\gamma=1$', r'$\gamma=0.5$', r'$\gamma=0$']
@@ -431,7 +431,7 @@ def bound_violation_tms_reduced(alpha):
         if mappable is None:
             mappable = c  # Only need one for the colorbar
 
-    fig.colorbar(mappable, ax=ax, orientation='vertical', label=r'$B_1$ - $\Delta \epsilon_{r e l}$', fraction=0.3, pad=0.04)
+    fig.colorbar(mappable, ax=ax, orientation='vertical', label=r'$B_{\text{max}}^{\text{sep}}$ - $\Delta \epsilon_{r e l}$', fraction=0.3, pad=0.04)
     plt.savefig(f'Bound violation reduced.pdf')
     plt.show()
     return
