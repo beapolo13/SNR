@@ -216,7 +216,7 @@ def gaussian_mixed_new_bound(n_shots):
             print('vacuum')
             vacuum_count+=1
             continue
-
+        
         x= 2 * np.pi* np.random.random()
         z1= np.random.random()
         z2= np.random.random()
@@ -266,6 +266,57 @@ def gaussian_mixed_new_bound(n_shots):
 
     plt.xlabel('Number of iterations')
     plt.ylabel(r'Bound - $\Delta \epsilon_{r e l}$')
+    #plt.savefig('Bound_violation_separable_vs_entangled.pdf')
+    plt.show()
+    return
+
+def bounds(n_shots):
+    fig,ax = plt.subplots()
+    entangled_state_count=0
+    pure_count=0
+    vacuum_count=0
+    w = 1
+    alpha = 10
+    k1=3
+    k2=2
+    #k1= 1/np.tanh((w/t1))
+    #k2= 1/np.tanh((w*alpha/t2))
+    k=(k1+k2)/2
+    gamma=(k1-k2)/2
+    bound1= (-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)+8*k*gamma))/((k-1)*(1+alpha)+ gamma*(1-alpha))
+    bound2= (-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)-8*k*gamma))/((k-1)*(1+alpha)+ gamma*(1-alpha))
+    print(k,gamma,alpha)
+    print('b1', bound1, 'b2', bound2)
+    # Dummy handles for legend
+    entangled_handle = ax.scatter([], [], c='b', s=10, label='Entangled')
+    separable_handle = ax.scatter([], [], c='r', s=10, label='Separable')
+    for i in range(n_shots):
+        x= 2 * np.pi* np.random.random()
+        z1= np.random.random()
+        z2= np.random.random()
+    
+        sep= z1*z2*(1+k1**2*k2**2-k1**2-k2**2)-4*cos(x)**2*sin(x)**2*(k1*k2*(z1**2+z2**2)-(k1**2+k2**2)*(z1*z2))
+       
+        erg_gap = (-(k*(1+alpha)+ gamma*(1-alpha)) + sqrt((k+gamma)**2*cos(x)**4+(k-gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2)))+alpha*sqrt((k-gamma)**2*cos(x)**4+(k+gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z1**2+z2**2)/(z1*z2))))/((k-1)*(1+alpha)+ gamma*(1-alpha))
+        bound1= (-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)+8*k*gamma))/((k-1)*(1+alpha)+ gamma*(1-alpha))
+        bound2= (-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)-8*k*gamma))/((k-1)*(1+alpha)+ gamma*(1-alpha))
+        
+        if sep < 0:
+            entangled_state_count +=1 
+            ax.scatter(i,erg_gap, c='b', s=5, label='Entangled')
+        else:
+            ax.scatter(i,erg_gap, c='r', s=5, label='Separable')      
+        i+=1
+    print(f'number of not separable states: {entangled_state_count}')
+    print(f'Pure state count {pure_count}')
+    print(f'Vacuum ground state count {vacuum_count}')
+    ax.axhline(y=bound1, xmin=0, xmax=n_shots, color='red', linestyle='dashed')
+    ax.axhline(y=bound2, xmin=0, xmax=n_shots, color='blue', linestyle='dashed')
+    ax.set_yscale('symlog')
+    ax.legend(handles=[entangled_handle, separable_handle], fontsize=20)
+    ax.set_ylim(bottom=-0.05)
+    plt.xlabel('Number of iterations', fontsize=20)
+    plt.ylabel(r'$\Delta \epsilon_{r e l}$', fontsize=20)
     #plt.savefig('Bound_violation_separable_vs_entangled.pdf')
     plt.show()
     return
@@ -1009,10 +1060,10 @@ def photon_sub_tms_reduced():
 #photon_sub_tms_reduced()
 #photon_add_tms()
 #plot_onemodegaussian()
-bound_violation_tms_reduced(1)
+#bound_violation_tms_reduced(1)
 #heatmap_bound(1)
-
-#gaussian_mixed_new_bound(10000)
+bounds(5000)
+#gaussian_mixed_new_bound(1000)
 #one_dim_plot_squeezing_pure(np.pi/4)
 #mutual_information_TMSQ()
 #relative_ergotropic_gap_TMSQ()
