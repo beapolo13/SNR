@@ -32,8 +32,8 @@ params = {'axes.linewidth': 2,
          'axes.linewidth': 2,
          'lines.markeredgecolor': "black",
      	'lines.linewidth': 2,
-         'xtick.labelsize': 10,
-         'ytick.labelsize': 10,
+         'xtick.labelsize': 15,
+         'ytick.labelsize': 15,
          "text.usetex": True,
          "font.serif": ["Palatino"],
          "font.family": "serif"
@@ -315,7 +315,7 @@ def bounds(n_shots):
     ax.set_yscale('symlog')
     ax.legend(handles=[entangled_handle, separable_handle], fontsize=20)
     ax.set_ylim(bottom=-0.05)
-    plt.xlabel('Number of iterations', fontsize=20)
+    plt.xlabel('Sample', fontsize=20)
     plt.ylabel(r'$\Delta \epsilon_{r e l}$', fontsize=20)
     #plt.savefig('Bound_violation_separable_vs_entangled.pdf')
     plt.show()
