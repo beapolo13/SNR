@@ -27,14 +27,15 @@ from utils import *
 #from plots import *
 
 params = {'axes.linewidth': 2,
-         'axes.labelsize': 20,
-         'axes.titlesize': 15,
+         'axes.labelsize': 40,
+         'axes.titlesize': 45,
          'axes.linewidth': 2,
          'lines.markeredgecolor': "black",
      	'lines.linewidth': 2,
-         'xtick.labelsize': 15,
-         'ytick.labelsize': 15,
+         'xtick.labelsize': 35,
+         'ytick.labelsize': 35,
          "text.usetex": True,
+         "text.latex.preamble": r"\usepackage{amsmath}\usepackage{amssymb}",
          "font.serif": ["Palatino"],
          "font.family": "serif"
          }
@@ -452,17 +453,19 @@ def bound_violation_tms_reduced(alpha):
         contour_levels = [0]
         contour = ax[i].contour(X_grid, Y_grid, W, levels=contour_levels, colors='red', linestyles='dashed', linewidths=1.5)
         contour2= ax[i].contour(X_grid, Y_grid, sep, levels=contour_levels, colors='red', linewidths=1.5)
-        ax[i].clabel(contour2, inline=True, fontsize=15,fmt='PPT',colors= 'black', manual=True)
+      
+        ax[i].clabel(contour2, inline=True, fontsize=30,fmt='PPT',colors= 'black', manual=True)
+
         ax[i].set_xlim(X.min(), X.max())
-        ax[i].set_yscale('log')
+        #ax[i].set_yscale('log')
         ax[i].set_ylim(Y.min() , Y.max())
         #ax.grid(True, which='both', linestyle='--')
-        ax[i].set_ylabel(r'$k$')
+        if i==0:
+            ax[i].set_ylabel(r'$k$')
         ax[i].set_xlabel(r'$z$')
         
         c.set_label(r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
 
-        
         
         plt.subplots_adjust(wspace=2)
         y=[gamma/2+1] + [(gamma/2+1)//1 + i for i in range(1,8)] + [10]
@@ -478,11 +481,11 @@ def bound_violation_tms_reduced(alpha):
     norm = colors.SymLogNorm(linthresh=epsilon, vmin=global_min, vmax=global_max)
     for ax, d, title in zip(ax, W_total, titles):
         c = ax.pcolormesh(X_grid, Y_grid, d, norm=norm, cmap=cmap,shading='auto')
-        ax.set_title(title, fontsize=12)
+        ax.set_title(title, fontsize=18)
         if mappable is None:
             mappable = c  # Only need one for the colorbar
 
-    fig.colorbar(mappable, ax=ax, orientation='vertical', label=r'$B_{\text{max}}^{\text{sep}}$ - $\Delta \epsilon_{r e l}$', fraction=0.3, pad=0.04)
+    fig.colorbar(mappable, ax=ax, orientation='vertical', label=r'$B_{\text{max}}^{\text{sep}} - \Delta \epsilon_{\text{rel}}$', ticks=[-1000, -0.1, 0,10**(-3), 1], fraction=0.3, pad=0.08)
     plt.savefig(f'Bound violation reduced.pdf')
     plt.show()
     return
@@ -1060,9 +1063,9 @@ def photon_sub_tms_reduced():
 #photon_sub_tms_reduced()
 #photon_add_tms()
 #plot_onemodegaussian()
-#bound_violation_tms_reduced(1)
+bound_violation_tms_reduced(1)
 #heatmap_bound(1)
-bounds(5000)
+#bounds(5000)
 #gaussian_mixed_new_bound(1000)
 #one_dim_plot_squeezing_pure(np.pi/4)
 #mutual_information_TMSQ()
