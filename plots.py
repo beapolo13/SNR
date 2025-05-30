@@ -717,7 +717,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
       contour_levels = [1]
       plt.contourf(T, Theta, SNR_opt, levels=20, cmap='viridis', alpha=0.7)
       contour = ax.contour(T, Theta, g, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
-      ax.clabel(contour, inline=True, fontsize=10,fmt=r'$g^{(0)}=1$')
+      ax.clabel(contour, inline=True, fontsize=10,fmt=r'$g^{(2)}(0)=1$')
       plt.colorbar(label=r'Optimal $\Gamma$')
       plt.xlabel(r'$T [K]$')
       plt.ylabel(r'$\epsilon$')
@@ -1100,7 +1100,7 @@ def entanglement_advantage(rank, max_temp, theta):
   snr_min=[]
   for t in t_vec:
     nu = 1/np.tanh(1/(2* t))
-    state_gauss= State(2,[random.random(),random.random()],[np.pi/4],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[], format='number')
+    state_gauss= State(2,[random.random(),random.random()],[np.pi/4],[0,0],disp=[0,0,0,0], temp=[t,t],nongaussian_ops=[], format='number')
     state_phadd = State(2,[random.random(),random.random()],[random.random()],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
     state_phadd_sep = State(2,[random.random(),random.random()],[0],[0,0],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t,t],nongaussian_ops=[1]*rank, format='number')
     #print(state.__dict__)
@@ -1137,6 +1137,40 @@ def entanglement_advantage(rank, max_temp, theta):
   colors=['black','purple','orange','green']
   fig,ax =plt.subplots()
   gauss_snr_opt = remove_outliers(gauss_snr_opt,0.05)
+  ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
+  ax.plot(t_vec, snr_min, color= 'black', alpha=0.5)
+  ax.plot(t_vec,snr_max,color='black')
+  #ax.fill_between(t_vec,optimal_snr_sep,optimal_snr_ent, color='grey',alpha=0.3)
+  ax.set_yscale('log')
+  plt.grid(True)
+  plt.legend(['Gaussian bound']+ ['1 photon addition min', '1 photon addition max'])
+  plt.xlabel(r'$T [K]$')
+  plt.ylabel(r'Optimal $\Gamma$')
+  #plt.savefig('entanglement_adv.pdf')
+  plt.show()
+  return
+
+def entanglement_advantage_v2(rank,max_temp, theta):
+  t_vec = np.linspace(0.1,max_temp,20)
+  gauss_snr_opt =[]
+  optimal_snr_phadd = []
+  snr_max=[]
+  snr_min=[]
+  sq_vec=np.linspace(0.01,1,20)
+  for t in t_vec:
+    nu = 1/np.tanh(1/(2* t))
+    
+    snr_max += [max([State(2,[1,sq],[np.pi/4],[0,0],disp=[0,0,0,0], temp=[t,t],nongaussian_ops=[1]*rank, format='number').SNR_extr() for sq in sq_vec])]
+    snr_min += [max([State(2,[1,sq],[0],[0,0],disp=[0,0,0,0], temp=[t,t],nongaussian_ops=[1]*rank, format='number').SNR_extr() for sq in sq_vec])]
+    
+    gauss_snr_opt+= [[max([State(2,[1,sq],[np.pi/4],[0,0],disp=[0,0,0,0], temp=[t,t],nongaussian_ops=[]*rank, format='number').SNR_extr() for sq in sq_vec])]]
+
+  
+    
+
+  
+  colors=['black','purple','orange','green']
+  fig,ax =plt.subplots()
   ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
   ax.plot(t_vec, snr_min, color= 'black', alpha=0.5)
   ax.plot(t_vec,snr_max,color='black')
@@ -1438,14 +1472,14 @@ def multimode_plots():
 
 #multimode_plots()
 
-check()
+#check()
 #q_mandel(1,1)
 #snr_vs_stellar_rank(3,1,5)
 #gaussian_vs_rare_state(np.linspace(0.01,2,50), 5, 3)
 
 
 #fock_always_better()
-#entanglement_advantage(2,2,5)
+entanglement_advantage_v2(1,2,5)
 #multimode_check(1)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
@@ -1459,5 +1493,5 @@ check()
 #multimode_optimization(3, 0.8, 4, 5)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-#heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'parameters')
+#heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'snr')
 #snr_sv_comparison(1, 1, 10)

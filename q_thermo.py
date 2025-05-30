@@ -32,8 +32,8 @@ params = {'axes.linewidth': 2,
          'axes.linewidth': 2,
          'lines.markeredgecolor': "black",
      	'lines.linewidth': 2,
-         'xtick.labelsize': 35,
-         'ytick.labelsize': 35,
+         'xtick.labelsize': 12,
+         'ytick.labelsize': 12,
          "text.usetex": True,
          "text.latex.preamble": r"\usepackage{amsmath}\usepackage{amssymb}",
          "font.serif": ["Palatino"],
@@ -289,8 +289,8 @@ def bounds(n_shots):
     print(k,gamma,alpha)
     print('b1', bound1, 'b2', bound2)
     # Dummy handles for legend
-    entangled_handle = ax.scatter([], [], c='b', s=10, label='Entangled')
-    separable_handle = ax.scatter([], [], c='r', s=10, label='Separable')
+    entangled_handle = ax.scatter([], [],marker='v',c='blue',  s=10, label='Entangled')
+    separable_handle = ax.scatter([], [], marker='^',c='red' ,s=10, label='Separable')
     for i in range(n_shots):
         x= 2 * np.pi* np.random.random()
         z1= np.random.random()
@@ -304,20 +304,20 @@ def bounds(n_shots):
         
         if sep < 0:
             entangled_state_count +=1 
-            ax.scatter(i,erg_gap, c='b', s=5, label='Entangled')
+            ax.scatter(i,erg_gap,c='blue', marker='v',s=5)
         else:
-            ax.scatter(i,erg_gap, c='r', s=5, label='Separable')      
+            ax.scatter(i,erg_gap,c='red', marker='^', s=5)      
         i+=1
     print(f'number of not separable states: {entangled_state_count}')
     print(f'Pure state count {pure_count}')
     print(f'Vacuum ground state count {vacuum_count}')
-    ax.axhline(y=bound1, xmin=0, xmax=n_shots, color='red', linestyle='dashed')
+    ax.axhline(y=bound1, xmin=0, xmax=n_shots, color='red', linestyle='dashed', label='B1')
     ax.axhline(y=bound2, xmin=0, xmax=n_shots, color='blue', linestyle='dashed')
     ax.set_yscale('symlog')
-    ax.legend(handles=[entangled_handle, separable_handle], fontsize=20)
+    ax.legend(handles=[entangled_handle, separable_handle], fontsize=12)
     ax.set_ylim(bottom=-0.05)
-    plt.xlabel('Sample', fontsize=20)
-    plt.ylabel(r'$\Delta \epsilon_{r e l}$', fontsize=20)
+    plt.xlabel('Sample', fontsize=16)
+    plt.ylabel(r'$\Delta \epsilon_{\text{rel}}$', fontsize=16)
     #plt.savefig('Bound_violation_separable_vs_entangled.pdf')
     plt.show()
     return
@@ -423,7 +423,7 @@ def bound_violation_tms_reduced(alpha):
     i=0
     fig,ax=plt.subplots(1,3,figsize=(10,6), constrained_layout=True)
     W_total=[]
-   
+    y_labels=[['1.5','5','10'],['1.25','5','10'],['1','5','10'] ]
     
     for gamma in gamma_vec:
 
@@ -468,8 +468,9 @@ def bound_violation_tms_reduced(alpha):
 
         
         plt.subplots_adjust(wspace=2)
-        y=[gamma/2+1] + [(gamma/2+1)//1 + i for i in range(1,8)] + [10]
-        ax[i].set_yticks(y)
+        y=[gamma/2+1] + [(gamma/2+1)//1 + 4] + [10]
+        
+        ax[i].set_yticks(ticks=y, labels=y_labels[i])
         i+=1
     
     mappable = None
@@ -481,7 +482,7 @@ def bound_violation_tms_reduced(alpha):
     norm = colors.SymLogNorm(linthresh=epsilon, vmin=global_min, vmax=global_max)
     for ax, d, title in zip(ax, W_total, titles):
         c = ax.pcolormesh(X_grid, Y_grid, d, norm=norm, cmap=cmap,shading='auto')
-        ax.set_title(title, fontsize=18)
+        ax.set_title(title, fontsize=40)
         if mappable is None:
             mappable = c  # Only need one for the colorbar
 
@@ -1037,10 +1038,10 @@ def photon_sub_tms_reduced():
     c2=ax.pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis_r', 40))
 
     #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
-    cbar=fig.colorbar(c2,ax=ax, label=r'$\Delta \epsilon_{rel}$')
+    cbar=fig.colorbar(c2,ax=ax, label=r'$\Delta \epsilon_{\text{rel}}$')
     contour_levels = [0]
     contour = ax.contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
-    ax.clabel(contour, inline=True, fontsize=20,fmt='SV')
+    ax.clabel(contour, inline=True, fontsize=30,fmt='SV')
     #contour = ax[1].contour(X_grid, Y_grid, W,levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     #ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
     ax.set_xlim(X.min(), X.max())
@@ -1048,6 +1049,7 @@ def photon_sub_tms_reduced():
     ax.set_ylim(Y.min() , Y.max())
     #ax.grid(True, which='both', linestyle='--')
     ax.set_ylabel(r'$k$')
+    ax.set_yticks(ticks=[1,10], labels=['1', '10'])
     ax.set_xlabel(r' $z$')
 
     c2.set_label(r'Ergotropic gap for TMS photon-subtracted states')
@@ -1063,9 +1065,9 @@ def photon_sub_tms_reduced():
 #photon_sub_tms_reduced()
 #photon_add_tms()
 #plot_onemodegaussian()
-bound_violation_tms_reduced(1)
+#bound_violation_tms_reduced(1)
 #heatmap_bound(1)
-#bounds(5000)
+bounds(500)
 #gaussian_mixed_new_bound(1000)
 #one_dim_plot_squeezing_pure(np.pi/4)
 #mutual_information_TMSQ()
