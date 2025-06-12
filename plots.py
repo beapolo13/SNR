@@ -26,14 +26,15 @@ from utils import *
 from expectation_values_cat import *
 from optimizations import *
 params = {'axes.linewidth': 2,
-         'axes.labelsize': 15,
-         'axes.titlesize': 15,
-         'axes.linewidth': 1.2,
+         'axes.labelsize': 22,
+         'axes.titlesize': 45,
+         'axes.linewidth': 2,
          'lines.markeredgecolor': "black",
-     	'lines.linewidth': 1.2,
-         'xtick.labelsize': 10,
-         'ytick.labelsize': 10,
+     	'lines.linewidth': 2,
+         'xtick.labelsize': 18,
+         'ytick.labelsize': 18,
          "text.usetex": True,
+         "text.latex.preamble": r"\usepackage{amsmath}\usepackage{amssymb}",
          "font.serif": ["Palatino"],
          "font.family": "serif"
          }
@@ -1186,26 +1187,32 @@ def entanglement_advantage_v2(rank,max_temp, theta):
 
 
 def fock_always_better():
-  t_vec=np.linspace(0.1,5,50)
-  z_vec=np.linspace(0.01,1,50)
+  t_vec=np.linspace(0.5,5,100)
+  z_vec=np.linspace(0.01,1,100)
   X=z_vec
   Y=t_vec
   X_grid, Y_grid =np.meshgrid(X,Y)
   grid= np.vstack([X_grid.ravel(),Y_grid.ravel()]).T 
-  W= [[np.real(State(2,[1,z_vec[i]],[np.pi/4],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t_vec[j],t_vec[j]],nongaussian_ops=[1], format='number').SNR_extr()) for i in range(len(X))] for j in range(len(Y))]
+  W= [[np.real(State(1,[z_vec[i]],[],[0],disp=[0,0], temp=[t_vec[j]],nongaussian_ops=[1], format='number').SNR_extr()) for i in range(len(X))] for j in range(len(Y))]
+  #W= [[np.real(State(2,[1,z_vec[i]],[np.pi/4],[random.random(),random.random()],disp=[random.random(),random.random(),random.random(),random.random()], temp=[t_vec[j],t_vec[j]],nongaussian_ops=[1], format='number').SNR_extr()) for i in range(len(X))] for j in range(len(Y))]
   print(np.shape(W), type(W))
   fig,ax=plt.subplots(figsize=(10,6))
-  c=ax.pcolormesh(X_grid,Y_grid,W,norm=mcolors.LogNorm(vmin=np.min(W), vmax=np.max(W)),cmap='jet')
-  cbar=fig.colorbar(c,ax=ax, label='SNR extr')
+  c=ax.pcolormesh(X_grid,Y_grid,W,norm=mcolors.LogNorm(vmin=np.min(W), vmax=np.max(W)),cmap='viridis')
+  cbar=fig.colorbar(c,ax=ax, label=r'$\Gamma$')
   ax.set_xlim(X.min(), X.max())
   #ax.set_yscale('log')
   print(Y.min() , Y.max())
   ax.set_ylim(Y.min() , Y.max())
   ax.grid(True, which='both', linestyle='--')
-  ax.set_xlabel('Squeezing parameter z', fontsize=22)
-  ax.set_ylabel(r'Noise $\gamma$', fontsize=22)
+  ax.set_xlabel(r'Squeezing  $z$', fontsize=22)
+  ax.set_ylabel(r'$T[K]$', fontsize=22)
+  ax.set_xticks(ticks=[0,0.2,0.4,0.6,0.8,1], labels=['0','0.2','0.4','0.6','0.8',r'$|1\rangle$'])
+  #ax.set_yticks(ticks=[0.5,1,1.5,2], labels=['0.5','1','1.5','2'])
   c.set_label('SNR extr')
+  cbar.ax.set_yticks(ticks=[0.8,0.9,1,1.5],labels=['0.8','0.9','1', '1.5'])
   plt.show()
+
+fock_always_better()
 
 
 def find_optimal_coherent_fock(t, theta,n): #finds the optimal squeezing, displacement parameters & optimal SNR for a certain temperature through the lagrange multipliers method
@@ -1479,7 +1486,7 @@ def multimode_plots():
 
 
 #fock_always_better()
-entanglement_advantage_v2(1,2,5)
+#entanglement_advantage_v2(1,2,5)
 #multimode_check(1)
 #plot_optimal_gaussian(np.linspace(0,15,1000),10)
 #optimal_strategy()
