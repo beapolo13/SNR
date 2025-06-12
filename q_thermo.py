@@ -292,7 +292,7 @@ def bounds(n_shots):
     entangled_handle = ax.scatter([], [],marker='v',c='blue',  s=10, label='Entangled')
     separable_handle = ax.scatter([], [], marker='^',c='red' ,s=10, label='Separable')
     for i in range(n_shots):
-        x= 2 * np.pi* np.random.random()
+        x= (np.pi/4)* np.random.random()
         z1= np.random.random()
         z2= np.random.random()
     
