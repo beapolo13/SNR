@@ -1009,10 +1009,10 @@ def photon_sub_tms():
     return
 
 def photon_sub_tms_reduced():
-    z_vec=np.linspace(0.1,1,200)
+    z_vec=np.linspace(0.1,1,20)
     
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
-    t_vec = np.linspace(0.1,10,200)
+    t_vec = np.linspace(0.1,10,10)
     print(z_vec, t_vec)
     
     k_vec= np.array([1/np.tanh((1/(2*t))) for t in t_vec])
@@ -1023,7 +1023,7 @@ def photon_sub_tms_reduced():
     epsilon = 1e-6
 
     
-    sv = [[np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]],[-1]).SV()) for z in z_vec] for j in range(len(k_vec))]
+    sv = [[np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]],[-1]).SV_4rank()) for z in z_vec] for j in range(len(k_vec))]
     sv_arr = np.array(sv)
     
     
@@ -1035,7 +1035,7 @@ def photon_sub_tms_reduced():
     fig,ax=plt.subplots(1,1,figsize=(10,6))
     
 
-    c2=ax.pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis_r', 40))
+    c2=ax.pcolormesh(X_grid,Y_grid,sv,cmap=cm.get_cmap('viridis_r', 40))
 
     #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
     cbar=fig.colorbar(c2,ax=ax, label=r'$\Delta \epsilon_{\text{rel}}$')
@@ -1062,12 +1062,12 @@ def photon_sub_tms_reduced():
     return
 
 
-#photon_sub_tms_reduced()
+photon_sub_tms_reduced()
 #photon_add_tms()
 #plot_onemodegaussian()
 #bound_violation_tms_reduced(1)
 #heatmap_bound(1)
-bounds(500)
+#bounds(500)
 #gaussian_mixed_new_bound(1000)
 #one_dim_plot_squeezing_pure(np.pi/4)
 #mutual_information_TMSQ()

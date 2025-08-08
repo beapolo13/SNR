@@ -507,7 +507,41 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
     #print(sum1,sum2,sum3,sum4)
     return (sum1*sum2)-(sum3*sum4)
   
+  def SV_extended(self):  #works for N=2 only
+    if self.N != 2: 
+      print('This function only computes bipartite entanglement! N has to be 2')
+      return
+    sum1= self.expectationvalue(['a','a'],[1,1])/self.K()
+    sum2= self.expectationvalue(['a','a'],[1,2])/self.K()
+    sum3= self.expectationvalue(['a','a','adag'],[1,1,2])/self.K()
+    sum4= self.expectationvalue(['a','a'],[2,1])/self.K()
+    sum5= self.expectationvalue(['a','a'],[2,2])/self.K()
+    sum6= self.expectationvalue(['a','a','adag'],[2,1,2])/self.K()
+    sum7= self.expectationvalue(['a','adag','a'],[2,1,1])/self.K()
+    sum8= self.expectationvalue(['a','adag','a'],[2,2,1])/self.K()
+    sum9= self.expectationvalue(['a','adag','a','adag'],[1,1,1,1])/self.K()
+    #print(sum1,sum2,sum3,sum4)
+    return (sum1*sum5*sum9+sum4*sum3*sum8+sum7*sum2*sum6)-(sum3*sum5*sum7+sum6*sum8*sum1+sum9*sum4*sum2)
   
+  def SV_4rank(self):
+    a=self.expectationvalue(['adag','a'],[1,1])/self.K()
+    b=self.expectationvalue(['adag','a'],[1,2])/self.K()
+    c=0
+    d=0
+    e=self.expectationvalue(['adag','a'],[2,1])/self.K()
+    f=self.expectationvalue(['adag','a'],[2,2])/self.K()
+    g=0
+    h=0
+    i=0
+    j=0
+    k=self.expectationvalue(['adag','adag','a','a'],[1,1,1,1])/self.K()
+    l=self.expectationvalue(['adag','adag','a','a'],[1,1,2,2])/self.K()
+    m=0
+    n=0
+    o=self.expectationvalue(['adag','adag','a','a'],[2,2,1,1])/self.K()
+    p=self.expectationvalue(['adag','adag','a','a'],[2,2,2,2])/self.K()
+    return d*g*j*m-c*h*j*m-d*f*k*m+b*h*k*m+c*f*l*m-b*g*l*m-i*d*g*n+i*c*h*n-a*h*k*n+a*g*l*n+i*d*f*o-i*b*h*o+a*h*j*o-a*f*l*o-i*c*f*p+i*b*g*p-a*g*j*p+a*f*k*p+d*k*n*e-c*l*n*e-d*j*o*e+b*l*o*e+c*j*p*e-b*k*p*e
+
   def antibunching(self): #N=1 or N=2
     if self.N==1:
       sum1= self.expectationvalue(['adag','adag','a','a'],[1,1,1,1])
