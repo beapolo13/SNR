@@ -1062,7 +1062,7 @@ def photon_sub_tms_reduced():
     return
 
 
-photon_sub_tms_reduced()
+#photon_sub_tms_reduced()
 #photon_add_tms()
 #plot_onemodegaussian()
 #bound_violation_tms_reduced(1)
