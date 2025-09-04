@@ -1009,7 +1009,7 @@ def photon_sub_tms():
     return
 
 def photon_sub_tms_reduced():
-    z_vec=np.linspace(0.1,1,20)
+    z_vec=np.linspace(0.1,1,10)
     
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
     t_vec = np.linspace(0.1,10,10)
@@ -1020,10 +1020,9 @@ def photon_sub_tms_reduced():
     Y=k_vec
     X_grid, Y_grid =np.meshgrid(X,Y)
     x= np.pi/4
-    epsilon = 1e-6
 
     
-    sv = [[np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]],[-1]).SV_4rank()) for z in z_vec] for j in range(len(k_vec))]
+    sv = [[np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]],[-1]).SV()) for z in z_vec] for j in range(len(k_vec))]
     sv_arr = np.array(sv)
     
     
@@ -1031,17 +1030,25 @@ def photon_sub_tms_reduced():
     W_arr= np.array(W)
     print(W)
     
-
+    certifying_value= 0
+    for i in range(len(z_vec)):
+        for j in range(len(k_vec)):
+            value= W[i][j]
+            if value > certifying_value and sv[i][j]>0:
+                certifying_value = value
     fig,ax=plt.subplots(1,1,figsize=(10,6))
     
 
-    c2=ax.pcolormesh(X_grid,Y_grid,sv,cmap=cm.get_cmap('viridis_r', 40))
+    c2=ax.pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis_r', 40))
 
     #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
     cbar=fig.colorbar(c2,ax=ax, label=r'$\Delta \epsilon_{\text{rel}}$')
     contour_levels = [0]
+    second_contour_levels =[certifying_value]
     contour = ax.contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+    contour2 = ax.contour(X_grid, Y_grid, W, levels=second_contour_levels, colors='red', linestyles='solid', linewidths=1.5)
     ax.clabel(contour, inline=True, fontsize=30,fmt='SV')
+    ax.clabel(contour2, inline=True, fontsize=30,fmt='REG')
     #contour = ax[1].contour(X_grid, Y_grid, W,levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     #ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
     ax.set_xlim(X.min(), X.max())
@@ -1062,7 +1069,7 @@ def photon_sub_tms_reduced():
     return
 
 
-#photon_sub_tms_reduced()
+photon_sub_tms_reduced()
 #photon_add_tms()
 #plot_onemodegaussian()
 #bound_violation_tms_reduced(1)
