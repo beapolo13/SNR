@@ -433,8 +433,8 @@ def bound_violation_tms_reduced(alpha):
         X=z_vec
         Y=k_vec
         X_grid, Y_grid =np.meshgrid(X,Y)
-        x= np.pi/5
-        epsilon = 1e-6
+        x= np.pi/4
+        epsilon = 1e-3
         
 
 
@@ -447,14 +447,16 @@ def bound_violation_tms_reduced(alpha):
         W_arr= np.array(diff)
         W = list(W_arr)
         W_total+=[W]
-
-        c=ax[i].pcolormesh(X_grid,Y_grid,W, norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=cm.get_cmap('viridis', 40),  shading='auto')
+        #norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max())
+        c=ax[i].pcolormesh(X_grid,Y_grid,W_arr+epsilon,cmap=cm.get_cmap('viridis', 40),norm=colors.Normalize(vmin=min(W_arr), vmax=max(W_arr)), shading='auto')
         #cbar=fig.colorbar(c,ax=ax[i], label=r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
         contour_levels = [0]
         contour = ax[i].contour(X_grid, Y_grid, W, levels=contour_levels, colors='red', linestyles='dashed', linewidths=1.5)
         contour2= ax[i].contour(X_grid, Y_grid, sep, levels=contour_levels, colors='red', linewidths=1.5)
-      
-        ax[i].clabel(contour2, inline=True, fontsize=30,fmt='PPT',colors= 'black', manual=True)
+
+        x_center = 0.5 * (ax[i].get_xlim()[0] + ax[i].get_xlim()[1])
+        y_center = 0.5 * (1.75*ax[i].get_ylim()[0] + 0.25*ax[i].get_ylim()[1])
+        ax[i].clabel(contour2, inline=True, fontsize=20,fmt='PPT',colors= 'black', manual=[(x_center, y_center)])
 
         ax[i].set_xlim(X.min(), X.max())
         #ax[i].set_yscale('log')
@@ -474,21 +476,22 @@ def bound_violation_tms_reduced(alpha):
         i+=1
     
     mappable = None
-    cmap=cm.get_cmap('viridis', 40)
+    cmap=cm.get_cmap('viridis', 20)
     global_min = min(W_total)
     global_max = max(W_total)
     titles = [r'$\gamma=1$', r'$\gamma=0.5$', r'$\gamma=0$']
-
-    norm = colors.SymLogNorm(linthresh=epsilon, vmin=global_min, vmax=global_max)
+    #norm=colors.Normalize(vmin=min(W_arr), vmax=max(W_arr))
+    norm = colors.SymLogNorm(linthresh=1e-12, vmin=global_min, vmax=global_max)
     for ax, d, title in zip(ax, W_total, titles):
         c = ax.pcolormesh(X_grid, Y_grid, d, norm=norm, cmap=cmap,shading='auto')
         ax.set_title(title, fontsize=40)
         if mappable is None:
             mappable = c  # Only need one for the colorbar
 
-    fig.colorbar(mappable, ax=ax, orientation='vertical', label=r'$B_{\text{max}}^{\text{sep}} - \Delta \epsilon_{\text{rel}}$', ticks=[-1000, -0.1, 0,10**(-3), 1], fraction=0.3, pad=0.08)
+    fig.colorbar(mappable, ax=ax, orientation='vertical', label=r'$\mathcal{B}_{\text{max}}^{\text{sep}} - \Delta  \mathcal{E}_{\text{rel}}$', ticks=[-1000, -0.1, 0,10**(-3), 1], fraction=0.3, pad=0.08)
     plt.savefig(f'Bound violation reduced.pdf')
     plt.show()
+    beep()
     return
          
 
@@ -1009,10 +1012,10 @@ def photon_sub_tms():
     return
 
 def photon_sub_tms_reduced():
-    z_vec=np.linspace(0.1,1,10)
+    z_vec=np.linspace(0.1,1,100)
     
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
-    t_vec = np.linspace(0.1,10,10)
+    t_vec = np.linspace(0.1,10,100)
     print(z_vec, t_vec)
     
     k_vec= np.array([1/np.tanh((1/(2*t))) for t in t_vec])
@@ -1042,13 +1045,12 @@ def photon_sub_tms_reduced():
     c2=ax.pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis_r', 40))
 
     #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
-    cbar=fig.colorbar(c2,ax=ax, label=r'$\Delta \epsilon_{\text{rel}}$')
+    cbar=fig.colorbar(c2,ax=ax, label=r'$\Delta \mathcal{E}_{\text{rel}}$')
     contour_levels = [0]
     second_contour_levels =[certifying_value]
-    contour = ax.contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
-    contour2 = ax.contour(X_grid, Y_grid, W, levels=second_contour_levels, colors='red', linestyles='solid', linewidths=1.5)
+    contour = ax.contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='solid', linewidths=1.5)
+    contour2 = ax.contour(X_grid, Y_grid, W, levels=second_contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     ax.clabel(contour, inline=True, fontsize=30,fmt='SV')
-    ax.clabel(contour2, inline=True, fontsize=30,fmt='REG')
     #contour = ax[1].contour(X_grid, Y_grid, W,levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     #ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
     ax.set_xlim(X.min(), X.max())
@@ -1069,10 +1071,10 @@ def photon_sub_tms_reduced():
     return
 
 
-photon_sub_tms_reduced()
+#photon_sub_tms_reduced()
 #photon_add_tms()
 #plot_onemodegaussian()
-#bound_violation_tms_reduced(1)
+bound_violation_tms_reduced(1)
 #heatmap_bound(1)
 #bounds(500)
 #gaussian_mixed_new_bound(1000)
