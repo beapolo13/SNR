@@ -98,6 +98,7 @@ def covariance_matrix_check(t,z,x,cutoff,phi):
     print('test1',sigma_0,identity4,P,np.matmul(sigma_0-identity4,P) )
     print(np.trace((sigma_0-identity4)@P))
     cov1=covariance_matrix(basis_ops,rho)
+    print(cov1)
     cov2=(sigma_0 + 2*(np.matmul((sigma_0-identity4)@P,(sigma_0-identity4)))/np.trace((sigma_0-identity4)@P))/2
     print('Numerical matrix',cov1)
     print('Exact matrix', np.round(cov2,3))
@@ -299,6 +300,7 @@ def gaussian_reg_phsub_on_superposition_ofmodes(z1,z2,phi,nu):
   def apply_local_sq(matrix, s1,s2):
     S = np.array([[s1,0,0,0],[0,1/s1,0,0],[0,0,s2,0],[0,0,0,1/s2]])
     return S @ matrix @S.T
+  
   res= tests_ph_subnongauss(z1,z2,phi,nu)
   #print(res)
   #print(res[1][1], res[3][3])
@@ -442,27 +444,76 @@ def tests_ph_subnongauss(z1,z2,phi,nu):
 def obtain_cm_werner():
     N = 2   # truncation for each mode (must be > n+1)
     n = 0   # choose your n
-    print('hello')
     ket_n_n   = qt.tensor(qt.basis(N, n),   qt.basis(N, n))
     ket_np1_np1 = qt.tensor(qt.basis(N, n+1), qt.basis(N, n+1))
     psi = (ket_n_n + ket_np1_np1).unit()
-    a = qt.destroy(n)
-    X = (a + a.dag()) / np.sqrt(2)
-    P = (a - a.dag()) / (np.sqrt(2) * 1j)
-    print(X,P)
-    ops = [X, P]   # list of observables
+    modes=2
+    
+    
 
     # state: mixture
     p = 1
-    rho = p * psi*psi.dag() + (1-p) * qt.qeye(N)/N
-    print(rho)
+    id = qt.qeye(N**2)
+    id.dims = [[2,2],[2,2]]  # now consistent with rho
+    
+ 
+    rho = p*psi*psi.dag() + (1-p)*id/N
+    rho.dims = [[2,2],[2,2]]  # two-mode dims
     # covariance matrix
-    V = qt.covariance_matrix(rho, ops)
+    a1 = qt.tensor(qt.destroy(2), qt.qeye(2))
+    # mode 2 operator
+    a2 = qt.tensor(qt.qeye(2), qt.destroy(2))
+    q1 = (a1 + a1.dag())/np.sqrt(2)
+    p1 = (a1 - a1.dag())/(1j*np.sqrt(2))
+    q2 = (a2 + a2.dag())/np.sqrt(2)
+    p2 = (a2 - a2.dag())/(1j*np.sqrt(2))
+    V = covariance_matrix(rho, [q1, p1, q2, p2])
     print(V)
     return V
 
+def obtain_cm_werner_numpy(N=10, n=1, p=0.5):
+    # Two-mode superposition |n,n> + |n+1,n+1>
+    def create_2modeket(N,n1,n2):
+        return qt.tensor(qt.basis(N, n1),   qt.basis(N, n2))
+    ket_n_n   = create_2modeket(N,n,n)
+    ket_np1_np1 = create_2modeket(N,n+1,n+1)
+    
 
-obtain_cm_werner()
+    psi_plus = (ket_n_n + ket_np1_np1).unit().full().flatten()
+
+    psi_minus = (ket_n_n - ket_np1_np1).unit().full().flatten()
+
+    #psi2= (create_2modeket(N,n-1,n)+create_2modeket(N,n,n+1)).unit().full().flatten()
+
+    # Density matrix
+    rho = (1+p)*0.5*np.outer(psi_plus, psi_plus.conj()) + (1-p)*0.5*np.outer(psi_minus, psi_minus.conj())
+    
+    # Single-mode annihilation
+    a1 = qt.tensor(qt.destroy(N), qt.qeye(N)).full()
+    # mode 2 operator
+    a2 = qt.tensor(qt.qeye(N), qt.destroy(N)).full()
+    # Quadratures
+    X1 = (a1 + a1.conj().T)/np.sqrt(2)
+    P1 = (a1 - a1.conj().T)/(1j*np.sqrt(2))
+    X2 = (a2 + a2.conj().T)/np.sqrt(2)
+    P2 = (a2 - a2.conj().T)/(1j*np.sqrt(2))
+
+    ops = [X1, P1, X2, P2]
+    V = np.zeros((4,4), dtype=float)
+
+    def expt(op):
+        return np.trace(rho @ op)
+
+    for i in range(4):
+        for j in range(4):
+            V[i,j] = (expt(ops[i] @ ops[j]) + expt(ops[j] @ ops[i])) - 2*expt(ops[i])*expt(ops[j])
+
+    return V
+
+V = obtain_cm_werner_numpy()
+print(V)
+
+#obtain_cm_werner()
 
 #covariance_matrix_check(2,0.6,np.pi/4,35,np.pi/6)
 #plot_general_ergotropy('tms photonsub on superposition of modes')

@@ -1074,7 +1074,7 @@ def photon_sub_tms_reduced():
 #photon_sub_tms_reduced()
 #photon_add_tms()
 #plot_onemodegaussian()
-bound_violation_tms_reduced(1)
+#bound_violation_tms_reduced(1)
 #heatmap_bound(1)
 #bounds(500)
 #gaussian_mixed_new_bound(1000)
