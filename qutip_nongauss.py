@@ -439,9 +439,33 @@ def tests_ph_subnongauss(z1,z2,phi,nu):
     result = V_0 + (2/trace1)*(result_prel@(V_0-Id))
     return result
 
+def obtain_cm_werner():
+    N = 2   # truncation for each mode (must be > n+1)
+    n = 0   # choose your n
+    print('hello')
+    ket_n_n   = qt.tensor(qt.basis(N, n),   qt.basis(N, n))
+    ket_np1_np1 = qt.tensor(qt.basis(N, n+1), qt.basis(N, n+1))
+    psi = (ket_n_n + ket_np1_np1).unit()
+    a = qt.destroy(n)
+    X = (a + a.dag()) / np.sqrt(2)
+    P = (a - a.dag()) / (np.sqrt(2) * 1j)
+    print(X,P)
+    ops = [X, P]   # list of observables
+
+    # state: mixture
+    p = 1
+    rho = p * psi*psi.dag() + (1-p) * qt.qeye(N)/N
+    print(rho)
+    # covariance matrix
+    V = qt.covariance_matrix(rho, ops)
+    print(V)
+    return V
+
+
+obtain_cm_werner()
 
 #covariance_matrix_check(2,0.6,np.pi/4,35,np.pi/6)
-plot_general_ergotropy('tms photonsub on superposition of modes')
+#plot_general_ergotropy('tms photonsub on superposition of modes')
 #PARAMETERS
 t1= 1.5  #temperature of first mode (between 0 and infty)
 t2= 1.5 #temperature of second mode (between 0 and infty)
