@@ -1048,6 +1048,7 @@ def photon_sub_tms_reduced():
     cbar=fig.colorbar(c2,ax=ax, label=r'$\Delta \mathcal{E}_{\text{rel}}$')
     contour_levels = [0]
     second_contour_levels =[certifying_value]
+    print('Max value for separable is', certifying_value)
     contour = ax.contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='solid', linewidths=1.5)
     contour2 = ax.contour(X_grid, Y_grid, W, levels=second_contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     ax.clabel(contour, inline=True, fontsize=30,fmt='SV')
@@ -1071,7 +1072,7 @@ def photon_sub_tms_reduced():
     return
 
 
-#photon_sub_tms_reduced()
+photon_sub_tms_reduced()
 #photon_add_tms()
 #plot_onemodegaussian()
 #bound_violation_tms_reduced(1)
