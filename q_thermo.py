@@ -1012,10 +1012,10 @@ def photon_sub_tms():
     return
 
 def photon_sub_tms_reduced():
-    z_vec=np.linspace(0.1,1,100)
+    z_vec=np.linspace(0.1,1,200)
     
     r_vec=np.array([-np.log(z)/2 for z in z_vec])
-    t_vec = np.linspace(0.1,10,100)
+    t_vec = np.linspace(0.1,10,200)
     print(z_vec, t_vec)
     
     k_vec= np.array([1/np.tanh((1/(2*t))) for t in t_vec])
@@ -1051,7 +1051,8 @@ def photon_sub_tms_reduced():
     print('Max value for separable is', certifying_value)
     contour = ax.contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='solid', linewidths=1.5)
     contour2 = ax.contour(X_grid, Y_grid, W, levels=second_contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
-    ax.clabel(contour, inline=True, fontsize=30,fmt='SV')
+    ax.clabel(contour, inline=True, fontsize=25,fmt='SV')
+    ax.clabel(contour2, inline=True, fontsize=20,fmt=r'$\Delta \mathcal{E}_{\text{rel}} \approx 1.11$')
     #contour = ax[1].contour(X_grid, Y_grid, W,levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     #ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
     ax.set_xlim(X.min(), X.max())
