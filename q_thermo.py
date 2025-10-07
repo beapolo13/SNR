@@ -1052,9 +1052,11 @@ def photon_sub_tms_reduced():
     contour = ax.contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='solid', linewidths=1.5)
     contour2 = ax.contour(X_grid, Y_grid, W, levels=second_contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     ax.clabel(contour, inline=True, fontsize=25,fmt='SV')
-    ax.clabel(contour2, inline=True, fontsize=20,fmt=r'$\Delta \mathcal{E}_{\text{rel}} \approx 1.11$')
+    #ax.clabel(contour2,inline=False,fontsize=20,fmt=r'$\Delta \mathcal{E}_{\text{rel}} \approx 1.11$',manual=[(0.2, 1.0)])   # <-- pick a good (x, y) in data coords
+    #ax.clabel(contour2, inline= True, fontsize=20,fmt=r'$\Delta \mathcal{E}_{\text{rel}} \approx 1.11$')
     #contour = ax[1].contour(X_grid, Y_grid, W,levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     #ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
+    ax.text(0.28, 1.0,  r'$\Delta \mathcal{E}_{\text{rel}} \approx 1.11$',fontsize=25, rotation=-25)
     ax.set_xlim(X.min(), X.max())
     ax.set_yscale('log')
     ax.set_ylim(Y.min() , Y.max())
