@@ -31,8 +31,8 @@ params = {'axes.linewidth': 2,
          'axes.linewidth': 2,
          'lines.markeredgecolor': "black",
      	'lines.linewidth': 2,
-         'xtick.labelsize': 18,
-         'ytick.labelsize': 18,
+         'xtick.labelsize': 16,
+         'ytick.labelsize': 16,
          "text.usetex": True,
          "text.latex.preamble": r"\usepackage{amsmath}\usepackage{amssymb}",
          "font.serif": ["Palatino"],
@@ -718,10 +718,12 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
       contour_levels = [1]
       plt.contourf(T, Theta, SNR_opt, levels=20, cmap='viridis', alpha=0.7)
       contour = ax.contour(T, Theta, g, levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
-      ax.clabel(contour, inline=True, fontsize=10,fmt=r'$g^{(2)}(0)=1$')
+      ax.clabel(contour, inline=True, fontsize=14,fmt=r'$g^{(2)}(0)=1$')
       plt.colorbar(label=r'Optimal $\Gamma$')
       plt.xlabel(r'$T [K]$')
       plt.ylabel(r'$\epsilon$')
+      ax.text(0.25, 4.0, 'Sub-Poissonian', fontsize=14,verticalalignment='bottom',horizontalalignment='left')
+      ax.text(1.0, 2, 'Super-Poissonian', fontsize=14,verticalalignment='bottom',horizontalalignment='left')
       #plt.title(r'Optimal $SNR_{ext}$')
       plt.savefig('optimal_snr.pdf')
 
@@ -734,7 +736,7 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
       plt.xlabel(r'$T [K]$')
       plt.ylabel(r'$\epsilon [\omega]$')
       #plt.title(r'Optimal $SNR_{ext}$')
-      plt.savefig('g_on_optimal_gaussian.pdf')
+      #plt.savefig('g_on_optimal_gaussian.pdf')
 
     plt.tight_layout()
     plt.show()
@@ -1212,7 +1214,7 @@ def fock_always_better():
   cbar.ax.set_yticks(ticks=[0.8,0.9,1,1.5],labels=['0.8','0.9','1', '1.5'])
   plt.show()
 
-fock_always_better()
+
 
 
 def find_optimal_coherent_fock(t, theta,n): #finds the optimal squeezing, displacement parameters & optimal SNR for a certain temperature through the lagrange multipliers method
@@ -1500,5 +1502,5 @@ def multimode_plots():
 #multimode_optimization(3, 0.8, 4, 5)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-#heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'snr')
+heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'snr')
 #snr_sv_comparison(1, 1, 10)
