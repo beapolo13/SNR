@@ -745,17 +745,17 @@ def heatmap_optimal_gaussian(t_vec, theta_vec, what_to_plot):
 
 def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
   #the ergotropy constraint is given by temperature and max_stellar_rank
-  t_vec = np.linspace(0.05,max_temp,2)
+  t_vec = np.linspace(0.01,0.6,30)
   if theta < max_stellar_rank*0.5*(1/np.tanh(1/(2* t_vec[-1])) + 1):
     print('Not feasible')
   gauss_snr_opt =[find_optimal_gaussian(t, theta) for t in t_vec]
-
+  print(gauss_snr_opt)
 
   optimal_snr = []
   for i in range(max_stellar_rank+1):
     optimal_snr += [[]]
     i+= 1
-  optimal_snr += [[],[]]
+  #optimal_snr += [[],[]]
   print(np.shape(optimal_snr))
   for t in t_vec:
     nu = 1/np.tanh(1/(2* t))
@@ -766,19 +766,21 @@ def snr_vs_stellar_rank(max_stellar_rank, max_temp, theta):
       while result.success == False:
         result= state.optimize_ratio(theta,1)
       optimal_snr[rank]+= [-result.fun]
-    optimal_snr[-2] += [find_optimal_coherent_fock(t, theta, 5)]
-    optimal_snr[-1] += [optimize_snr_cat(1,t,theta,0.5)]
+      print('success')
+    #optimal_snr[-2] += [find_optimal_coherent_fock(t, theta, 5)]
+    #optimal_snr[-1] += [optimize_snr_cat(1,t,theta,0.5)]
   colors=['black','purple','orange','green']
   fig,ax =plt.subplots()
   ax.plot(t_vec,gauss_snr_opt, color='black', linestyle='dashed')
   for rank in range(1, max_stellar_rank+1):
     ax.plot(t_vec, optimal_snr[rank], color= colors[rank])
-  ax.plot(t_vec,optimal_snr[-2], 'magenta')
-  ax.plot(t_vec,optimal_snr[-1], 'b')
+  #ax.plot(t_vec,optimal_snr[-2], 'magenta')
+  #ax.plot(t_vec,optimal_snr[-1], 'b')
   ax.set_yscale('log')
   plt.grid(True)
-  plt.legend(['Gaussian bound']+ ['1 photon addition', '2 photon additions', '3 photon additions']+ ['Coherent-fock', 'Noisy cat'])
+  #plt.legend(['Gaussian bound']+ ['1 photon addition', '2 photon additions', '3 photon additions']+ ['Coherent-fock', 'Noisy cat'])
   #plt.legend(['Gaussian bound']+ ['1 ph add','Coherent-fock', 'Noisy cat'])
+  plt.legend(['Gaussian bound','1 ph add'])
   plt.xlabel(r'$T [K]$')
   plt.ylabel(r'Optimal $\Gamma$')
   #plt.savefig('snr_with_stellar_rank.pdf')
@@ -1483,7 +1485,7 @@ def multimode_plots():
 
 #check()
 #q_mandel(1,1)
-#snr_vs_stellar_rank(3,1,5)
+snr_vs_stellar_rank(1,1,1000)
 #gaussian_vs_rare_state(np.linspace(0.01,2,50), 5, 3)
 
 
@@ -1502,5 +1504,5 @@ def multimode_plots():
 #multimode_optimization(3, 0.8, 4, 5)
 #snr_sv_comparison(2,1)
 #plot_optimal_gaussian(np.linspace(0.01,1.5,200), 1)
-heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'snr')
+#heatmap_optimal_gaussian(np.linspace(0.01,1.5,30), np.linspace(0,10,30), 'snr')
 #snr_sv_comparison(1, 1, 10)
