@@ -1,48 +1,54 @@
 import numpy as np
-from numpy import transpose, real, sqrt, sin, cos, linalg, cosh, sinh, diag
-import sympy as sp
-import math
-from math import factorial
-from sympy import symbols, Matrix, simplify, exp, sqrt, tanh, diag, cos, sin, coth
+from numpy import transpose, real, sqrt, sin, cos, linalg, cosh, sinh, log, log2, min, max
 import scipy
+import math
+import sympy as sp
 import matplotlib.pyplot as plt
-import random
-import itertools
 from itertools import combinations
 from scipy import optimize
-from scipy.optimize import minimize, fsolve, NonlinearConstraint, shgo, differential_evolution
+from scipy.optimize import minimize
+from scipy.linalg import sqrtm
 import time
 import sys
-import matplotlib as mpl
-from matplotlib import colors
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.colors as colors
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 from pprint import pprint
 from scipy.linalg import block_diag
 import os
 from mpl_toolkits.mplot3d import Axes3D
-import winsound
-import pickle
+import matplotlib.ticker as ticker
+from numpy import where
+import matplotlib.colors as mcolors
+import copy 
 
 
-def beep(): #definition of sounds 
-  #os.system("afplay /System/Library/Sounds/Ping.aiff")
-  winsound.Beep(2000, 1000)
-  return
+params = {'axes.linewidth': 2,
+         'axes.labelsize': 30,
+         'axes.titlesize': 30,
+         'axes.linewidth': 2,
+         'lines.markeredgecolor': "black",
+     	'lines.linewidth': 2,
+         'xtick.labelsize': 16,
+         'ytick.labelsize': 16,
+         "text.usetex": True,
+         "text.latex.preamble": r"\usepackage{amsmath}\usepackage{amssymb}",
+         "font.serif": ["Palatino"],
+         "font.family": "serif"
+         }
+plt.rcParams.update(params)
 
-'''Auxiliary functions for perfect matchings and loops'''
-
-def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=5):
-    
+def truncate_and_discretize(cmap, minval=0.0, maxval=1.0, N=40, smooth_samples=256):
     if isinstance(cmap, str):
         cmap = plt.get_cmap(cmap)
-    new_cmap = mpl.colors.LinearSegmentedColormap.from_list(
-        'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
-        cmap(np.linspace(minval, maxval, n)))
-    return new_cmap
-
-
+    
+    truncated = mpl.colors.LinearSegmentedColormap.from_list(
+        "truncated",
+        cmap(np.linspace(minval, maxval, smooth_samples))
+    )
+    return mpl.colors.ListedColormap(truncated(np.linspace(0, 1, N)))
 
 
 def perfect_matchings_and_loops(num_ladder_operators):
@@ -88,7 +94,6 @@ def find_perf_match_and_loops(index_list, current_combination, perf_matchings):
         index_list.insert(0, v1)
     else:
         perf_matchings.append(current_combination)
-
 
 #function that builds an orthogonal matrix out of a random one
 def Orth(params):  #params is a generic vector of passive optics with N^2 parameters
@@ -151,10 +156,6 @@ def convention_switch(N,sigma,ordering,format):
             newarray2[N+k, :] = newarray[2*k+1, :]
         #print('swapped array:',newarray2)
         return newarray2
-
-
-
-
 
 
 class State:    #notation as in master thesis. Assume kb= 1, hbar=1 
@@ -771,8 +772,6 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
           constraint1 = {'type': 'eq', 'fun': energy_constraint}
           constraint2 = {'type': 'ineq', 'fun': sq_constraint}
         
-          
-    
 
           # Initial guess for the attributes
           initial_guess = self.disp[:2*N] + self.squeezing[:N] 
@@ -794,165 +793,208 @@ class State:    #notation as in master thesis. Assume kb= 1, hbar=1
           return result
    
 
+def fig1(alpha):
+    gamma_vec = [1, 0.5, 0]
+    i = 0
 
+    fig, ax = plt.subplots(1, 3, figsize=(10, 6), constrained_layout=True)
 
-def optimize_snr_cat(m, T, epsilon_constraint, z0):  #returns the optimal value of snr_cat as a function of the system's temperature. the # of ph subtractions m,  and the constraint on deltaN \leq epsilon
-  #z0 is the initial guess for the squeezing parameter
-  
-  #First compute the snr _ extr (gamma) of a one-mode cat state consisting of a squeezed (z) thermal state (T) after m (tending to infinity) photon subtractions
-  def I1(z,nu):
-    return  (nu/4)*(z-1/z)
-  def I3(z,nu):
-    return  (nu/4)*(z+1/z)-(1/2)
-  def tr(nu,z,r):
-    result =0
-    if r%2 == 0: #if r even
-      for j in range(0,r//2+1):
-        result += I3(z,nu)**(2*j)*I1(z,nu)**(r-2*j)*factorial(r)**2/(factorial(2*j)*factorial((r-2*j)//2)**2*2**(r-2*j))
-    elif r%2 == 1: #if r odd
-      for j in range(0,(r-1)//2+1):
-        result += I3(z,nu)**(2*j+1)*I1(z,nu)**(r-2*j-1)*factorial(r)**2/(factorial(2*j+1)*factorial((r-2*j-1)//2)**2*2**(r-2*j-1))
-    return result
-       
-  def n_cat(nu,z,m):
-    return tr(nu,z,m+1)/tr(nu,z,m)
-  def n0_cat(nu):
-    return (nu-1)/2
-  def numerator(nu,z,m):
-    return n_cat(nu,z,m)-n0_cat(nu)
-  #print('delta n', numerator(nu,z,m))
-  def denominator(nu,z,m):
-    return math.sqrt(n_cat(nu,z,m)+tr(nu,z,m+2)/tr(nu,z,m)-n_cat(nu,z,m)**2)
-  def snr_cat(z,m,T): 
-    nu = 1/np.tanh(1/(2* T))
-    return numerator(nu,z,m)/denominator(nu,z,m)
+    W_total = []
+    y_labels = [['1.5', '5', '10'],
+                ['1.25', '5', '10'],
+                ['1', '5', '10']]
+    X_grids = []
+    Y_grids = []
+
+    vmin, vmax = 0, 1
+    new_viridis = truncate_and_discretize('viridis', vmin, vmax)
+
+    for gamma in gamma_vec:
+
+        z_vec = np.linspace(0.1, 1, 400)
+        r_vec = np.array([-np.log(z) / 2 for z in z_vec])   # unused but kept
+        k_vec = np.linspace(1.001 + gamma / 2, 10, 400)
+
+        X = z_vec
+        Y = k_vec
+        X_grid, Y_grid = np.meshgrid(X, Y)
+        X_grids.append(X_grid)
+        Y_grids.append(Y_grid)
+
+        x = np.pi / 4
+
+        # separability
+        sep = [[np.float64(
+            (1 + k**4 + gamma**4 - 2 * k**2 * gamma**2 - 2 * k**2 - 2 * gamma**2)
+            - 4 * cos(x)**2 * sin(x)**2 * (
+                (k**2 - gamma**2) * (z**2 + 1 / z**2) - (2 * k**2 + 2 * gamma**2)
+            )
+        ) for z in z_vec] for k in k_vec]
+        sep_arr = np.array(sep)
+
+        diff = [[np.float64(
+            (-(k * (1 + alpha) + gamma * (1 - alpha))
+             + ((1 + alpha) / 2) * sqrt(
+                 1 + k**4 - 2 * k**2 * gamma**2 + gamma**4
+                 + 2 * (k**2 + gamma**2) + 8 * k * gamma
+             )
+            ) / ((k - 1) * (1 + alpha) + gamma * (1 - alpha))
+            -
+            (-(k * (1 + alpha) + gamma * (1 - alpha))
+             + sqrt(
+                 (k + gamma)**2 * cos(x)**4
+                 + (k - gamma)**2 * sin(x)**4
+                 + (k**2 - gamma**2) * cos(x)**2 * sin(x)**2 * ((z**2 + 1 / z**2) / 1)
+             )
+             + alpha * sqrt(
+                 (k - gamma)**2 * cos(x)**4
+                 + (k + gamma)**2 * sin(x)**4
+                 + (k**2 - gamma**2) * cos(x)**2 * sin(x)**2 * ((z**2 + 1 / z**2) / 1)
+             )
+            ) / ((k - 1) * (1 + alpha) + gamma * (1 - alpha))
+        ) for z in z_vec] for k in k_vec]
+
+        W_arr = np.array(diff, dtype=np.float32)
+        W_total.append(W_arr)   
+
+      
+        contour_levels = [0]
+        contour = ax[i].contour(X_grid, Y_grid, W_arr,
+                                levels=contour_levels,
+                                colors='red',
+                                linestyles='dashed',
+                                linewidths=1.5)
+        contour2 = ax[i].contour(X_grid, Y_grid, sep_arr,
+                                 levels=contour_levels,
+                                 colors='red',
+                                 linewidths=1.5)
+
+        x_center = 0.5 * (ax[i].get_xlim()[0] + ax[i].get_xlim()[1])
+        y_center = 0.5 * (1.75 * ax[i].get_ylim()[0] + 0.25 * ax[i].get_ylim()[1])
+
+        ax[i].clabel(contour2, inline=True, fontsize=20,
+                     fmt='PPT', colors='black',
+                     manual=[(x_center, y_center)])
+
+        ax[i].set_xlim(X.min(), X.max())
+        ax[i].set_ylim(Y.min(), Y.max())
+
+        if i == 0:
+            ax[i].set_ylabel(r'$k$')
+        ax[i].set_xlabel(r'$z$')
+
+        y = [gamma / 2 + 1] + [(gamma / 2 + 1) // 1 + 4] + [10]
+        ax[i].set_yticks(ticks=y, labels=y_labels[i])
+
+        i += 1
+
+    
+    mappable = None
+    cmap = new_viridis
+
    
-  nu = 1/np.tanh(1/(2* T)) 
-  objective = lambda z: -snr_cat(z, m, T)
+    global_min = np.min([W.min() for W in W_total])
+    global_max = np.max([W.max() for W in W_total])
 
-    # Constraint: deltan(z, m, T) <= epsilon
-  constraint1 = {
-        'type': 'ineq',  # means: constraint_fun(z) >= 0 → we'll return epsilon - deltan
-        'fun': lambda z: epsilon_constraint - numerator(nu, z, m)
-    }
-  
-  bounds = [(0.01, 1)]
-  result = minimize(
-        objective,
-        z0,
-        constraints=[constraint1],
-        bounds=bounds,
-        method='SLSQP',  # handles inequality constraints
-        options={'disp': True, 'maxiter': 10000, 'gtol': 1e-6}
+    titles = [r'$\gamma=1$', r'$\gamma=0.5$', r'$\gamma=0$']
+
+    norm = colors.SymLogNorm(linthresh=1e-3,
+                             vmin=global_min, vmax=global_max)
+
+    i = 0
+    for ax_i, d, title in zip(ax, W_total, titles):
+        c = ax_i.pcolormesh(X_grids[i], Y_grids[i], d,
+                            norm=norm, cmap=cmap,
+                            shading='auto', rasterized=True)
+        ax_i.set_title(title, fontsize=40)
+        if mappable is None:
+            mappable = c  
+        i += 1
+
+    fig.colorbar(
+        mappable, ax=ax, orientation='vertical',
+        label=r'$\mathcal{B}_{\text{max}}^{\text{sep}} - \Delta  \mathcal{E}_{\text{rel}}$',
+        ticks=[-1000, -0.1, 0, 10**(-3), 1],
+        fraction=0.3, pad=0.08
     )
-  print('m=', m, 'T=', T, 'optimal z', result.x)
-  print(result.success)
-  return -result.fun
+
+    plt.subplots_adjust(wspace=2)
+    plt.savefig('Bound violation reduced.pdf', dpi=120)
+    plt.show()
+    return
+    
 
 
-def optimize_snr_sq_phadd(m, T, epsilon_constraint, z0):  #returns the optimal value of snr_cat as a function of the system's temperature. the # of ph subtractions m,  and the constraint on deltaN \leq epsilon
-  #z0 is the initial guess for the squeezing parameter
-  
+def fig2():
+    def find_ergotropic_gap_phsub(z,k):
+        a= k*(z+1/z)-1
+        c=k*(-z+1/z)
+        d=k*(-1/z+z)
+        b= (a+1)+ (((k/2)*(-z+1/z))**2)/a
+        gamma= a**2 + b**2 +2*c*d 
+        det = a**2*b**2-a*b*c**2-a*b*d**2+c**2*d**2
+        numinus = sqrt((gamma - sqrt(gamma**2-4*det))/2) 
+        nuplus = sqrt((gamma + sqrt(gamma**2-4*det))/2) 
+        eloc= 0.5*(a+b-2)
+        eglob= 0.5*(nuplus+numinus-2)
+        rel_gap = (eloc - eglob)/eglob
+        return rel_gap
+    
 
-  def I1(z,nu):
-    return  (nu/4)*(z-1/z)
-  def I4(z,nu):
-    return  (nu/4)*(z+1/z)+(1/2)
-  def tr(nu,z,r):
-    result =0
-    if r%2 == 0: #if r even
-      for j in range(0,r//2+1):
-        result += I4(z,nu)**(2*j)*I1(z,nu)**(r-2*j)*factorial(r)**2/(factorial(2*j)*factorial((r-2*j)//2)**2*2**(r-2*j))
-    elif r%2 == 1: #if r odd
-      for j in range(0,(r-1)//2+1):
-        result += I4(z,nu)**(2*j+1)*I1(z,nu)**(r-2*j-1)*factorial(r)**2/(factorial(2*j+1)*factorial((r-2*j-1)//2)**2*2**(r-2*j-1))
-    return result
-       
-  def n_cat(nu,z,m):
-    return tr(nu,z,m+1)/tr(nu,z,m)-1
-  def n0_cat(nu):
-    return (nu-1)/2
-  def numerator(nu,z,m):
-    return n_cat(nu,z,m)-n0_cat(nu)
-  #print('delta n', numerator(nu,z,m))
-  def denominator(nu,z,m):
-    return math.sqrt((-3*tr(nu,z,m)+tr(nu,z,m+2))/tr(nu,z,m)+1-n_cat(nu,z,m)**2)
-  def snr_cat(z,m,T): 
-    nu = 1/np.tanh(1/(2* T))
-    return numerator(nu,z,m)/denominator(nu,z,m)
-   
-  nu = 1/np.tanh(1/(2* T)) 
-  objective = lambda z: -snr_cat(z, m, T)
+    z_vec=np.linspace(0.1,1,300)
+    
+    r_vec=np.array([-np.log(z)/2 for z in z_vec])
+    t_vec = np.linspace(0.1,10,300)
+    print(z_vec, t_vec)
+    
+    k_vec= np.array([1/np.tanh((1/(2*t))) for t in t_vec])
+    X=z_vec
+    Y=k_vec
+    X_grid, Y_grid =np.meshgrid(X,Y)
+    x= np.pi/4
 
-    # Constraint: deltan(z, m, T) <= epsilon
-  constraint1 = {
-        'type': 'ineq',  # means: constraint_fun(z) >= 0 → we'll return epsilon - deltan
-        'fun': lambda z: epsilon_constraint - numerator(nu, z, m)
-    }
-  
-  bounds = [(0.01, 1)]
-  result = minimize(
-        objective,
-        z0,
-        constraints=[constraint1],
-        bounds=bounds,
-        method='SLSQP',  # handles inequality constraints
-        options={'disp': True, 'maxiter': 10000, 'gtol': 1e-6}
-    )
-  print('m=', m, 'T=', T, 'optimal z', result.x)
-  print(result.success)
-  return -result.fun
+    
+    sv = [[np.float64(State(2, [z,1/z],[x],[0,0],None, None, [t_vec[j],t_vec[j]],[-1]).SV()) for z in z_vec] for j in range(len(k_vec))]
+    sv_arr = np.array(sv)
+    
+    
+    W = [[np.float64(find_ergotropic_gap_phsub(z,k)) for z in z_vec] for k in k_vec]
+    W_arr= np.array(W)
+    print(W)
+    
+    certifying_value= 0
+    for i in range(len(z_vec)):
+        for j in range(len(k_vec)):
+            value= W[i][j]
+            if value > certifying_value and sv[i][j]>0:
+                certifying_value = value
+    fig,ax=plt.subplots(1,1,figsize=(10,6))
+    
 
-def remove_outliers(vector, tolerance):
-  new_vector= vector
-  print(vector)
-  print(new_vector)
-  for i in range(1,len(vector)-1):
-    if np.abs(vector[i]-vector[i-1]) > tolerance or np.abs(vector[i]-vector[i+1]) > tolerance:
-        new_vector[i] = (vector[i+1]+vector[i-1])/2
-  print(new_vector)
-  return new_vector
+    c2=ax.pcolormesh(X_grid,Y_grid,W,cmap=truncate_and_discretize('viridis_r',0,1))
 
-#optimal_state= State(1,[result.x[2]],[],[0,0],disp=[result.x[0],result.x[1]], temp=[0.1], nongaussian_ops=[1])
-#print(result)
-#print(optimal_state.ergotropy(), optimal_state.SNR_extr())
-# #Symbolic representation
-nu1, nu2, w1, w2, z1,z2,x,T1,T2,phi1,phi2,alpha1,alpha2,beta1,beta2, lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2 = symbols('nu1, nu2, w1, w2 z1,z2,x,T1, T2, phi1,phi2,alpha1,alpha2,beta1,beta2,lambda1, lambda2,theta1,theta2,psi1,psi2,r1,r2',real=True, RealNumber=True, commutative= True, nonnegative= True)
-# # alpha = symbols('alpha')
-# state_sym=State(2,[z2,z1],[x],[0,0],disp=[0,0,0,0],temp=[T1,T2],omega=[w1,w2],nongaussian_ops=[], required_ordering='xxpp',format='string')
-# print('initial matrix', state_sym.matrix.subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T2)): nu2 }))
-# erg_exp = state_sym.ergotropy().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T2)): nu2 })
-# print(erg_exp)
-#  var_expr = (state_sym.varianceN().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))**2
-#snr_expr = simplify(state_sym.SNR_extr().subs({coth(1/(2*T1)): nu1, coth(w2/(2*T1)): nu2 }))
-# SV_expr = simplify(state_sym.SV().subs({coth(w1/(2*T1)): nu1, coth(w2/(2*T1)): nu2}))
-# print('erg',erg_exp)
-# print('')
-# print('var', var_expr)
-# print('')
-#print('snr', snr_expr)
-# print('')
-# print('SV', SV_expr)
-# print('')
-# variables = [x,phi1,phi2]
-# energy_gradient_vector = [simplify(sp.diff(erg_exp, var)) for var in variables]
-# print('')
-# print('gradient',energy_gradient_vector)
-# for var in variables:
-#   print(f'{var}', sp.trigsimp(simplify(sp.diff(var_expr, var))))
-#   print('')
+    cbar=fig.colorbar(c2,ax=ax, label=r'$\Delta \mathcal{E}_{\text{rel}}$')
+    contour_levels = [0]
+    second_contour_levels =[certifying_value]
+    print('Max value for separable is', certifying_value)
+    contour = ax.contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='solid', linewidths=1.5)
+    contour2 = ax.contour(X_grid, Y_grid, W, levels=second_contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
+    ax.clabel(contour, inline=True, fontsize=25,fmt='SV')
+    ax.text(0.28, 1.0,  r'$\Delta \mathcal{E}_{\text{rel}} \approx 1.11$',fontsize=25, rotation=-25)
+    ax.set_xlim(X.min(), X.max())
+    ax.set_yscale('log')
+    ax.set_ylim(Y.min() , Y.max())
+    ax.set_ylabel(r'$k$')
+    ax.set_yticks(ticks=[1,10], labels=['1', '10'])
+    ax.set_xlabel(r' $z$')
 
-# state_sym.local_operation(0,r1,psi1,0,r2,psi2)
+    c2.set_label(r'Ergotropic gap for TMS photon-subtracted states')
+    plt.subplots_adjust(wspace=2)
+    y=[1] + [1 + i for i in range(1,8)] + [10]
+    ax.set_yticks(y)
+    plt.savefig(f'Photon-subtracted reduced.pdf')
+    plt.show()
+    return
 
-
-# energy_expr=state_sym.expvalN_gaussian_nondisplaced().subs({coth(w1/(2*T)): nu1, coth(w2/(2*T)): nu2 })
-# print('energy local passive', energy_expr)
-# variables = [r1,psi1,r2,psi2]
-# gradient_vector = [sp.diff(energy_expr, var) for var in variables]
-# print('derivative',gradient_vector)
-
-# state_0= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussian_ops=[], required_ordering='xxpp',format='string')
-# state_1= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussian_ops=[1], required_ordering='xxpp',format='string')
-# state_2= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussian_ops=[1,1], required_ordering='xxpp',format='string')
-# state_3= state_sym=State(1,[1],[],[0],omega=[w1],disp=[0,0],temp=[T1],nongaussian_ops=[1,1,1], required_ordering='xxpp',format='string')
-
+#fig1(1)
+fig2()

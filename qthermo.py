@@ -22,24 +22,33 @@ import matplotlib.ticker as ticker
 from numpy import where
 import matplotlib.colors as mcolors
 import copy
-
 from utils import * 
 #from plots import *
 
 params = {'axes.linewidth': 2,
-         'axes.labelsize': 40,
-         'axes.titlesize': 45,
+         'axes.labelsize': 30,
+         'axes.titlesize': 30,
          'axes.linewidth': 2,
          'lines.markeredgecolor': "black",
      	'lines.linewidth': 2,
-         'xtick.labelsize': 12,
-         'ytick.labelsize': 12,
+         'xtick.labelsize': 16,
+         'ytick.labelsize': 16,
          "text.usetex": True,
          "text.latex.preamble": r"\usepackage{amsmath}\usepackage{amssymb}",
          "font.serif": ["Palatino"],
          "font.family": "serif"
          }
 plt.rcParams.update(params)
+
+def truncate_and_discretize(cmap, minval=0.0, maxval=1.0, N=40, smooth_samples=256):
+    if isinstance(cmap, str):
+        cmap = plt.get_cmap(cmap)
+    
+    truncated = mpl.colors.LinearSegmentedColormap.from_list(
+        "truncated",
+        cmap(np.linspace(minval, maxval, smooth_samples))
+    )
+    return mpl.colors.ListedColormap(truncated(np.linspace(0, 1, N)))
 
 def mutual_information_TMSQ(): #this plots the mutual information for the specific case of the two-mode squeezed state (do it for generic state)
     r_vec=np.linspace(0,1.5,1000)
@@ -368,7 +377,7 @@ def bound_violation_tms(alpha, gamma):
     X_grid, Y_grid =np.meshgrid(X,Y)
     x= np.pi/5
     epsilon = 1e-6
-
+    new_viridis = cm.get_sub_cmap('viridis', 0.3, 0.7)
     
     #separability
     
@@ -379,7 +388,7 @@ def bound_violation_tms(alpha, gamma):
     W = list(W_arr)
  
     fig,ax=plt.subplots(1,2,figsize=(10,6))
-    c=ax[0].pcolormesh(X_grid,Y_grid,W,norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=cm.get_cmap('viridis', 10))
+    c=ax[0].pcolormesh(X_grid,Y_grid,W,norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max()),cmap=cm.get_cmap('new_viridis', 10))
     #c=ax[0].pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis', 10))
     cbar=fig.colorbar(c,ax=ax[0], label=r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
     contour_levels = [0]
@@ -394,7 +403,7 @@ def bound_violation_tms(alpha, gamma):
     
     c.set_label(r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
 
-    c2=ax[1].pcolormesh(X_grid,Y_grid,sep,norm=colors.SymLogNorm(0.00001, vmin=min(sep_arr+epsilon), vmax=sep_arr.max()),cmap=cm.get_cmap('viridis', 10))
+    c2=ax[1].pcolormesh(X_grid,Y_grid,sep,norm=colors.SymLogNorm(0.00001, vmin=min(sep_arr+epsilon), vmax=sep_arr.max()),cmap=new_viridis)
 
     #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
     cbar=fig.colorbar(c,ax=ax[1], label=r'2-mode Gaussian separability condition')
@@ -419,79 +428,133 @@ def bound_violation_tms(alpha, gamma):
 
 
 def bound_violation_tms_reduced(alpha):
-    gamma_vec=[1,0.5,0]
-    i=0
-    fig,ax=plt.subplots(1,3,figsize=(10,6), constrained_layout=True)
-    W_total=[]
-    y_labels=[['1.5','5','10'],['1.25','5','10'],['1','5','10'] ]
-    
+    gamma_vec = [1, 0.5, 0]
+    i = 0
+
+    fig, ax = plt.subplots(1, 3, figsize=(10, 6), constrained_layout=True)
+
+    W_total = []
+    y_labels = [['1.5', '5', '10'],
+                ['1.25', '5', '10'],
+                ['1', '5', '10']]
+    X_grids = []
+    Y_grids = []
+
+    vmin, vmax = 0, 1
+    new_viridis = truncate_and_discretize('viridis', vmin, vmax)
+
     for gamma in gamma_vec:
 
-        z_vec=np.linspace(0.1,1,400)
-        r_vec=np.array([-np.log(z)/2 for z in z_vec])
-        k_vec= np.linspace(1.001+gamma/2,10,400)
-        X=z_vec
-        Y=k_vec
-        X_grid, Y_grid =np.meshgrid(X,Y)
-        x= np.pi/4
-        epsilon = 1e-3
-        
+        z_vec = np.linspace(0.1, 1, 400)
+        r_vec = np.array([-np.log(z) / 2 for z in z_vec])   # unused but kept
+        k_vec = np.linspace(1.001 + gamma / 2, 10, 400)
 
+        X = z_vec
+        Y = k_vec
+        X_grid, Y_grid = np.meshgrid(X, Y)
+        X_grids.append(X_grid)
+        Y_grids.append(Y_grid)
 
-    
-    #separability
-    
-        sep= [[np.float64((1+k**4+gamma**4-2*k**2*gamma**2-2*k**2-2*gamma**2)-4*cos(x)**2*sin(x)**2*((k**2-gamma**2)*(z**2+1/z**2)-(2*k**2+2*gamma**2))) for z in z_vec] for k in k_vec] 
-        sep_arr=np.array(sep)
-        diff=[[np.float64((-(k*(1+alpha)+ gamma*(1-alpha))+((1+alpha)/2)*sqrt(1+k**4-2*k**2*gamma**2+gamma**4+2*(k**2+gamma**2)+8*k*gamma))/((k-1)*(1+alpha)+ gamma*(1-alpha))-(-(k*(1+alpha)+ gamma*(1-alpha)) + sqrt((k+gamma)**2*cos(x)**4+(k-gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z**2+1/z**2)/(1)))+alpha*sqrt((k-gamma)**2*cos(x)**4+(k+gamma)**2*sin(x)**4+(k**2-gamma**2)*cos(x)**2*sin(x)**2*((z**2+1/z**2)/(1))))/((k-1)*(1+alpha)+ gamma*(1-alpha)))for z in z_vec]for k in k_vec]
-        W_arr= np.array(diff)
-        W = list(W_arr)
-        W_total+=[W]
-        #norm=colors.SymLogNorm(0.0000001,vmin=min(W_arr+epsilon), vmax=W_arr.max())
-        c=ax[i].pcolormesh(X_grid,Y_grid,W_arr+epsilon,cmap=cm.get_cmap('viridis', 40),norm=colors.Normalize(vmin=min(W_arr), vmax=max(W_arr)), shading='auto')
-        #cbar=fig.colorbar(c,ax=ax[i], label=r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
+        x = np.pi / 4
+
+        # separability
+        sep = [[np.float64(
+            (1 + k**4 + gamma**4 - 2 * k**2 * gamma**2 - 2 * k**2 - 2 * gamma**2)
+            - 4 * cos(x)**2 * sin(x)**2 * (
+                (k**2 - gamma**2) * (z**2 + 1 / z**2) - (2 * k**2 + 2 * gamma**2)
+            )
+        ) for z in z_vec] for k in k_vec]
+        sep_arr = np.array(sep)
+
+        diff = [[np.float64(
+            (-(k * (1 + alpha) + gamma * (1 - alpha))
+             + ((1 + alpha) / 2) * sqrt(
+                 1 + k**4 - 2 * k**2 * gamma**2 + gamma**4
+                 + 2 * (k**2 + gamma**2) + 8 * k * gamma
+             )
+            ) / ((k - 1) * (1 + alpha) + gamma * (1 - alpha))
+            -
+            (-(k * (1 + alpha) + gamma * (1 - alpha))
+             + sqrt(
+                 (k + gamma)**2 * cos(x)**4
+                 + (k - gamma)**2 * sin(x)**4
+                 + (k**2 - gamma**2) * cos(x)**2 * sin(x)**2 * ((z**2 + 1 / z**2) / 1)
+             )
+             + alpha * sqrt(
+                 (k - gamma)**2 * cos(x)**4
+                 + (k + gamma)**2 * sin(x)**4
+                 + (k**2 - gamma**2) * cos(x)**2 * sin(x)**2 * ((z**2 + 1 / z**2) / 1)
+             )
+            ) / ((k - 1) * (1 + alpha) + gamma * (1 - alpha))
+        ) for z in z_vec] for k in k_vec]
+
+        W_arr = np.array(diff, dtype=np.float32)
+        W_total.append(W_arr)   
+
+      
         contour_levels = [0]
-        contour = ax[i].contour(X_grid, Y_grid, W, levels=contour_levels, colors='red', linestyles='dashed', linewidths=1.5)
-        contour2= ax[i].contour(X_grid, Y_grid, sep, levels=contour_levels, colors='red', linewidths=1.5)
+        contour = ax[i].contour(X_grid, Y_grid, W_arr,
+                                levels=contour_levels,
+                                colors='red',
+                                linestyles='dashed',
+                                linewidths=1.5)
+        contour2 = ax[i].contour(X_grid, Y_grid, sep_arr,
+                                 levels=contour_levels,
+                                 colors='red',
+                                 linewidths=1.5)
 
         x_center = 0.5 * (ax[i].get_xlim()[0] + ax[i].get_xlim()[1])
-        y_center = 0.5 * (1.75*ax[i].get_ylim()[0] + 0.25*ax[i].get_ylim()[1])
-        ax[i].clabel(contour2, inline=True, fontsize=20,fmt='PPT',colors= 'black', manual=[(x_center, y_center)])
+        y_center = 0.5 * (1.75 * ax[i].get_ylim()[0] + 0.25 * ax[i].get_ylim()[1])
+
+        ax[i].clabel(contour2, inline=True, fontsize=20,
+                     fmt='PPT', colors='black',
+                     manual=[(x_center, y_center)])
 
         ax[i].set_xlim(X.min(), X.max())
-        #ax[i].set_yscale('log')
-        ax[i].set_ylim(Y.min() , Y.max())
-        #ax.grid(True, which='both', linestyle='--')
-        if i==0:
+        ax[i].set_ylim(Y.min(), Y.max())
+
+        if i == 0:
             ax[i].set_ylabel(r'$k$')
         ax[i].set_xlabel(r'$z$')
-        
-        c.set_label(r'Bound - $\Delta \epsilon_{r e l}$ for TMS states')
 
-        
-        plt.subplots_adjust(wspace=2)
-        y=[gamma/2+1] + [(gamma/2+1)//1 + 4] + [10]
-        
+        y = [gamma / 2 + 1] + [(gamma / 2 + 1) // 1 + 4] + [10]
         ax[i].set_yticks(ticks=y, labels=y_labels[i])
-        i+=1
+
+        i += 1
+
     
     mappable = None
-    cmap=cm.get_cmap('viridis', 20)
-    global_min = min(W_total)
-    global_max = max(W_total)
-    titles = [r'$\gamma=1$', r'$\gamma=0.5$', r'$\gamma=0$']
-    #norm=colors.Normalize(vmin=min(W_arr), vmax=max(W_arr))
-    norm = colors.SymLogNorm(linthresh=1e-12, vmin=global_min, vmax=global_max)
-    for ax, d, title in zip(ax, W_total, titles):
-        c = ax.pcolormesh(X_grid, Y_grid, d, norm=norm, cmap=cmap,shading='auto')
-        ax.set_title(title, fontsize=40)
-        if mappable is None:
-            mappable = c  # Only need one for the colorbar
+    cmap = new_viridis
 
-    fig.colorbar(mappable, ax=ax, orientation='vertical', label=r'$\mathcal{B}_{\text{max}}^{\text{sep}} - \Delta  \mathcal{E}_{\text{rel}}$', ticks=[-1000, -0.1, 0,10**(-3), 1], fraction=0.3, pad=0.08)
-    plt.savefig(f'Bound violation reduced.pdf')
+   
+    global_min = np.min([W.min() for W in W_total])
+    global_max = np.max([W.max() for W in W_total])
+
+    titles = [r'$\gamma=1$', r'$\gamma=0.5$', r'$\gamma=0$']
+
+    norm = colors.SymLogNorm(linthresh=1e-3,
+                             vmin=global_min, vmax=global_max)
+
+    i = 0
+    for ax_i, d, title in zip(ax, W_total, titles):
+        c = ax_i.pcolormesh(X_grids[i], Y_grids[i], d,
+                            norm=norm, cmap=cmap,
+                            shading='auto', rasterized=True)
+        ax_i.set_title(title, fontsize=40)
+        if mappable is None:
+            mappable = c  
+        i += 1
+
+    fig.colorbar(
+        mappable, ax=ax, orientation='vertical',
+        label=r'$\mathcal{B}_{\text{max}}^{\text{sep}} - \Delta  \mathcal{E}_{\text{rel}}$',
+        ticks=[-1000, -0.1, 0, 10**(-3), 1],
+        fraction=0.3, pad=0.08
+    )
+
+    plt.subplots_adjust(wspace=2)
+    plt.savefig('Bound violation reduced.pdf', dpi=120)
     plt.show()
-    beep()
     return
          
 
@@ -858,7 +921,6 @@ def plot_nongaussian_erg_gap(nongaussian_ops, gamma,alpha):
     plt.show()
     return
 
-    
 
 
 
@@ -1044,7 +1106,6 @@ def photon_sub_tms_reduced():
 
     c2=ax.pcolormesh(X_grid,Y_grid,W,cmap=cm.get_cmap('viridis_r', 40))
 
-    #c2=ax[1].pcolormesh(X_grid,Y_grid,sep,cmap=cm.get_cmap('viridis', 10))
     cbar=fig.colorbar(c2,ax=ax, label=r'$\Delta \mathcal{E}_{\text{rel}}$')
     contour_levels = [0]
     second_contour_levels =[certifying_value]
@@ -1052,15 +1113,10 @@ def photon_sub_tms_reduced():
     contour = ax.contour(X_grid, Y_grid, sv, levels=contour_levels, colors='black', linestyles='solid', linewidths=1.5)
     contour2 = ax.contour(X_grid, Y_grid, W, levels=second_contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
     ax.clabel(contour, inline=True, fontsize=25,fmt='SV')
-    #ax.clabel(contour2,inline=False,fontsize=20,fmt=r'$\Delta \mathcal{E}_{\text{rel}} \approx 1.11$',manual=[(0.2, 1.0)])   # <-- pick a good (x, y) in data coords
-    #ax.clabel(contour2, inline= True, fontsize=20,fmt=r'$\Delta \mathcal{E}_{\text{rel}} \approx 1.11$')
-    #contour = ax[1].contour(X_grid, Y_grid, W,levels=contour_levels, colors='black', linestyles='dashed', linewidths=1.5)
-    #ax[1].clabel(contour, inline=True, fontsize=10,fmt='PPT')
     ax.text(0.28, 1.0,  r'$\Delta \mathcal{E}_{\text{rel}} \approx 1.11$',fontsize=25, rotation=-25)
     ax.set_xlim(X.min(), X.max())
     ax.set_yscale('log')
     ax.set_ylim(Y.min() , Y.max())
-    #ax.grid(True, which='both', linestyle='--')
     ax.set_ylabel(r'$k$')
     ax.set_yticks(ticks=[1,10], labels=['1', '10'])
     ax.set_xlabel(r' $z$')
@@ -1069,16 +1125,15 @@ def photon_sub_tms_reduced():
     plt.subplots_adjust(wspace=2)
     y=[1] + [1 + i for i in range(1,8)] + [10]
     ax.set_yticks(y)
-    #beep()
     plt.savefig(f'Photon-subtracted reduced.pdf')
     plt.show()
     return
 
 
-photon_sub_tms_reduced()
+#photon_sub_tms_reduced()
 #photon_add_tms()
 #plot_onemodegaussian()
-#bound_violation_tms_reduced(1)
+bound_violation_tms_reduced(1)
 #heatmap_bound(1)
 #bounds(500)
 #gaussian_mixed_new_bound(1000)
@@ -1087,7 +1142,6 @@ photon_sub_tms_reduced()
 #relative_ergotropic_gap_TMSQ()
 
 #experimental_optimization(1)
-
 
 
 
